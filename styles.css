@@ -1,0 +1,7 @@
+body {
+    background-color: blueviolet !important;
+}
+h1, h2, h3, h4, p {
+    color: green !important;
+    font-size: xx-large !important;
+}

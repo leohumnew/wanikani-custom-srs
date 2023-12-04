@@ -31,3 +31,27 @@ unsafeWindow.fetch = async (...args) => {
         return originalFetch(...args);
     }
 };
+
+// ---------- Utility functions ----------
+function updatePopupContent() {
+    // Overview tab
+    document.querySelector("#tab-1__content").lastElementChild.innerHTML = "Reviews: " + activePackProfile.getActiveReviews().length;
+    // Packs tab
+    let packsTab = document.querySelector("#tab-2__content");
+    packsTab.innerHTML = "";
+    for(let i = 0; i < activePackProfile.customPacks.length; i++) {
+        let pack = activePackProfile.customPacks[i];
+        let packElement = document.createElement("div");
+        packElement.classList = "pack";
+        packElement.innerHTML = `
+            <h3>${pack.name}: <span>${pack.items.length} items</span></h3>
+            <button class="fa-regular fa-trash"></button>
+        `;
+        packElement.querySelector("button").onclick = () => {
+            activePackProfile.removePack(i);
+            StorageManager.savePackProfile(activePackProfile, "main");
+            updatePopupContent();
+        };
+        packsTab.appendChild(packElement);
+    }
+}

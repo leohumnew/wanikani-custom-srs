@@ -8,6 +8,13 @@ overviewPopup.id = "overview-popup";
 let overviewPopupStyle = document.createElement("style");
 // Styles copied in from styles.css
 overviewPopupStyle.innerHTML = `
+/* General styling */
+.content-box {
+    background-color: var(--color-wk-panel-background);
+    border-radius: 3px;
+    padding: 1rem;
+}
+
 /* Main popup styling */
 #overview-popup {
     background-color: var(--color-menu, white);
@@ -23,6 +30,8 @@ overviewPopupStyle.innerHTML = `
         cursor: pointer;
         background-color: transparent;
     }
+    & button:hover {
+        color: var(--color-tertiary, #a5a5a5) }
     & > header {
         display: flex;
         justify-content: space-between;
@@ -74,11 +83,19 @@ overviewPopupStyle.innerHTML = `
         display: initial }
 }
 
+/* Styling for the overview tab */
+#tab-1__content > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1.5rem;
+    text-align: center;
+
+    & p {
+        font-size: xxx-large }
+}
+
 /* Styling for packs in the packs tab */
 #tabs .pack {
-    background-color: var(--color-wk-panel-background);
-    padding: 1rem;
-    border-radius: 3px;
     display: flex;
     justify-content: space-between;
 
@@ -91,14 +108,16 @@ overviewPopupStyle.innerHTML = `
 }
 
 /* Styling for the pack edit tab */
-#tab-3__content > div {
-    border-radius: 3px;
-    background-color: var(--color-wk-panel-background);
-    padding: 1rem;
+#tab-3__content > .content-box {
     margin: 1rem 0;
 
     & input, & ul {
         margin-bottom: 1rem }
+    & div {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
     & li {
         margin-bottom: 0.5rem;
         justify-content: space-between;
@@ -107,7 +126,12 @@ overviewPopupStyle.innerHTML = `
         & button {
             margin-left: 10px }
     }
+    & li:hover {
+        color: var(--color-tertiary, rgb(165, 165, 165));
+    }
 }
+#pack-items {
+    background-color: var(--color-menu, white) }
 `;
 
 overviewPopup.innerHTML = `
@@ -119,8 +143,16 @@ overviewPopup.innerHTML = `
         <input type="radio" name="custom-srs-tab" id="tab-1" checked>
         <label for="tab-1">Overview</label>
         <div id="tab-1__content">
-            <p>Lessons: 0</p>
-            <p>Reviews: 0</p>
+            <div>
+                <div class="content-box">
+                    <h2>Lessons</h2>
+                    <p>0</p>
+                </div>
+                <div class="content-box">
+                    <h2>Reviews</h2>
+                    <p></p>
+                </div>
+            </div>
         </div>
 
         <input type="radio" name="custom-srs-tab" id="tab-2">
@@ -132,16 +164,20 @@ overviewPopup.innerHTML = `
         <div id="tab-3__content">
             <label for="pack-select">Pack: </label>
             <select id="pack-select"></select><br>
-            <div>
+            <form class="content-box">
                 <label for="pack-name">Name: </label>
                 <input id="pack-name" required><br>
                 <label for="pack-author">Author: </label>
                 <input id="pack-author" required><br>
                 <label for="pack-version">Version: </label>
                 <input id="pack-version" required type="number" step="0.1"><br>
-                <ul id="pack-items"></ul>
-            </div>
-            <button id="pack-save">Save</button>
+                <div>
+                    <p>Items: </p>
+                    <button onclick="createNewItem()" class="fa-regular fa-plus" title="Add Item"></button>
+                </div>
+                <ul class="content-box" id="pack-items"></ul>
+                <button type="submit">Save</button>
+            </form>
         </div>
 
         <input type="radio" name="custom-srs-tab" id="tab-4">
@@ -171,6 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector(".quiz-footer .quiz-footer__content").prepend(overviewPopupButton);
     document.head.appendChild(overviewPopupStyle);
     document.body.appendChild(overviewPopup);
+    // Add event listeners for buttons etc.
     document.querySelector("#pack-select").onchange = () => {
         loadPackEditDetails(document.querySelector("#pack-select").value);
     };
@@ -180,14 +217,15 @@ document.addEventListener("DOMContentLoaded", () => {
 // ---------- Update popup content ----------
 function updatePopupContent() {
     // Overview tab
-    document.querySelector("#tab-1__content").lastElementChild.innerHTML = "Reviews: " + activePackProfile.getActiveReviews().length;
+    //document.querySelector("#tab-1__content .content-box:first-child p").innerText = activePackProfile.getActiveLessons().length;
+    document.querySelector("#tab-1__content .content-box:last-child p").innerText = activePackProfile.getActiveReviews().length;
     // Packs tab
     let packsTab = document.querySelector("#tab-2__content");
     packsTab.innerHTML = "";
     for(let i = 0; i < activePackProfile.customPacks.length; i++) {
         let pack = activePackProfile.customPacks[i];
         let packElement = document.createElement("div");
-        packElement.classList = "pack";
+        packElement.classList = "pack content-box";
         packElement.innerHTML = `
             <h3>${pack.name}: <span>${pack.items.length} items</span><br><span>${pack.author}</span></h3>
             <div>
@@ -260,7 +298,7 @@ function loadPackEditDetails(i) {
             packItems.appendChild(itemElement);
         }
     }
-    document.querySelector("#pack-save").onclick = () => { // Pack save button
+    document.querySelector("#tab-3__content form").onsubmit = () => { // Pack save button
         let packName = packNameInput.value;
         let packAuthor = packAuthorInput.value;
         let packVersion = packVersionInput.value;
@@ -281,4 +319,9 @@ function loadPackEditDetails(i) {
         StorageManager.savePackProfile(activePackProfile, "main");
         updatePopupContent();
     };
+}
+
+// ---------- Create new item ----------
+function createNewItem() {
+    
 }

@@ -1,4 +1,5 @@
-const srsGaps = [0, 4*60*60*1000, 8*60*60*1000, 23*60*60*1000, 47*60*60*1000]
+const srsGaps = [0, 4*60*60*1000, 8*60*60*1000, 23*60*60*1000, 47*60*60*1000, 167*60*60*1000, 335*60*60*1000, 730*60*60*1000, 2920*60*60*1000]
+
 
 class CustomItem {
     // WK variables
@@ -23,6 +24,7 @@ class CustomItem {
         this.characters = characters;
         this.meanings = meanings;
         this.readings = readings;
+        this.last_reviewed_at = Date.now();
     }
 
     set auxiliary_meanings(auxiliary_meanings) {
@@ -50,11 +52,14 @@ class CustomItem {
     }
 
     incrementSRS() {
-        this.srs_stage++;
+        if(this.srs_stage < 9) this.srs_stage++;
         this.last_reviewed_at = Date.now();
     }
     decrementSRS() {
-        this.srs_stage--;
+        if(this.srs_stage > 1) {
+            if(this.srs_stage < 5) this.srs_stage--;
+            else this.srs_stage -= 2;
+        }
         this.last_reviewed_at = Date.now();
     }
     set srs_stage(srs_stage) {
@@ -144,14 +149,14 @@ class StorageManager {
 
     // Save custom packs to GM storage
     static savePackProfile(packProfile, profileName) {
-        GM_setValue("customPackProfile_" + profileName, packProfile);
+        //GM_setValue("customPackProfile_" + profileName, packProfile);
     }
 }
 
 class TestData {
     // Create pack with custom test items
     static createTestPack() {
-        let testPack = new CustomItemPack("Test Pack", "Test Author", "0.0.1");
+        let testPack = new CustomItemPack("Test Pack", "Test Author", 0.1);
         testPack.addItem("Vocabulary", "Vocabulary", "猫猫", ["cat"], [{"reading": "ねこ", "pronunciations": []}]);
         testPack.addItem("Vocabulary", "Vocabulary", "犬犬", ["dog"], [{"reading": "いぬ", "pronunciations": []}]);
         testPack.addItem("Vocabulary", "Vocabulary", "鳥鳥", ["bird"], [{"reading": "とり", "pronunciations": []}]);

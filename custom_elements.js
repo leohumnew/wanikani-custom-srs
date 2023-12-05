@@ -1,5 +1,5 @@
 // ------------------------ Define and create custom HTML structures ------------------------
-
+const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"]
 // --------- Main popup ---------
 
 let overviewPopup = document.createElement("dialog");
@@ -8,6 +8,7 @@ overviewPopup.id = "overview-popup";
 let overviewPopupStyle = document.createElement("style");
 // Styles copied in from styles.css
 overviewPopupStyle.innerHTML = `
+/* Main popup styling */
 #overview-popup {
     background-color: var(--color-menu, white);
     width: 60%;
@@ -17,70 +18,95 @@ overviewPopupStyle.innerHTML = `
     border: none;
     border-radius: 3px;
     box-shadow: 0 0 1rem rgb(0 0 0 / .5);
-}
-#overview-popup::backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
-}
-#overview-popup > header {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--color-tertiary, --color-text);
-    margin-bottom: 1rem;
-}
-#overview-popup > header > h1 {
-    font-size: x-large;
-    color: var(--color-tertiary, --color-text);
-}
-#overview-popup > header > button {
-    background-color: transparent;
-    border: none;
-    color: var(--color-tertiary, --color-text);
-    font-size: x-large;
-    cursor: pointer;
-}
-#overview-popup > header > button:hover {
-    color: var(--color-text, --color-text);
-}
-#overview-popup > header > button:focus-visible {
-    outline: none;
+
+    & button {
+        cursor: pointer;
+        background-color: transparent;
+    }
+    & > header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--color-tertiary, --color-text);
+        margin-bottom: 1rem;
+
+        & > h1 {
+            font-size: x-large;
+            color: var(--color-tertiary, --color-text);
+        }
+        & > button {
+            border: none;
+            color: var(--color-tertiary, --color-text);
+            font-size: x-large;
+
+            &:hover {
+                color: var(--color-text) }
+            &:focus-visible {
+                outline: none }
+        }
+    }
+    &::backdrop {
+        background-color: rgba(0, 0, 0, 0.5) }
 }
 
+/* Styling for top tabs */
 #tabs {
     display: flex;
     flex-wrap: wrap;
-}
-#tabs > input {
-    display: none;
-}
-#tabs > label {
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    max-width: 20%;
-}
-#tabs > div {
-    display: none;
-    padding: 1rem;
-    order: 1;
-    width: 100%;
-}
-#tabs > input:checked + label {
-    color: var(--color-tertiary, --color-text);
-    border-bottom: 2px solid var(--color-tertiary, gray);
-}
-#tabs > input:checked + label + div {
-    display: initial;
+
+    & > input {
+        display: none }
+    & > label {
+        cursor: pointer;
+        padding: 0.5rem 1rem;
+        max-width: 20%;
+    }
+    & > div {
+        display: none;
+        padding: 1rem;
+        order: 1;
+        width: 100%;
+    }
+    & > input:checked + label {
+        color: var(--color-tertiary, --color-text);
+        border-bottom: 2px solid var(--color-tertiary, gray);
+    }
+    & > input:checked + label + div {
+        display: initial }
 }
 
+/* Styling for packs in the packs tab */
 #tabs .pack {
     background-color: var(--color-wk-panel-background);
     padding: 1rem;
     border-radius: 3px;
     display: flex;
     justify-content: space-between;
+
+    & span {
+        font-style: italic }
+    & > div {
+        margin: auto 0 }
+    & button {
+        margin-left: 10px }
 }
-#tabs .pack button {
-    background-color: transparent;
-    cursor: pointer;
+
+/* Styling for the pack edit tab */
+#tab-3__content > div {
+    border-radius: 3px;
+    background-color: var(--color-wk-panel-background);
+    padding: 1rem;
+    margin: 1rem 0;
+
+    & input, & ul {
+        margin-bottom: 1rem }
+    & li {
+        margin-bottom: 0.5rem;
+        justify-content: space-between;
+        display: flex;
+        
+        & button {
+            margin-left: 10px }
+    }
 }
 `;
 
@@ -96,18 +122,33 @@ overviewPopup.innerHTML = `
             <p>Lessons: 0</p>
             <p>Reviews: 0</p>
         </div>
+
         <input type="radio" name="custom-srs-tab" id="tab-2">
         <label for="tab-2">Packs</label>
         <div id="tab-2__content"></div>
+
         <input type="radio" name="custom-srs-tab" id="tab-3">
-        <label for="tab-3">Import/Export</label>
-        <div>TODO</div>
+        <label for="tab-3">Edit Pack</label>
+        <div id="tab-3__content">
+            <label for="pack-select">Pack: </label>
+            <select id="pack-select"></select><br>
+            <div>
+                <label for="pack-name">Name: </label>
+                <input id="pack-name" required><br>
+                <label for="pack-author">Author: </label>
+                <input id="pack-author" required><br>
+                <label for="pack-version">Version: </label>
+                <input id="pack-version" required type="number" step="0.1"><br>
+                <ul id="pack-items"></ul>
+            </div>
+            <button id="pack-save">Save</button>
+        </div>
+
         <input type="radio" name="custom-srs-tab" id="tab-4">
         <label for="tab-4">Settings</label>
         <div>TODO</div>
     </div>
 `;
-
 
 // --------- Popup open button ---------
 let overviewPopupButton = document.createElement("a");
@@ -130,4 +171,114 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector(".quiz-footer .quiz-footer__content").prepend(overviewPopupButton);
     document.head.appendChild(overviewPopupStyle);
     document.body.appendChild(overviewPopup);
+    document.querySelector("#pack-select").onchange = () => {
+        loadPackEditDetails(document.querySelector("#pack-select").value);
+    };
 });
+
+
+// ---------- Update popup content ----------
+function updatePopupContent() {
+    // Overview tab
+    document.querySelector("#tab-1__content").lastElementChild.innerHTML = "Reviews: " + activePackProfile.getActiveReviews().length;
+    // Packs tab
+    let packsTab = document.querySelector("#tab-2__content");
+    packsTab.innerHTML = "";
+    for(let i = 0; i < activePackProfile.customPacks.length; i++) {
+        let pack = activePackProfile.customPacks[i];
+        let packElement = document.createElement("div");
+        packElement.classList = "pack";
+        packElement.innerHTML = `
+            <h3>${pack.name}: <span>${pack.items.length} items</span><br><span>${pack.author}</span></h3>
+            <div>
+                <button class="edit-pack fa-regular fa-pen-to-square" title="Edit Pack"></button>
+                <button class="fa-regular fa-file-export" title="Export Pack"></button>
+                <button class="delete-pack fa-regular fa-trash" title="Delete Pack"></button>
+            </div>
+        `;
+        packElement.querySelector(".edit-pack").onclick = () => { // Pack edit button
+            document.querySelector("#tab-3").checked = true;
+            document.querySelector("#pack-select").value = i;
+            document.querySelector("#pack-select").onchange();
+        };
+        packElement.querySelector(".delete-pack").onclick = () => { // Pack delete button
+            activePackProfile.removePack(i);
+            StorageManager.savePackProfile(activePackProfile, "main");
+            updatePopupContent();
+        };
+        packsTab.appendChild(packElement);
+    }
+    // Edit pack tab
+    let packSelect = document.querySelector("#pack-select");
+    packSelect.innerHTML = "<option value='new'>New Pack</option>";
+    for(let i = 0; i < activePackProfile.customPacks.length; i++) {
+        let pack = activePackProfile.customPacks[i];
+        let option = document.createElement("option");
+        option.value = i;
+        option.innerText = pack.name + " - " + pack.author;
+        packSelect.appendChild(option);
+    }
+    packSelect.value = "new";
+    packSelect.onchange();
+}
+
+// ---------- Load pack edit details ----------
+function loadPackEditDetails(i) {
+    let packNameInput = document.querySelector("#pack-name");
+    let packAuthorInput = document.querySelector("#pack-author");
+    let packVersionInput = document.querySelector("#pack-version");
+    let packItems = document.querySelector("#pack-items");
+    if(i === "new") { // If creating a new pack
+        packNameInput.value = "";
+        packAuthorInput.value = "";
+        packVersionInput.value = 0.1;
+        packItems.innerHTML = "";
+    } else { // If editing an existing pack
+        let pack = activePackProfile.customPacks[i];
+        packNameInput.value = pack.name;
+        packAuthorInput.value = pack.author;
+        packVersionInput.value = pack.version;
+        packItems.innerHTML = "";
+        for(let j = 0; j < pack.items.length; j++) {
+            let item = pack.items[j];
+            let itemElement = document.createElement("li");
+            itemElement.classList = "pack-item";
+            itemElement.innerHTML = `
+                ${item.characters} - ${item.meanings[0]} - SRS: ${srsNames[item.srs_stage]}
+                <div>
+                    <button class="edit-item fa-regular fa-pen-to-square" title="Edit Item"></button>
+                    <button class="delete-item fa-regular fa-trash" title="Delete Item"></button>
+                </div>
+            `;
+            itemElement.querySelector(".edit-item").onclick = () => { // Item edit button
+                // TODO
+            }
+            itemElement.querySelector(".delete-item").onclick = () => { // Item delete button
+                pack.items.splice(j, 1);
+                loadPackEditDetails(i);
+            };
+            packItems.appendChild(itemElement);
+        }
+    }
+    document.querySelector("#pack-save").onclick = () => { // Pack save button
+        let packName = packNameInput.value;
+        let packAuthor = packAuthorInput.value;
+        let packVersion = packVersionInput.value;
+        let packItems = document.querySelectorAll("#pack-items .pack-item");
+        let pack = new CustomItemPack(packName, packAuthor, packVersion);
+        for(let j = 0; j < packItems.length; j++) {
+            let item = packItems[j];
+            let character = item.children[0].value;
+            let meaning = item.children[1].value;
+            let reading = item.children[2].value;
+            pack.addItem(character, meaning, reading);
+        }
+        if(i === "new") {
+            activePackProfile.addPack(pack);
+        } else {
+            activePackProfile.customPacks[i] = pack;
+        }
+        StorageManager.savePackProfile(activePackProfile, "main");
+        updatePopupContent();
+    };
+}

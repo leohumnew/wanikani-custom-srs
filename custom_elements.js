@@ -1,7 +1,7 @@
 // ------------------------ Define and create custom HTML structures ------------------------
 const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"]
-// --------- Main popup ---------
 
+// --------- Main popup ---------
 let overviewPopup = document.createElement("dialog");
 overviewPopup.id = "overview-popup";
 
@@ -26,12 +26,27 @@ overviewPopupStyle.innerHTML = `
     border-radius: 3px;
     box-shadow: 0 0 1rem rgb(0 0 0 / .5);
 
+    &:focus-visible {
+        border: none }
+    & p {
+        margin: 0 }
     & button {
         cursor: pointer;
         background-color: transparent;
+        border: none;
+
+        &[type="submit"] {
+            border: 1px solid var(--color-text);
+            border-radius: 5px;
+            padding: 0.2rem 0.8rem;
+        }
     }
     & button:hover {
-        color: var(--color-tertiary, #a5a5a5) }
+        color: var(--color-tertiary, #a5a5a5);
+
+        &[type="submit"] {
+            border-color: var(--color-tertiary, #a5a5a5) }
+    }
     & > header {
         display: flex;
         justify-content: space-between;
@@ -119,7 +134,7 @@ overviewPopupStyle.innerHTML = `
         margin-bottom: 0.5rem;
     }
     & li {
-        margin-bottom: 0.5rem;
+        margin: 0.25rem;
         justify-content: space-between;
         display: flex;
         
@@ -166,14 +181,14 @@ overviewPopup.innerHTML = `
             <select id="pack-select"></select><br>
             <form class="content-box">
                 <label for="pack-name">Name: </label>
-                <input id="pack-name" required><br>
+                <input id="pack-name" required type="text">
                 <label for="pack-author">Author: </label>
-                <input id="pack-author" required><br>
+                <input id="pack-author" required type="text">
                 <label for="pack-version">Version: </label>
-                <input id="pack-version" required type="number" step="0.1"><br>
+                <input id="pack-version" required type="number" step="0.1">
                 <div>
                     <p>Items: </p>
-                    <button onclick="createNewItem()" class="fa-regular fa-plus" title="Add Item"></button>
+                    <button id="new-item-button" class="fa-regular fa-plus" title="Add Item" type="button"></button>
                 </div>
                 <ul class="content-box" id="pack-items"></ul>
                 <button type="submit">Save</button>
@@ -181,45 +196,113 @@ overviewPopup.innerHTML = `
         </div>
 
         <input type="radio" name="custom-srs-tab" id="tab-4">
-        <label for="tab-4">Settings</label>
+        <label for="tab-4">Edit Item</label>
+        <div id="tab-4__content">
+            <div>Select item from Pack edit tab.</div>
+            <form class="content-box" style="display: none;">
+                <label for="item-type">Type: </label>
+                <select id="item-type">
+                    <option value="Radical">Radical</option>
+                    <option value="Kanji">Kanji</option>
+                    <option value="Vocabulary">Vocabulary</option>
+                    <option value="Kana-vocabulary">Kana Vocabulary</option>
+                </select><br>
+                <label for="item-characters">Characters: </label>
+                <input id="item-characters" required type="text">
+                <label for="item-meanings">Meanings (comma separated): </label>
+                <input id="item-meanings" required type="text">
+                <label for="item-readings">Readings (comma separated): </label>
+                <input id="item-readings" required type="text"><br>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+
+        <input type="radio" name="custom-srs-tab" id="tab-5">
+        <label for="tab-5">Settings</label>
         <div>TODO</div>
     </div>
 `;
 
 // --------- Popup open button ---------
-let overviewPopupButton = document.createElement("a");
+let overviewPopupButton, buttonLI;
+if (window.location.pathname.includes("/review")) {
+    overviewPopupButton = document.createElement("a");
+    overviewPopupButton.classList = "chat-button quiz-footer__button";
+    overviewPopupButton.innerText = "WK Custom SRS";
+    overviewPopupButton.style = `
+        padding: 8px 10px;
+        color: #999;
+    `;
+} else if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
+    overviewPopupButton = document.createElement("button");
+    overviewPopupButton.classList = "sitemap__section-header";
+    overviewPopupButton.style = `
+        display: flex;
+        align-items: center;
+    `;
+    let buttonSpan = document.createElement("span");
+    buttonSpan.classList = "font-sans";
+    buttonSpan.innerText = "WK Custom SRS";
+    overviewPopupButton.appendChild(buttonSpan);
+    buttonLI = document.createElement("li");
+    buttonLI.classList = "sitemap__section";
+    buttonLI.appendChild(overviewPopupButton);
+}
 overviewPopupButton.title = "Custom SRS";
-overviewPopupButton.classList = "chat-button quiz-footer__button";
-overviewPopupButton.innerText = "WK Custom SRS";
 overviewPopupButton.onclick = () => {
-    updatePopupContent();
+    changeTab(1);
     overviewPopup.showModal();
 };
-
-overviewPopupButton.style = `
-    padding: 8px 10px;
-    color: #999;
-`;
 
 
 // --------- Add custom elements to page ---------
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector(".quiz-footer .quiz-footer__content").prepend(overviewPopupButton);
     document.head.appendChild(overviewPopupStyle);
     document.body.appendChild(overviewPopup);
     // Add event listeners for buttons etc.
+    for(let i = 1; i <= 5; i++) {
+        document.querySelector(`#tab-${i}`).onchange = () => {
+            changeTab(i) };
+    }
     document.querySelector("#pack-select").onchange = () => {
-        loadPackEditDetails(document.querySelector("#pack-select").value);
-    };
+        loadPackEditDetails(document.querySelector("#pack-select").value) };
+    document.querySelector("#new-item-button").onclick = () => {
+        changeTab(4, null) };
+    // Add popup button to page
+    if (window.location.pathname.includes("/review")) {
+        document.querySelector(".quiz-footer .quiz-footer__content").prepend(overviewPopupButton);
+    } else if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
+        document.querySelector("#sitemap").prepend(buttonLI);
+    }
 });
 
 
+// ---------- Change tab ----------
+function changeTab(tab, data) {
+    document.querySelector(`#tab-${tab}`).checked = true;
+    switch(tab) {
+        case 1:
+            updateOverviewTab();
+            break;
+        case 2:
+            updatePacksTab();
+            break;
+        case 3:
+            updateEditPackTab(data);
+            break;
+        case 4:
+            updateEditItemTab(data);
+            break;
+    }
+}
+
 // ---------- Update popup content ----------
-function updatePopupContent() {
-    // Overview tab
+function updateOverviewTab() {
     //document.querySelector("#tab-1__content .content-box:first-child p").innerText = activePackProfile.getActiveLessons().length;
     document.querySelector("#tab-1__content .content-box:last-child p").innerText = activePackProfile.getActiveReviews().length;
-    // Packs tab
+}
+
+function updatePacksTab() {
     let packsTab = document.querySelector("#tab-2__content");
     packsTab.innerHTML = "";
     for(let i = 0; i < activePackProfile.customPacks.length; i++) {
@@ -235,18 +318,18 @@ function updatePopupContent() {
             </div>
         `;
         packElement.querySelector(".edit-pack").onclick = () => { // Pack edit button
-            document.querySelector("#tab-3").checked = true;
-            document.querySelector("#pack-select").value = i;
-            document.querySelector("#pack-select").onchange();
+            changeTab(3, i);
         };
         packElement.querySelector(".delete-pack").onclick = () => { // Pack delete button
             activePackProfile.removePack(i);
             StorageManager.savePackProfile(activePackProfile, "main");
-            updatePopupContent();
+            changeTab(2);
         };
         packsTab.appendChild(packElement);
     }
-    // Edit pack tab
+}
+
+function updateEditPackTab(editPack) {
     let packSelect = document.querySelector("#pack-select");
     packSelect.innerHTML = "<option value='new'>New Pack</option>";
     for(let i = 0; i < activePackProfile.customPacks.length; i++) {
@@ -256,11 +339,54 @@ function updatePopupContent() {
         option.innerText = pack.name + " - " + pack.author;
         packSelect.appendChild(option);
     }
-    packSelect.value = "new";
+    if(editPack !== undefined) packSelect.value = editPack;
+    else packSelect.value = "new";
     packSelect.onchange();
 }
 
-// ---------- Load pack edit details ----------
+function updateEditItemTab(editItem) {
+    if(editItem !== undefined) {
+        // Show add item edit tab and make sure inputs are empty
+        document.querySelector("#tab-4__content > form").style.display = "block";
+        document.querySelector("#tab-4__content > div").style.display = "none";
+        if(editItem !== null) {
+            let editItemDetails = activePackProfile.customPacks[document.querySelector("#pack-select").value].getItem(editItem);
+            document.querySelector("#item-type").value = editItemDetails.type;
+            document.querySelector("#item-characters").value = editItemDetails.characters;
+            document.querySelector("#item-meanings").value = editItemDetails.meanings.join(", ");
+            document.querySelector("#item-readings").value = editItemDetails.readings.map(r => r.reading).join(", ");
+            document.querySelector("#tab-4__content button[type='submit']").innerText = "Update";
+        } else {
+            document.querySelector("#item-characters").value = "";
+            document.querySelector("#item-meanings").value = "";
+            document.querySelector("#item-readings").value = "";
+        }
+        // Add event listener to form
+        document.querySelector("#tab-4__content form").onsubmit = (e) => {
+            e.preventDefault();
+
+            let itemType = document.querySelector("#item-type").value;
+            let itemCharacters = document.querySelector("#item-characters").value;
+            let itemMeanings = document.querySelector("#item-meanings").value.split(",").map(s => s.trim());
+            let itemReadings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
+
+            let pack = activePackProfile.customPacks[document.querySelector("#pack-select").value];
+
+            if(editItem !== null) { // If editing an existing item
+                pack.editItem(editItem, itemType, itemType, itemCharacters, itemMeanings, itemReadings);
+            } else { // If adding a new item
+                pack.addItem(itemType, itemType, itemCharacters, itemMeanings, itemReadings);
+            }
+
+            document.querySelector("#tab-4__content > form").style.display = "none";
+            document.querySelector("#tab-4__content > div").style.display = "block";
+            loadPackEditDetails(document.querySelector("#pack-select").value);
+            changeTab(3, document.querySelector("#pack-select").value);
+        };
+    }
+}
+
+// ---------- Tabs details ----------
 function loadPackEditDetails(i) {
     let packNameInput = document.querySelector("#pack-name");
     let packAuthorInput = document.querySelector("#pack-author");
@@ -284,12 +410,12 @@ function loadPackEditDetails(i) {
             itemElement.innerHTML = `
                 ${item.characters} - ${item.meanings[0]} - SRS: ${srsNames[item.srs_stage]}
                 <div>
-                    <button class="edit-item fa-regular fa-pen-to-square" title="Edit Item"></button>
-                    <button class="delete-item fa-regular fa-trash" title="Delete Item"></button>
+                    <button class="edit-item fa-regular fa-pen-to-square" title="Edit Item" type="button"></button>
+                    <button class="delete-item fa-regular fa-trash" title="Delete Item" type="button"></button>
                 </div>
             `;
             itemElement.querySelector(".edit-item").onclick = () => { // Item edit button
-                // TODO
+                changeTab(4, j);
             }
             itemElement.querySelector(".delete-item").onclick = () => { // Item delete button
                 pack.items.splice(j, 1);
@@ -298,7 +424,9 @@ function loadPackEditDetails(i) {
             packItems.appendChild(itemElement);
         }
     }
-    document.querySelector("#tab-3__content form").onsubmit = () => { // Pack save button
+    document.querySelector("#tab-3__content form").onsubmit = (e) => { // Pack save button
+        e.preventDefault();
+
         let packName = packNameInput.value;
         let packAuthor = packAuthorInput.value;
         let packVersion = packVersionInput.value;
@@ -317,11 +445,7 @@ function loadPackEditDetails(i) {
             activePackProfile.customPacks[i] = pack;
         }
         StorageManager.savePackProfile(activePackProfile, "main");
-        updatePopupContent();
+        changeTab(2);
+        return false;
     };
-}
-
-// ---------- Create new item ----------
-function createNewItem() {
-    
 }

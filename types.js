@@ -80,10 +80,23 @@ class CustomItemPack {
         this.version = version;
     }
 
+    getItem(id) {
+        return this.items[id];
+    }
+
     addItem(type, subject_category, characters, meanings, readings) {
         let id = this.items.length;
         let item = new CustomItem(id, type, subject_category, characters, meanings, readings);
         this.items.push(item);
+    }
+
+    editItem(id, type, subject_category, characters, meanings, readings) {
+        let item = this.items[id];
+        item.type = type;
+        item.subject_category = subject_category;
+        item.characters = characters;
+        item.meanings = meanings;
+        item.readings = readings;
     }
 
     removeItem(id) {
@@ -158,9 +171,9 @@ class TestData {
     static createTestPack() {
         let testPack = new CustomItemPack("Test Pack", "Test Author", 0.1);
         testPack.addItem("Vocabulary", "Vocabulary", "猫猫", ["cat"], [{"reading": "ねこ", "pronunciations": []}]);
-        testPack.addItem("Vocabulary", "Vocabulary", "犬犬", ["dog"], [{"reading": "いぬ", "pronunciations": []}]);
-        testPack.addItem("Vocabulary", "Vocabulary", "鳥鳥", ["bird"], [{"reading": "とり", "pronunciations": []}]);
-        testPack.addItem("Vocabulary", "Vocabulary", "魚魚", ["fish"], [{"reading": "さかな", "pronunciations": []}]);
+        //testPack.addItem("Vocabulary", "Vocabulary", "犬犬", ["dog"], [{"reading": "いぬ", "pronunciations": []}]);
+        //testPack.addItem("Vocabulary", "Vocabulary", "鳥鳥", ["bird"], [{"reading": "とり", "pronunciations": []}]);
+        //testPack.addItem("Vocabulary", "Vocabulary", "魚魚", ["fish"], [{"reading": "さかな", "pronunciations": []}]);
         return testPack;
     }
 }

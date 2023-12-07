@@ -30,6 +30,8 @@ overviewPopupStyle.innerHTML = `
         border: none }
     & p {
         margin: 0 }
+    & input, & select {
+        margin-bottom: 0.5rem }
     & button {
         cursor: pointer;
         background-color: transparent;
@@ -127,7 +129,9 @@ overviewPopupStyle.innerHTML = `
     margin: 1rem 0;
 
     & input, & ul {
-        margin-bottom: 1rem }
+        margin-left: 0 }
+    & > div {
+        margin-top: 1.5rem }
     & div {
         display: flex;
         justify-content: space-between;
@@ -145,6 +149,9 @@ overviewPopupStyle.innerHTML = `
         color: var(--color-tertiary, rgb(165, 165, 165));
     }
 }
+#tab-3__content:has(#pack-select [value="new"]:checked) .content-box :is(div, ul) {
+    display: none }
+
 #pack-items {
     background-color: var(--color-menu, white) }
 `;
@@ -181,17 +188,17 @@ overviewPopup.innerHTML = `
             <select id="pack-select"></select><br>
             <form class="content-box">
                 <label for="pack-name">Name: </label>
-                <input id="pack-name" required type="text">
+                <input id="pack-name" required type="text"><br>
                 <label for="pack-author">Author: </label>
-                <input id="pack-author" required type="text">
+                <input id="pack-author" required type="text"><br>
                 <label for="pack-version">Version: </label>
-                <input id="pack-version" required type="number" step="0.1">
+                <input id="pack-version" required type="number" step="0.1"><br>
+                <button type="submit">Save</button>
                 <div>
                     <p>Items: </p>
                     <button id="new-item-button" class="fa-regular fa-plus" title="Add Item" type="button"></button>
                 </div>
                 <ul class="content-box" id="pack-items"></ul>
-                <button type="submit">Save</button>
             </form>
         </div>
 
@@ -208,9 +215,9 @@ overviewPopup.innerHTML = `
                     <option value="Kana-vocabulary">Kana Vocabulary</option>
                 </select><br>
                 <label for="item-characters">Characters: </label>
-                <input id="item-characters" required type="text">
+                <input id="item-characters" required type="text"><br>
                 <label for="item-meanings">Meanings (comma separated): </label>
-                <input id="item-meanings" required type="text">
+                <input id="item-meanings" required type="text"><br>
                 <label for="item-readings">Readings (comma separated): </label>
                 <input id="item-readings" required type="text"><br>
                 <button type="submit">Add</button>
@@ -354,7 +361,7 @@ function updateEditItemTab(editItem) {
             document.querySelector("#item-type").value = editItemDetails.type;
             document.querySelector("#item-characters").value = editItemDetails.characters;
             document.querySelector("#item-meanings").value = editItemDetails.meanings.join(", ");
-            document.querySelector("#item-readings").value = editItemDetails.readings.map(r => r.reading).join(", ");
+            document.querySelector("#item-readings").value = editItemDetails.readings.join(", ");
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Update";
         } else {
             document.querySelector("#item-characters").value = "";
@@ -381,6 +388,7 @@ function updateEditItemTab(editItem) {
             document.querySelector("#tab-4__content > form").style.display = "none";
             document.querySelector("#tab-4__content > div").style.display = "block";
             loadPackEditDetails(document.querySelector("#pack-select").value);
+            StorageManager.savePackProfile(activePackProfile, "main");
             changeTab(3, document.querySelector("#pack-select").value);
         };
     }
@@ -396,7 +404,6 @@ function loadPackEditDetails(i) {
         packNameInput.value = "";
         packAuthorInput.value = "";
         packVersionInput.value = 0.1;
-        packItems.innerHTML = "";
     } else { // If editing an existing pack
         let pack = activePackProfile.customPacks[i];
         packNameInput.value = pack.name;
@@ -430,22 +437,16 @@ function loadPackEditDetails(i) {
         let packName = packNameInput.value;
         let packAuthor = packAuthorInput.value;
         let packVersion = packVersionInput.value;
-        let packItems = document.querySelectorAll("#pack-items .pack-item");
-        let pack = new CustomItemPack(packName, packAuthor, packVersion);
-        for(let j = 0; j < packItems.length; j++) {
-            let item = packItems[j];
-            let character = item.children[0].value;
-            let meaning = item.children[1].value;
-            let reading = item.children[2].value;
-            pack.addItem(character, meaning, reading);
-        }
+        
         if(i === "new") {
+            let pack = new CustomItemPack(packName, packAuthor, packVersion);
             activePackProfile.addPack(pack);
+            changeTab(3, activePackProfile.customPacks.length - 1);
         } else {
-            activePackProfile.customPacks[i] = pack;
+            activePackProfile.customPacks[i].name = packName;
+            activePackProfile.customPacks[i].author = packAuthor;
+            activePackProfile.customPacks[i].version = packVersion;
         }
         StorageManager.savePackProfile(activePackProfile, "main");
-        changeTab(2);
-        return false;
     };
 }

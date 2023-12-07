@@ -1,6 +1,5 @@
 const srsGaps = [0, 4*60*60*1000, 8*60*60*1000, 23*60*60*1000, 47*60*60*1000, 167*60*60*1000, 335*60*60*1000, 730*60*60*1000, 2920*60*60*1000]
 
-
 class CustomItem {
     // WK variables
     id;
@@ -45,7 +44,7 @@ class CustomItem {
             characters: this.characters,
             meanings: this.meanings,
             auxiliary_meanings: this.auxiliary_meanings,
-            readings: this.readings,
+            readings: this.readings.map(reading => ({"reading": reading, "pronunciations": []})),
             auxiliary_readings: this.auxiliary_readings,
             kanji: this.kanji
         };
@@ -65,6 +64,16 @@ class CustomItem {
     set srs_stage(srs_stage) {
         this.srs_stage = srs_stage;
         this.last_reviewed_at = Date.now();
+    }
+
+    static fromObject(object) {
+        let item = new CustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.readings);
+        item.auxiliary_meanings = object.auxiliary_meanings;
+        item.auxiliary_readings = object.auxiliary_readings;
+        item.kanji = object.kanji;
+        item.srs_stage = object.srs_stage;
+        item.last_reviewed_at = object.last_reviewed_at;
+        return item;
     }
 }
 
@@ -106,9 +115,15 @@ class CustomItemPack {
     getActiveReviews(packID) { // Get all items that were last reviewed more than 24 hours ago
         return this.items.filter(item => item.last_reviewed_at < Date.now() - srsGaps[item.srs_stage] && item.srs_stage > -1).map(item => item.getQueueItem(packID)); // TODO: Change SRS stage check
     }
+
+    static fromObject(object) {
+        let pack = new CustomItemPack(object.name, object.author, object.version);
+        pack.items = object.items.map(item => CustomItem.fromObject(item));
+        return pack;
+    }
 }
 
-class customPackProfile {
+class CustomPackProfile {
     customPacks = [];
 
     addPack(newPack) {
@@ -137,6 +152,12 @@ class customPackProfile {
             item.incrementSRS();
         }
     }
+
+    static fromObject(object) {
+        let packProfile = new CustomPackProfile();
+        packProfile.customPacks = object.customPacks.map(pack => CustomItemPack.fromObject(pack));
+        return packProfile;
+    }
 }
 
 // ------------------- Utility classes -------------------
@@ -156,13 +177,17 @@ class MathUtils {
 class StorageManager {
     // Get custom packs saved in GM storage
     static loadPackProfile(profileName) {
-        let savedPackProfile = GM_getValue("customPackProfile_" + profileName, new customPackProfile());
+        let savedPackProfile = new CustomPackProfile();
+        Object.assign(savedPackProfile, GM_getValue("customPackProfile_" + profileName, new CustomPackProfile()));
+        // Convert CustomItemPacks and their CustomItems
+        savedPackProfile.customPacks = savedPackProfile.customPacks.map(pack => CustomItemPack.fromObject(pack));
+        console.log(savedPackProfile);
         return savedPackProfile;
     }
 
     // Save custom packs to GM storage
     static savePackProfile(packProfile, profileName) {
-        //GM_setValue("customPackProfile_" + profileName, packProfile);
+        GM_setValue("customPackProfile_" + profileName, packProfile);
     }
 }
 
@@ -170,10 +195,10 @@ class TestData {
     // Create pack with custom test items
     static createTestPack() {
         let testPack = new CustomItemPack("Test Pack", "Test Author", 0.1);
-        testPack.addItem("Vocabulary", "Vocabulary", "猫猫", ["cat"], [{"reading": "ねこ", "pronunciations": []}]);
-        //testPack.addItem("Vocabulary", "Vocabulary", "犬犬", ["dog"], [{"reading": "いぬ", "pronunciations": []}]);
-        //testPack.addItem("Vocabulary", "Vocabulary", "鳥鳥", ["bird"], [{"reading": "とり", "pronunciations": []}]);
-        //testPack.addItem("Vocabulary", "Vocabulary", "魚魚", ["fish"], [{"reading": "さかな", "pronunciations": []}]);
+        testPack.addItem("Vocabulary", "Vocabulary", "猫猫", ["cat"], ["ねこ"]);
+        testPack.addItem("Vocabulary", "Vocabulary", "犬犬", ["dog"], ["いぬ"]);
+        //testPack.addItem("Vocabulary", "Vocabulary", "鳥鳥", ["bird"], [とり]);
+        //testPack.addItem("Vocabulary", "Vocabulary", "魚魚", ["fish"], ["さかな"]);
         return testPack;
     }
 }

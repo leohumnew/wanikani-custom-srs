@@ -1,5 +1,4 @@
 let activePackProfile = StorageManager.loadPackProfile("main");
-activePackProfile.addPack(TestData.createTestPack());
 
 // ----------- If on review page -----------
 if (window.location.pathname.includes("/review")) {

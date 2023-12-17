@@ -306,7 +306,7 @@ function changeTab(tab, data) {
 // ---------- Update popup content ----------
 function updateOverviewTab() {
     //document.querySelector("#tab-1__content .content-box:first-child p").innerText = activePackProfile.getActiveLessons().length;
-    document.querySelector("#tab-1__content .content-box:last-child p").innerText = activePackProfile.getActiveReviews().length;
+    document.querySelector("#tab-1__content .content-box:last-child p").innerText = activePackProfile.getNumActiveReviews();
 }
 
 function updatePacksTab() {
@@ -449,4 +449,67 @@ function loadPackEditDetails(i) {
         }
         StorageManager.savePackProfile(activePackProfile, "main");
     };
+}
+
+// ---------- Item details ----------
+function makeDetailsHTML(item) {
+    let detailsHTML = `
+    <turbo-frame class="subject-info" id="subject-info">
+        <div class="container">
+            <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
+                <a class='wk-nav__anchor' id='meaning'></a>
+                <h2 class='subject-section__title'>
+                    <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
+                        <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                        <span class='subject-section__title-text'>Meaning</span>
+                    </a>
+                </h2>
+                <section id="section-meaning" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                    <section class="subject-section__subsection">
+                        <div class='subject-section__meanings'>
+                            <h2 class='subject-section__meanings-title'>Primary</h2>
+                            <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                        </div>
+                        <div class='subject-section__meanings'>
+                            <h2 class='subject-section__meanings-title'>Word Type</h2>
+                            <p class='subject-section__meanings-items'></p>
+                        </div>
+                    </section>
+                    <section class="subject-section__subsection">
+                        <h3 class='subject-section__subtitle'>Explanation</h3>
+                        <p class="subject-section__text"></p>
+                    </section>
+                </section>
+            </section>
+
+            <section class="subject-section subject-section--reading subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
+                <a class='wk-nav__anchor' id='reading'></a>
+                <h2 class='subject-section__title'>
+                    <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-reading">
+                        <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                        <span class='subject-section__title-text'>Reading</span>
+                    </a>
+                </h2>
+                <section id="section-reading" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                    <section class="subject-section__subsection">
+                        <div class="subject-readings-with-audio">
+                            <div class="subject-readings-with-audio__item">
+                                <div class="reading-with-audio">
+                                    <div class="reading-with-audio__reading" lang='ja'>${item.readings[0]}</div>
+                                    <ul class="reading-with-audio__audio-items">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="subject-section__subsection">
+                        <h3 class='subject-section__subtitle'>Explanation</h3>
+                        <p class="subject-section__text">This is a jukugo word, which usually means on'yomi readings from the kanji. If you know the readings of your kanji you'll know how to read this as well.</p>
+                    </section>
+                </section>
+            </section>
+        </div>
+    </turbo-frame>
+    `;
+    return detailsHTML;
 }

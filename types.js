@@ -222,8 +222,8 @@ class TestData {
         let testPack = new CustomItemPack("Test Pack", "Test Author", 0.1);
         testPack.addItem("Vocabulary", "Vocabulary", "猫猫", ["cat"], ["ねこ"]);
         testPack.addItem("Vocabulary", "Vocabulary", "犬犬", ["dog"], ["いぬ"]);
-        //testPack.addItem("Vocabulary", "Vocabulary", "鳥鳥", ["bird"], [とり]);
-        //testPack.addItem("Vocabulary", "Vocabulary", "魚魚", ["fish"], ["さかな"]);
+        testPack.addItem("Vocabulary", "Vocabulary", "鳥鳥", ["bird"], [とり]);
+        testPack.addItem("Vocabulary", "Vocabulary", "魚魚", ["fish"], ["さかな"]);
         return testPack;
     }
 }

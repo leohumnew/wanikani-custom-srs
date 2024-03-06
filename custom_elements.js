@@ -391,6 +391,10 @@ function updateEditItemTab(editItem) {
             StorageManager.savePackProfile(activePackProfile, "main");
             changeTab(3, document.querySelector("#pack-select").value);
         };
+    } else {
+        // Hide add item edit tab
+        document.querySelector("#tab-4__content > form").style.display = "none";
+        document.querySelector("#tab-4__content > div").style.display = "block";
     }
 }
 
@@ -470,14 +474,25 @@ function makeDetailsHTML(item) {
                             <h2 class='subject-section__meanings-title'>Primary</h2>
                             <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
                         </div>
-                        <div class='subject-section__meanings'>
-                            <h2 class='subject-section__meanings-title'>Word Type</h2>
-                            <p class='subject-section__meanings-items'></p>
-                        </div>
+                        <!--<div class='subject-section__meanings'>
+                            <h2 class='subject-section__meanings-title'>User Synonyms</h2>
+                            <p class='subject-section__meanings-items'><i>User synonyms are currently disabled for custom items.</i></p>
+                        </div>-->
                     </section>
                     <section class="subject-section__subsection">
-                        <h3 class='subject-section__subtitle'>Explanation</h3>
-                        <p class="subject-section__text"></p>
+                        <h3 class='subject-section__subtitle'>Mnemonic</h3>
+                        <p class="subject-section__text">Lorem Ipsum</p>
+                        <!--<aside class="subject-hint">
+                            <h3 class="subject-hint__title">
+                                <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
+                                <span class="subject-hint__title-text">Hints</span>
+                            </h3>
+                            <p class="subject-hint__text"></p>
+                        </aside>-->
+                    </section>
+                    <section class="subject-section__subsection">
+                        <h3 class='subject-section__subtitle'>Note</h3>
+                        <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
                     </section>
                 </section>
             </section>
@@ -503,8 +518,19 @@ function makeDetailsHTML(item) {
                         </div>
                     </section>
                     <section class="subject-section__subsection">
-                        <h3 class='subject-section__subtitle'>Explanation</h3>
-                        <p class="subject-section__text">This is a jukugo word, which usually means on'yomi readings from the kanji. If you know the readings of your kanji you'll know how to read this as well.</p>
+                        <h3 class='subject-section__subtitle'>Mnemonic</h3>
+                        <p class="subject-section__text">Lorem Ipsum</p>
+                        <!--<aside class="subject-hint">
+                            <h3 class="subject-hint__title">
+                                <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
+                                <span class="subject-hint__title-text">Hints</span>
+                            </h3>
+                            <p class="subject-hint__text"></p>
+                        </aside>-->
+                    </section>
+                    <section class="subject-section__subsection">
+                        <h3 class='subject-section__subtitle'>Note</h3>
+                        <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
                     </section>
                 </section>
             </section>

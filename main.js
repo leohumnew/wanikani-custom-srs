@@ -32,11 +32,18 @@ if (window.location.pathname.includes("/review")) {
             } else {
                 return originalFetch(...args);
             }
+        // Catch subject info fetch and return custom item details
         } else if (resource.includes("/subject_info/") && config && config.method === "get") {
+            // Submit original fetch but to different URL to get usable headers
+            args[0] = "https://www.wanikani.com/subject_info/1";
+            let response = await originalFetch(...args);
             let subjectId = resource.split("/").pop();
             let subjectInfo = activePackProfile.getSubjectInfo(subjectId);
             console.log(subjectInfo);
-            return new Response(subjectInfo, { status: 200 });
+            return new Response(subjectInfo, {
+                status: response.status,
+                headers: response.headers
+            });
         } else {
             return originalFetch(...args);
         }

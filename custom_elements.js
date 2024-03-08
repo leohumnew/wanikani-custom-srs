@@ -115,6 +115,7 @@ overviewPopupStyle.innerHTML = /*css*/ `
 #tabs .pack {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 1rem;
 
     & span {
         font-style: italic }
@@ -123,6 +124,8 @@ overviewPopupStyle.innerHTML = /*css*/ `
     & button {
         margin-left: 10px }
 }
+#tabs .clickable {
+    cursor: pointer }
 
 /* Styling for the pack edit tab */
 #tab-3__content > .content-box {
@@ -356,6 +359,14 @@ function updatePacksTab() {
         };
         packsTab.appendChild(packElement);
     }
+    // New pack button
+    let newPackButton = document.createElement("div");
+    newPackButton.classList = "pack content-box clickable";
+    newPackButton.innerHTML = "<h3>New Pack</h3>";
+    newPackButton.onclick = () => {
+        changeTab(3, "new");
+    };
+    packsTab.appendChild(newPackButton);
 }
 
 function updateEditPackTab(editPack) {
@@ -506,6 +517,7 @@ function loadPackEditDetails(i) {
             activePackProfile.customPacks[i].version = packVersion;
         }
         StorageManager.savePackProfile(activePackProfile, "main");
+        changeTab(2);
     };
 }
 

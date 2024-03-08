@@ -8,46 +8,19 @@ class CustomItem {
     characters;
     meanings;
     auxiliary_meanings = [];
-    readings;
-    auxiliary_readings = [];
-    kanji = [];
 
     // Custom variables
     srs_stage = 0;
     last_reviewed_at = 0;
+    meaning_explanation = "This item does not have a meaning explanation.";
 
-    constructor(id, type, subject_category, characters, meanings, readings) {
+    constructor(id, type, subject_category, characters, meanings) {
         this.id = id;
         this.type = type;
         this.subject_category = subject_category;
         this.characters = characters;
         this.meanings = meanings;
-        this.readings = readings;
         this.last_reviewed_at = Date.now();
-    }
-
-    set auxiliary_meanings(auxiliary_meanings) {
-        this.auxiliary_meanings = auxiliary_meanings;
-    }
-    set auxiliary_readings(auxiliary_readings) {
-        this.auxiliary_readings = auxiliary_readings;
-    }
-    set kanji(kanji) {
-        this.kanji = kanji;
-    }
-
-    getQueueItem(packID) {
-        return {
-            id: MathUtils.cantorNumber(packID, this.id),
-            type: this.type,
-            subject_category: this.subject_category,
-            characters: this.characters,
-            meanings: this.meanings,
-            auxiliary_meanings: this.auxiliary_meanings,
-            readings: this.readings.map(reading => ({"reading": reading, "pronunciations": []})),
-            auxiliary_readings: this.auxiliary_readings,
-            kanji: this.kanji
-        };
     }
 
     isReadyForReview() {
@@ -67,22 +40,136 @@ class CustomItem {
         this.last_reviewed_at = Date.now();
         StorageManager.savePackProfile(activePackProfile, "main");
     }
-    set srs_stage(srs_stage) {
-        this.srs_stage = srs_stage;
-        this.last_reviewed_at = Date.now();
-    }
     getSRSText(packID) {
         return "[" + MathUtils.cantorNumber(packID, this.id) + "," + this.srs_stage + "]";
     }
 
     static fromObject(object) {
-        let item = new CustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.readings);
-        item.auxiliary_meanings = object.auxiliary_meanings;
+        let item;
+        switch(object.type) {
+            case "Radical":
+                item = new RadicalCustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings);
+                break;
+            case "Kanji":
+                item = new KanjiCustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.primary_reading_type, object.onyomi, object.kunyomi, object.nanori);
+                break;
+            case "Vocabulary":
+                item = new VocabularyCustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.readings);
+                break;
+            case "KanaVocabulary":
+                item = new KanaVocabularyCustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.readings);
+                break;
+        }
+        /*item.auxiliary_meanings = object.auxiliary_meanings;
         item.auxiliary_readings = object.auxiliary_readings;
-        item.kanji = object.kanji;
+        item.kanji = object.kanji;*/
         item.srs_stage = object.srs_stage;
         item.last_reviewed_at = object.last_reviewed_at;
         return item;
+    }
+}
+
+class RadicalCustomItem extends CustomItem {
+    kanji = [];
+
+    constructor(id, type, subject_category, characters, meanings) {
+        super(id, type, subject_category, characters, meanings);
+    }
+
+    getQueueItem(packID) {
+        return {
+            id: MathUtils.cantorNumber(packID, this.id),
+            type: this.type,
+            subject_category: this.subject_category,
+            characters: this.characters,
+            meanings: this.meanings,
+            auxiliary_meanings: this.auxiliary_meanings,
+            kanji: this.kanji
+        };
+    }
+}
+
+class KanjiCustomItem extends CustomItem {
+    primary_reading_type;
+    onyomi = [];
+    kunyomi = [];
+    nanori = [];
+    radicals = [];
+    vocabulary = [];
+    reading_explanation = "This item does not have a reading explanation.";
+
+    constructor(id, type, subject_category, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori) {
+        super(id, type, subject_category, characters, meanings);
+        this.primary_reading_type = primary_reading_type;
+        this.onyomi = onyomi;
+        this.kunyomi = kunyomi;
+        this.nanori = nanori;
+    }
+
+    getQueueItem(packID) {
+        return {
+            id: MathUtils.cantorNumber(packID, this.id),
+            type: this.type,
+            subject_category: this.subject_category,
+            characters: this.characters,
+            meanings: this.meanings,
+            auxiliary_meanings: this.auxiliary_meanings,
+            primary_reading_type: this.primary_reading_type,
+            onyomi: this.onyomi,
+            kunyomi: this.kunyomi,
+            nanori: this.nanori,
+            auxiliary_readings: [],
+            radicals: this.radicals,
+            vocabulary: this.vocabulary
+        };
+    }
+}
+
+class VocabularyCustomItem extends CustomItem {
+    readings;
+    auxiliary_readings = [];
+    kanji = [];
+    reading_explanation = "This item does not have a reading explanation.";
+
+    constructor(id, type, subject_category, characters, meanings, readings) {
+        super(id, type, subject_category, characters, meanings);
+        this.readings = readings;
+    }
+
+    getQueueItem(packID) {
+        return {
+            id: MathUtils.cantorNumber(packID, this.id),
+            type: this.type,
+            subject_category: this.subject_category,
+            characters: this.characters,
+            meanings: this.meanings,
+            auxiliary_meanings: this.auxiliary_meanings,
+            readings: this.readings.map(reading => ({"reading": reading, "pronunciations": []})),
+            auxiliary_readings: this.auxiliary_readings,
+            kanji: this.kanji
+        };
+    }
+}
+
+class KanaVocabularyCustomItem extends CustomItem {
+    readings;
+    reading_explanation = "This item does not have a reading explanation.";
+
+    constructor(id, type, subject_category, characters, meanings, readings) {
+        super(id, type, subject_category, characters, meanings);
+        this.readings = readings;
+    }
+
+    getQueueItem(packID) {
+        return {
+            id: MathUtils.cantorNumber(packID, this.id),
+            type: this.type,
+            subject_category: this.subject_category,
+            characters: this.characters,
+            meanings: this.meanings,
+            auxiliary_meanings: this.auxiliary_meanings,
+            readings: this.readings.map(reading => ({"reading": reading, "pronunciations": []}))
+        };
     }
 }
 
@@ -101,18 +188,51 @@ class CustomItemPack {
     getItem(id) {
         return this.items[id];
     }
-    addItem(type, subject_category, characters, meanings, readings) {
+    addRadical(characters, meanings) {
         let id = this.items.length;
-        let item = new CustomItem(id, type, subject_category, characters, meanings, readings);
-        this.items.push(item);
+        let radical = new RadicalCustomItem(id, "Radical", "Radical", characters, meanings);
+        this.items.push(radical);
     }
-    editItem(id, type, subject_category, characters, meanings, readings) {
-        let item = this.items[id];
-        item.type = type;
-        item.subject_category = subject_category;
-        item.characters = characters;
-        item.meanings = meanings;
-        item.readings = readings;
+    addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori) {
+        let id = this.items.length;
+        let kanji = new KanjiCustomItem(id, "Kanji", "Kanji", characters, meanings, primary_reading_type, onyomi, kunyomi, nanori);
+        this.items.push(kanji);
+    }
+    addVocabulary(characters, meanings, readings) {
+        let id = this.items.length;
+        let vocabulary = new VocabularyCustomItem(id, "Vocabulary", "Vocabulary", characters, meanings, readings);
+        this.items.push(vocabulary);
+    }
+    addKanaVocabulary(characters, meanings, readings) {
+        let id = this.items.length;
+        let kanaVocabulary = new KanaVocabularyCustomItem(id, "KanaVocabulary", "Vocabulary", characters, meanings, readings);
+        this.items.push(kanaVocabulary);
+    }
+    editRadical(id, characters, meanings) {
+        let radical = this.items[id];
+        radical.characters = characters;
+        radical.meanings = meanings;
+    }
+    editKanji(id, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori) {
+        let kanji = this.items[id];
+        kanji.characters = characters;
+        kanji.meanings = meanings;
+        kanji.primary_reading_type = primary_reading_type;
+        kanji.onyomi = onyomi;
+        kanji.kunyomi = kunyomi;
+        kanji.nanori = nanori;
+    }
+    editVocabulary(id, characters, meanings, readings) {
+        let vocabulary = this.items[id];
+        vocabulary.characters = characters;
+        vocabulary.meanings = meanings;
+        vocabulary.readings = readings;
+    }
+    editKanaVocabulary(id, characters, meanings, readings) {
+        let kanaVocabulary = this.items[id];
+        kanaVocabulary.characters = characters;
+        kanaVocabulary.meanings = meanings;
+        kanaVocabulary.readings = readings;
     }
     removeItem(id) {
         this.items.splice(id, 1);
@@ -138,6 +258,9 @@ class CustomItemPack {
 class CustomPackProfile {
     customPacks = [];
 
+    getPack(id) {
+        return this.customPacks[id];
+    }
     addPack(newPack) {
         this.customPacks.push(newPack);
     }
@@ -165,7 +288,7 @@ class CustomPackProfile {
 
     getSubjectInfo(cantorNum) {
         let [packID, itemID] = MathUtils.reverseCantorNumber(cantorNum);
-        let item = this.customPacks[packID].items[itemID];
+        let item = this.getPack(packID).getItem(itemID);
         return makeDetailsHTML(item);
     }
 
@@ -220,10 +343,10 @@ class TestData {
     // Create pack with custom test items
     static createTestPack() {
         let testPack = new CustomItemPack("Test Pack", "Test Author", 0.1);
-        testPack.addItem("Vocabulary", "Vocabulary", "猫猫", ["cat"], ["ねこ"]);
-        testPack.addItem("Vocabulary", "Vocabulary", "犬犬", ["dog"], ["いぬ"]);
-        testPack.addItem("Vocabulary", "Vocabulary", "鳥鳥", ["bird"], [とり]);
-        testPack.addItem("Vocabulary", "Vocabulary", "魚魚", ["fish"], ["さかな"]);
+        testPack.addRadical("少", ["Radical"]);
+        testPack.addKanji("犬", ["dog"], "onyomi", ["いん"], ["いぬ"], ["いぬ"]);
+        testPack.addVocabulary("猫猫", ["cat"], ["ねこ"]);
+        testPack.addKanaVocabulary("いぬ", ["dog"], ["いぬ"]);
         return testPack;
     }
 }

@@ -4,18 +4,18 @@ let activePackProfile = await StorageManager.loadPackProfile("main");
 if (window.location.pathname.includes("/review")) {
     // Add custom items to the quiz queue
     document.addEventListener("DOMContentLoaded", () => {
-        let quizQueueElement = document.querySelector("#quiz-queue script[data-quiz-queue-target='subjects']"); // Get quiz queue array
-        document.querySelector("#quiz-queue script[data-quiz-queue-target='subjects']").remove(); // Remove default quiz queue
-        let quizQueue = JSON.parse(quizQueueElement.innerHTML);
-        quizQueue = activePackProfile.getActiveReviews().concat(quizQueue); // Add custom items to quiz queue
-        quizQueueElement.innerHTML = JSON.stringify(quizQueue); // Update quiz queue
-        document.getElementById("quiz-queue").appendChild(quizQueueElement); // Re-add quiz queue to page
+        let queueEl = document.getElementById('quiz-queue');
+        let parentEl = queueEl.parentElement;
+        queueEl.remove();
+        let cloneEl = queueEl.cloneNode(true);
 
-        let quizQueueSRSElement = document.querySelector("#quiz-queue script[data-quiz-queue-target='subjectIdsWithSRS']"); // Get quiz queue SRS array
-        document.querySelector("#quiz-queue script[data-quiz-queue-target='subjectIdsWithSRS']").remove(); // Remove default quiz queue SRS
         let newQuizQueueSRS = activePackProfile.getActiveReviewsSRS().join();
-        quizQueueSRSElement.innerHTML = quizQueueSRSElement.innerHTML.replace("[", "[" + newQuizQueueSRS + ","); // Add custom items to quiz queue SRS
-        document.getElementById("quiz-queue").appendChild(quizQueueSRSElement); // Re-add quiz queue SRS to page
+        cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML.replace("[", "[" + newQuizQueueSRS + ",");
+        let quizQueue = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
+        quizQueue = activePackProfile.getActiveReviews().concat(quizQueue);
+        cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(quizQueue);
+
+        parentEl.appendChild(cloneEl);
     });
 
     // Catch submission fetch and stop it if submitted item is a custom item

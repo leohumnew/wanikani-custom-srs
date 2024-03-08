@@ -7,7 +7,7 @@ overviewPopup.id = "overview-popup";
 
 let overviewPopupStyle = document.createElement("style");
 // Styles copied in from styles.css
-overviewPopupStyle.innerHTML = `
+overviewPopupStyle.innerHTML = /*css*/ `
 /* General styling */
 .content-box {
     background-color: var(--color-wk-panel-background);
@@ -20,7 +20,7 @@ overviewPopupStyle.innerHTML = `
     background-color: var(--color-menu, white);
     width: 60%;
     max-width: 50rem;
-    height: 40%;
+    height: 50%;
     max-height: 40rem;
     border: none;
     border-radius: 3px;
@@ -154,6 +154,12 @@ overviewPopupStyle.innerHTML = `
 
 #pack-items {
     background-color: var(--color-menu, white) }
+
+/* Styling for the item edit tab */
+#tab-4__content:has(#item-type [value="Vocabulary"]:checked) #item-vocab-specific, #tab-4__content:has(#item-type [value="Kana-vocabulary"]:checked) #item-vocab-specific {
+    display: block !important }
+#tab-4__content:has(#item-type [value="Kanji"]:checked) #item-kanji-specific {
+    display: block !important }
 `;
 
 overviewPopup.innerHTML = `
@@ -218,8 +224,24 @@ overviewPopup.innerHTML = `
                 <input id="item-characters" required type="text"><br>
                 <label for="item-meanings">Meanings (comma separated): </label>
                 <input id="item-meanings" required type="text"><br>
-                <label for="item-readings">Readings (comma separated): </label>
-                <input id="item-readings" required type="text"><br>
+                <div id="item-vocab-specific" style="display: none;">
+                    <label for="item-readings">Readings (comma separated): </label>
+                    <input id="item-readings" type="text"><br>
+                </div>
+                <div id="item-kanji-specific" style="display: none;">
+                    <label for="knaji-primary-reading">Primary Reading: </label>
+                    <select id="kanji-primary-reading">
+                        <option value="onyomi">On'yomi</option>
+                        <option value="kunyomi">Kun'yomi</option>
+                        <option value="nanori">Nanori</option>
+                    </select><br>
+                    <label for="kanji-onyomi">On'yomi: </label>
+                    <input id="kanji-onyomi" type="text"><br>
+                    <label for="kanji-kunyomi">Kun'yomi: </label>
+                    <input id="kanji-kunyomi" type="text"><br>
+                    <label for="kanji-nanori">Nanori: </label>
+                    <input id="kanji-nanori" type="text"><br>
+                </div>
                 <button type="submit">Add</button>
             </form>
         </div>
@@ -361,28 +383,60 @@ function updateEditItemTab(editItem) {
             document.querySelector("#item-type").value = editItemDetails.type;
             document.querySelector("#item-characters").value = editItemDetails.characters;
             document.querySelector("#item-meanings").value = editItemDetails.meanings.join(", ");
-            document.querySelector("#item-readings").value = editItemDetails.readings.join(", ");
+            if(editItemDetails.readings) document.querySelector("#item-readings").value = editItemDetails.readings.join(", ");
+            if(editItemDetails.primary_reading_type) document.querySelector("#kanji-primary-reading").value = editItemDetails.primary_reading_type;
+            if(editItemDetails.onyomi) document.querySelector("#kanji-onyomi").value = editItemDetails.onyomi.join(", ");
+            if(editItemDetails.kunyomi) document.querySelector("#kanji-kunyomi").value = editItemDetails.kunyomi.join(", ");
+            if(editItemDetails.nanori) document.querySelector("#kanji-nanori").value = editItemDetails.nanori.join(", ");
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Update";
         } else {
             document.querySelector("#item-characters").value = "";
             document.querySelector("#item-meanings").value = "";
             document.querySelector("#item-readings").value = "";
+            document.querySelector("#kanji-onyomi").value = "";
+            document.querySelector("#kanji-kunyomi").value = "";
+            document.querySelector("#kanji-nanori").value = "";
+            document.querySelector("#tab-4__content button[type='submit']").innerText = "Add";
         }
         // Add event listener to form
         document.querySelector("#tab-4__content form").onsubmit = (e) => {
             e.preventDefault();
 
             let itemType = document.querySelector("#item-type").value;
-            let itemCharacters = document.querySelector("#item-characters").value;
-            let itemMeanings = document.querySelector("#item-meanings").value.split(",").map(s => s.trim());
-            let itemReadings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
-
+            let characters = document.querySelector("#item-characters").value;
+            let meanings = document.querySelector("#item-meanings").value.split(",").map(s => s.trim());
+            let readings;
             let pack = activePackProfile.customPacks[document.querySelector("#pack-select").value];
 
-            if(editItem !== null) { // If editing an existing item
-                pack.editItem(editItem, itemType, itemType, itemCharacters, itemMeanings, itemReadings);
-            } else { // If adding a new item
-                pack.addItem(itemType, itemType, itemCharacters, itemMeanings, itemReadings);
+            // Add or edit item
+            switch(itemType) {
+                case "Radical":
+                    if(editItem !== null) pack.editRadical(editItem, characters, meanings);
+                    else pack.addRadical(characters, meanings);
+                    break;
+                case "Kanji":
+                    let primary_reading_type = document.querySelector("#kanji-primary-reading").value;
+                    let onyomi = document.querySelector("#kanji-onyomi").value;
+                    onyomi = onyomi.trim() ? onyomi.split(",").map(s => s.trim()) : [];
+                    let kunyomi = document.querySelector("#kanji-kunyomi").value;
+                    kunyomi = kunyomi.trim() ? kunyomi.split(",").map(s => s.trim()) : [];
+                    let nanori = document.querySelector("#kanji-nanori").value;
+                    nanori = nanori.trim() ? nanori.split(",").map(s => s.trim()) : [];
+                    if(editItem !== null) pack.editKanji(editItem, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori);
+                    else pack.addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori);
+                    break;
+                case "Vocabulary":
+                    readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
+                    if(editItem !== null) pack.editVocabulary(editItem, characters, meanings, readings);
+                    else pack.addVocabulary(characters, meanings, readings);
+                    break;
+                case "KanaVocabulary":
+                    readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
+                    if(editItem !== null) pack.editKanaVocabulary(editItem, characters, meanings, readings);
+                    else pack.addKanaVocabulary(characters, meanings, readings);
+                    break;
+                default:
+                    console.error("Invalid item type");
             }
 
             document.querySelector("#tab-4__content > form").style.display = "none";
@@ -457,85 +511,505 @@ function loadPackEditDetails(i) {
 
 // ---------- Item details ----------
 function makeDetailsHTML(item) {
-    let detailsHTML = `
-    <turbo-frame class="subject-info" id="subject-info">
-        <div class="container">
-            <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
-                <a class='wk-nav__anchor' id='meaning'></a>
-                <h2 class='subject-section__title'>
-                    <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
-                        <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
-                        <span class='subject-section__title-text'>Meaning</span>
-                    </a>
-                </h2>
-                <section id="section-meaning" class="subject-section__content" data-toggle-target="content" hidden="hidden">
-                    <section class="subject-section__subsection">
-                        <div class='subject-section__meanings'>
-                            <h2 class='subject-section__meanings-title'>Primary</h2>
-                            <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
-                        </div>
-                        <!--<div class='subject-section__meanings'>
-                            <h2 class='subject-section__meanings-title'>User Synonyms</h2>
-                            <p class='subject-section__meanings-items'><i>User synonyms are currently disabled for custom items.</i></p>
-                        </div>-->
-                    </section>
-                    <section class="subject-section__subsection">
-                        <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                        <p class="subject-section__text">Lorem Ipsum</p>
-                        <!--<aside class="subject-hint">
-                            <h3 class="subject-hint__title">
-                                <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
-                                <span class="subject-hint__title-text">Hints</span>
-                            </h3>
-                            <p class="subject-hint__text"></p>
-                        </aside>-->
-                    </section>
-                    <section class="subject-section__subsection">
-                        <h3 class='subject-section__subtitle'>Note</h3>
-                        <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
+    switch(item.type) {
+        case "Radical":
+        return /*html*/ `
+        <turbo-frame class="subject-info" id="subject-info">
+            <div class="container">
+                <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
+                    <a class='wk-nav__anchor' id='information'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                            <span class='subject-section__title-text'>Name</span>
+                        </a>
+                    </h2>
+                    <section id="section-meaning" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <section class="subject-section__subsection">
+                            <div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>Primary</h2>
+                                <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                            </div>
+                            ${item.meanings.length > 1 ? `
+                            <div class="subject-section__meanings">
+                                <h2 class="subject-section__meanings-title">Alternatives</h2>
+                                <p class="subject-section__meanings-items">${item.meanings.slice(1).join(', ')}</p>
+                            </div>` : ''}
+                            <!--<div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>User Synonyms</h2>
+                                <p class='subject-section__meanings-items'><i>User synonyms are currently disabled for custom items.</i></p>
+                            </div>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Mnemonic</h3>
+                            <p class="subject-section__text">${item.meaning_explanation}</p>
+                            <!--<aside class="subject-hint">
+                                <h3 class="subject-hint__title">
+                                    <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
+                                    <span class="subject-hint__title-text">Hints</span>
+                                </h3>
+                                <p class="subject-hint__text"></p>
+                            </aside>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Note</h3>
+                            <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
+                        </section>
                     </section>
                 </section>
-            </section>
 
-            <section class="subject-section subject-section--reading subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
-                <a class='wk-nav__anchor' id='reading'></a>
-                <h2 class='subject-section__title'>
-                    <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-reading">
-                        <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
-                        <span class='subject-section__title-text'>Reading</span>
-                    </a>
-                </h2>
-                <section id="section-reading" class="subject-section__content" data-toggle-target="content" hidden="hidden">
-                    <section class="subject-section__subsection">
-                        <div class="subject-readings-with-audio">
-                            <div class="subject-readings-with-audio__item">
-                                <div class="reading-with-audio">
-                                    <div class="reading-with-audio__reading" lang='ja'>${item.readings[0]}</div>
-                                    <ul class="reading-with-audio__audio-items">
+                <section class="subject-section subject-section--amalgamations subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[]}">
+                    <a class='wk-nav__anchor' id='amalgamations'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-amalgamations">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                            <span class='subject-section__title-text'>Found In Kanji</span>
+                        </a>
+                    </h2>
+                    <section id="section-amalgamations" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <div class="subject-character-grid">
+                            <ol class="subject-character-grid__items">
+                                <!--<li class="subject-character-grid__item">
+                                    <a class="subject-character subject-character--kanji subject-character--grid subject-character--burned" title="じょう" href="https://www.wanikani.com/kanji/%E4%B8%8A" data-turbo-frame="_blank">
+                                        <div class="subject-character__content">
+                                            <span class="subject-character__characters" lang="ja">上</span>
+                                            <div class="subject-character__info">
+                                                <span class="subject-character__reading">じょう</span>
+                                                <span class="subject-character__meaning">Above</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>-->
+                            </ol>
+                        </div>
+                    </section>
+                </section>
+            </div>
+        </turbo-frame>
+        `;
+        case "Kanji":
+        return /*html*/ `
+        <turbo-frame class="subject-info" id="subject-info">
+            <div class="container">
+                <!-- Radical combination -->
+                <section class="subject-section subject-section--components subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
+                    <h2 class="subject-section__title">
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-components" data-controller-connected="true">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right" aria-hidden="true"></i>
+                            <span class="subject-section__title-text">Radical Combination</span>
+                        </a>
+                    </h2>
+                    <section id="section-components" class="subject-section__content" data-toggle-target="content">
+                        <div class="subject-list subject-list--with-separator">
+                            <ul class="subject-list__items">
+                                <!--<li class="subject-list__item">
+                                    <a class="subject-character subject-character--radical subject-character--small-with-meaning subject-character--burned subject-character--expandable" title="Head" href="https://www.wanikani.com/radicals/head" data-turbo-frame="_blank">
+                                        <div class="subject-character__content">
+                                            <span class="subject-character__characters" lang="ja">冂</span>
+                                            <div class="subject-character__info">
+                                                <span class="subject-character__meaning">Head</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>-->
+                            </ul>
+                        </div>
+                    </section>
+                </section>
+                <!-- Meaning -->
+                <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
+                    <a class='wk-nav__anchor' id='meaning'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                            <span class='subject-section__title-text'>Meaning</span>
+                        </a>
+                    </h2>
+                    <section id="section-meaning" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <section class="subject-section__subsection">
+                            <div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>Primary</h2>
+                                <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                            </div>
+                            ${item.meanings.length > 1 ? `
+                            <div class="subject-section__meanings">
+                                <h2 class="subject-section__meanings-title">Alternative</h2>
+                                <p class="subject-section__meanings-items">${item.meanings.slice(1).join(', ')}</p>
+                            </div>` : ''}
+                            <!--<div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>User Synonyms</h2>
+                                <p class='subject-section__meanings-items'><i>User synonyms are currently disabled for custom items.</i></p>
+                            </div>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Mnemonic</h3>
+                            <p class="subject-section__text">${item.meaning_explanation}</p>
+                            <!--<aside class="subject-hint">
+                                <h3 class="subject-hint__title">
+                                    <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
+                                    <span class="subject-hint__title-text">Hints</span>
+                                </h3>
+                                <p class="subject-hint__text"></p>
+                            </aside>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Note</h3>
+                            <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
+                        </section>
+                    </section>
+                </section>
+                <!-- Reading -->
+                <section class="subject-section subject-section--reading subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
+                    <a class='wk-nav__anchor' id='reading'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-reading">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                            <span class='subject-section__title-text'>Reading</span>
+                        </a>
+                    </h2>
+                    <section id="section-reading" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <section class="subject-section__subsection">
+                            <div class="subject-readings">
+                                <div class="subject-readings__reading ${item.primary_reading_type == "onyomi" ? "subject-readings__reading--primary" : ""}">
+                                    <h3 class="subject-readings__reading-title">On’yomi</h3>
+                                    <p class="subject-readings__reading-items" lang="ja">
+                                        ${item.onyomi.length > 0 ? item.onyomi.join(', ') : "None"}
+                                    </p>
+                                </div>
+                                <div class="subject-readings__reading ${item.primary_reading_type == "kunyomi" ? "subject-readings__reading--primary" : ""}">
+                                    <h3 class="subject-readings__reading-title">Kun’yomi</h3>
+                                    <p class="subject-readings__reading-items" lang="ja">
+                                        ${item.kunyomi.length > 0 ? item.kunyomi.join(', ') : "None"}
+                                    </p>
+                                </div>
+                                <div class="subject-readings__reading ${item.primary_reading_type == "nanori" ? "subject-readings__reading--primary" : ""}">
+                                    <h3 class="subject-readings__reading-title">Nanori</h3>
+                                    <p class="subject-readings__reading-items" lang="ja">
+                                        ${item.nanori.length > 0 ? item.nanori.join(', ') : "None"}
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Mnemonic</h3>
+                            <p class="subject-section__text">${item.reading_explanation}</p>
+                            <!--<aside class="subject-hint">
+                                <h3 class="subject-hint__title">
+                                    <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
+                                    <span class="subject-hint__title-text">Hints</span>
+                                </h3>
+                                <p class="subject-hint__text"></p>
+                            </aside>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Note</h3>
+                            <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
+                        </section>
+                    </section>
+                </section>
+                <!-- Found in vocabulary -->
+                <section class="subject-section subject-section--amalgamations subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[]}">
+                    <a class="wk-nav__anchor" id="amalgamations"></a>
+                    <h2 class="subject-section__title">
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-amalgamations" data-controller-connected="true">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right" aria-hidden="true"></i>
+                            <span class="subject-section__title-text">Found In Vocabulary</span>
+                        </a>
+                    </h2>
+                    <section id="section-amalgamations" class="subject-section__content" data-toggle-target="content">
+                        <div class="subject-character-grid subject-character-grid--single-column">
+                            <ol class="subject-character-grid__items">
+                                <!--<li class="subject-character-grid__item">
+                                    <a class="subject-character subject-character--vocabulary subject-character--grid subject-character--burned" title="うち" href="https://www.wanikani.com/vocabulary/%E5%86%85" data-turbo-frame="_blank">
+                                        <div class="subject-character__content">
+                                            <span class="subject-character__characters" lang="ja">内</span>
+                                            <div class="subject-character__info">
+                                                <span class="subject-character__reading">うち</span>
+                                                <span class="subject-character__meaning">Inside</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>-->
+                            </ol>
+                        </div>
+                    </section>
+                </section>
+            </div>
+        </turbo-frame>
+        `;
+        case "Vocabulary":
+        return /*html*/ `
+        <turbo-frame class="subject-info" id="subject-info">
+            <div class="container">
+                <!-- Meaning -->
+                <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
+                    <a class='wk-nav__anchor' id='meaning'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                            <span class='subject-section__title-text'>Meaning</span>
+                        </a>
+                    </h2>
+                    <section id="section-meaning" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <section class="subject-section__subsection">
+                            <div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>Primary</h2>
+                                <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                            </div>
+                            ${item.meanings.length > 1 ? `
+                            <div class="subject-section__meanings">
+                                <h2 class="subject-section__meanings-title">Alternatives</h2>
+                                <p class="subject-section__meanings-items">${item.meanings.slice(1).join(', ')}</p>
+                            </div>` : ''}
+                            <!--<div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>User Synonyms</h2>
+                                <p class='subject-section__meanings-items'><i>User synonyms are currently disabled for custom items.</i></p>
+                            </div>-->
+                            <!--<div class="subject-section__meanings">
+                                <h2 class="subject-section__meanings-title">Word Type</h2>
+                                <p class="subject-section__meanings-items">noun, の adjective</p>
+                            </div>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Explanation</h3>
+                            <p class="subject-section__text">${item.meaning_explanation}</p>
+                            <!--<aside class="subject-hint">
+                                <h3 class="subject-hint__title">
+                                    <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
+                                    <span class="subject-hint__title-text">Hints</span>
+                                </h3>
+                                <p class="subject-hint__text"></p>
+                            </aside>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Note</h3>
+                            <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
+                        </section>
+                    </section>
+                </section>
+                <!-- Reading -->
+                <section class="subject-section subject-section--reading subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
+                    <a class='wk-nav__anchor' id='reading'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-reading">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                            <span class='subject-section__title-text'>Reading</span>
+                        </a>
+                    </h2>
+                    <section id="section-reading" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <section class="subject-section__subsection">
+                            <div class="subject-readings-with-audio">
+                                <div class="subject-readings-with-audio__item">
+                                    <div class="reading-with-audio">
+                                        <div class="reading-with-audio__reading" lang='ja'>${item.readings[0]}</div>
+                                        <ul class="reading-with-audio__audio-items">
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Explanation</h3>
+                            <p class="subject-section__text">${item.reading_explanation}</p>
+                            <!--<aside class="subject-hint">
+                                <h3 class="subject-hint__title">
+                                    <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
+                                    <span class="subject-hint__title-text">Hints</span>
+                                </h3>
+                                <p class="subject-hint__text"></p>
+                            </aside>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Note</h3>
+                            <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
+                        </section>
+                    </section>
+                </section>
+                <!-- Context -->
+                <section class="subject-section subject-section--context subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
+                    <a class="wk-nav__anchor" id="context"></a>
+                    <h2 class="subject-section__title">
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-context" data-controller-connected="true">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right" aria-hidden="true"></i>
+                            <span class="subject-section__title-text">Context</span>
+                        </a>
+                    </h2>
+                    <section id="section-context" class="subject-section__content" data-toggle-target="content">
+                        <!--<section class="subject-section__subsection">
+                            <div class="subject-collocations" data-controller="tabbed-content" data-tabbed-content-next-tab-hotkey-value="s" data-tabbed-content-previous-tab-hotkey-value="w" data-hotkey-registered="true">
+                                <div class="subject-collocations__patterns">
+                                    <h3 class="subject-collocations__title subject-collocations__title--patterns">Pattern of Use</h3>
+                                    <div class="subject-collocations__pattern-names">
+                                        <a class="subject-collocations__pattern-name" data-tabbed-content-target="tab" data-action="tabbed-content#changeTab" aria-controls="collocations-710736400-0" aria-selected="true" role="tab" lang="ja" href="#collocations-710736400-0">農業を〜</a>
+                                    </div>
+                                </div>
+                                <div class="subject-collocations__collocations">
+                                    <h3 class="subject-collocations__title">Common Word Combinations</h3>
+                                    <ul class="subject-collocations__pattern-collocations">
+                                        <li class="subject-collocations__pattern-collocation" id="collocations-710736400-0" data-tabbed-content-target="content" role="tabpanel">
+                                            <div class="context-sentences">
+                                                <p class="wk-text" lang="ja">農業を行う</p>
+                                                <p class="wk-text">to carry out farming</p>
+                                            </div>
+                                        </li>      
                                     </ul>
                                 </div>
                             </div>
-                        </div>
-                    </section>
-                    <section class="subject-section__subsection">
-                        <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                        <p class="subject-section__text">Lorem Ipsum</p>
-                        <!--<aside class="subject-hint">
-                            <h3 class="subject-hint__title">
-                                <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
-                                <span class="subject-hint__title-text">Hints</span>
-                            </h3>
-                            <p class="subject-hint__text"></p>
-                        </aside>-->
-                    </section>
-                    <section class="subject-section__subsection">
-                        <h3 class='subject-section__subtitle'>Note</h3>
-                        <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
+                        </section>-->
+                        <section class="subject-section__subsection">
+                            <h3 class="subject-section__subtitle">Context Sentences</h3>
+                            <!--<div class="subject-section__text subject-section__text--grouped">
+                                <p lang="ja">私たちの町では、米の農業をしてる人々が多いです。</p>
+                                <p>In our town, there are many people who are farming rice.</p>
+                            </div>-->
+                        </section>
                     </section>
                 </section>
-            </section>
-        </div>
-    </turbo-frame>
-    `;
-    return detailsHTML;
+                <!-- Kanji Composition -->
+                <section class="subject-section subject-section--components subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[]}">
+                    <a class="wk-nav__anchor" id="components"></a>
+                    <h2 class="subject-section__title">
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-components" data-controller-connected="true">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right" aria-hidden="true"></i>
+                            <span class="subject-section__title-text">Kanji Composition</span>
+                        </a>
+                    </h2>
+                    <section id="section-components" class="subject-section__content" data-toggle-target="content">
+                        <div class="subject-character-grid">
+                            <ol class="subject-character-grid__items">
+                                <!--<li class="subject-character-grid__item">
+                                    <a class="subject-character subject-character--kanji subject-character--grid subject-character--burned" title="のう" href="https://www.wanikani.com/kanji/%E8%BE%B2" data-turbo-frame="_blank">
+                                        <div class="subject-character__content">
+                                            <span class="subject-character__characters" lang="ja">農</span>
+                                            <div class="subject-character__info">
+                                                <span class="subject-character__reading">のう</span>
+                                                <span class="subject-character__meaning">Farming</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>-->
+                            </ol>
+                        </div>
+                    </section>
+                </section>
+            </div>
+        </turbo-frame>
+        `;
+        case "KanaVocabulary":
+        return /*html*/ `
+        <turbo-frame class="subject-info" id="subject-info">
+            <div class="container">
+                <!-- Meaning -->
+                <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
+                    <a class='wk-nav__anchor' id='meaning'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                            <span class='subject-section__title-text'>Meaning</span>
+                        </a>
+                    </h2>
+                    <section id="section-meaning" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <section class="subject-section__subsection">
+                            <div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>Primary</h2>
+                                <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                            </div>
+                            ${item.meanings.length > 1 ? `
+                            <div class="subject-section__meanings">
+                                <h2 class="subject-section__meanings-title">Alternatives</h2>
+                                <p class="subject-section__meanings-items">${item.meanings.slice(1).join(', ')}</p>
+                            </div>` : ''}
+                            <!--<div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>User Synonyms</h2>
+                                <p class='subject-section__meanings-items'><i>User synonyms are currently disabled for custom items.</i></p>
+                            </div>-->
+                            <!--<div class="subject-section__meanings">
+                                <h2 class="subject-section__meanings-title">Word Type</h2>
+                                <p class="subject-section__meanings-items">noun, suffix</p>
+                            </div>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Explanation</h3>
+                            <p class="subject-section__text">${item.meaning_explanation}</p>
+                            <!--<aside class="subject-hint">
+                                <h3 class="subject-hint__title">
+                                    <i class="fa-solid fa-circle-question subject-hint__title-icon" aria-hidden="true"></i>
+                                    <span class="subject-hint__title-text">Hints</span>
+                                </h3>
+                                <p class="subject-hint__text"></p>
+                            </aside>-->
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Note</h3>
+                            <p class="subject-section__text"><i>Notes are currently disabled for custom items.</i></p>
+                        </section>
+                    </section>
+                </section>
+                <!-- Pronunciation -->
+                <section class="subject-section subject-section--reading subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
+                    <a class='wk-nav__anchor' id='reading'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-reading">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right"></i>
+                            <span class='subject-section__title-text'>Pronunciation</span>
+                        </a>
+                    </h2>
+                    <section id="section-reading" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <section class="subject-section__subsection">
+                            <div class="subject-readings-with-audio">
+                                <div class="subject-readings-with-audio__item">
+                                    <div class="reading-with-audio">
+                                        <div class="reading-with-audio__reading" lang='ja'>${item.readings[0]}</div>
+                                        <ul class="reading-with-audio__audio-items">
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </section>
+                </section>
+                <!-- Context -->
+                <section class="subject-section subject-section--context subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
+                    <a class="wk-nav__anchor" id="context"></a>
+                    <h2 class="subject-section__title">
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-context" data-controller-connected="true">
+                            <i class="subject-section__toggle-icon fa-regular fa-chevron-right" aria-hidden="true"></i>
+                            <span class="subject-section__title-text">Context</span>
+                        </a>
+                    </h2>
+                    <section id="section-context" class="subject-section__content" data-toggle-target="content">
+                        <!--<section class="subject-section__subsection">
+                            <div class="subject-collocations" data-controller="tabbed-content" data-tabbed-content-next-tab-hotkey-value="s" data-tabbed-content-previous-tab-hotkey-value="w" data-hotkey-registered="true">
+                                <div class="subject-collocations__patterns">
+                                    <h3 class="subject-collocations__title subject-collocations__title--patterns">Pattern of Use</h3>
+                                    <div class="subject-collocations__pattern-names">
+                                        <a class="subject-collocations__pattern-name" data-tabbed-content-target="tab" data-action="tabbed-content#changeTab" aria-controls="collocations-710736400-0" aria-selected="true" role="tab" lang="ja" href="#collocations-710736400-0">農業を〜</a>
+                                    </div>
+                                </div>
+                                <div class="subject-collocations__collocations">
+                                    <h3 class="subject-collocations__title">Common Word Combinations</h3>
+                                    <ul class="subject-collocations__pattern-collocations">
+                                        <li class="subject-collocations__pattern-collocation" id="collocations-710736400-0" data-tabbed-content-target="content" role="tabpanel">
+                                            <div class="context-sentences">
+                                                <p class="wk-text" lang="ja">農業を行う</p>
+                                                <p class="wk-text">to carry out farming</p>
+                                            </div>
+                                        </li>      
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>-->
+                        <section class="subject-section__subsection">
+                            <h3 class="subject-section__subtitle">Context Sentences</h3>
+                            <!--<div class="subject-section__text subject-section__text--grouped">
+                                <p lang="ja">このパン、５ドルだって。</p>
+                                <p>It says this bread costs $5.</p>
+                            </div>-->
+                        </section>
+                    </section>
+                </section>
+            </div>
+        </turbo-frame>
+        `;
+    }
 }

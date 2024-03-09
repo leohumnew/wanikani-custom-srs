@@ -182,6 +182,7 @@ class CustomItemPack {
     version;
     items = [];
     active = true;
+    nextID = 0;
 
     constructor(name, author, version) {
         this.name = name;
@@ -193,22 +194,22 @@ class CustomItemPack {
         return this.items[id];
     }
     addRadical(characters, meanings, meaning_explanation) {
-        let id = this.items.length;
+        let id = this.nextID++;
         let radical = new RadicalCustomItem(id, "Radical", "Radical", characters, meanings, meaning_explanation);
         this.items.push(radical);
     }
     addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation) {
-        let id = this.items.length;
+        let id = this.nextID++;
         let kanji = new KanjiCustomItem(id, "Kanji", "Kanji", characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation);
         this.items.push(kanji);
     }
     addVocabulary(characters, meanings, readings, meaning_explanation, reading_explanation) {
-        let id = this.items.length;
+        let id = this.nextID++;
         let vocabulary = new VocabularyCustomItem(id, "Vocabulary", "Vocabulary", characters, meanings, readings, meaning_explanation, reading_explanation);
         this.items.push(vocabulary);
     }
     addKanaVocabulary(characters, meanings, readings, meaning_explanation) {
-        let id = this.items.length;
+        let id = this.nextID++;
         let kanaVocabulary = new KanaVocabularyCustomItem(id, "KanaVocabulary", "Vocabulary", characters, meanings, readings, meaning_explanation);
         this.items.push(kanaVocabulary);
     }
@@ -263,6 +264,7 @@ class CustomItemPack {
         let pack = new CustomItemPack(object.name, object.author, object.version);
         pack.items = object.items.map(item => CustomItem.fromObject(item));
         pack.active = object.active;
+        pack.nextID = (object.lastID || pack.items.length); // If lastID is not present, use the length of the items array
         return pack;
     }
 }
@@ -278,6 +280,30 @@ class CustomPackProfile {
     }
     removePack(id) {
         this.customPacks.splice(id, 1);
+    }
+
+    doesPackExist(packName, packAuthor, packVersion) {
+        for(let i = 0; i < this.customPacks.length; i++) {
+            let pack = this.customPacks[i];
+            if(pack.name === packName && pack.author === packAuthor) {
+                if(pack.version === packVersion) return "exists";
+                else return i;
+            }
+        }
+        return "no";
+    }
+    updatePack(id, newPack) { // Update pack but keeping the SRS stages of items that are in both the old and new pack
+        let oldPack = this.customPacks[id];
+        newPack = StorageManager.packFromJSON(newPack);
+        for(let i = 0; i < newPack.items.length; i++) {
+            let newItem = newPack.items[i];
+            let oldItem = oldPack.items.find(item => item.id === newItem.id);
+            if(oldItem) {
+                newItem.srs_stage = oldItem.srs_stage;
+                newItem.last_reviewed_at = oldItem.last_reviewed_at;
+            }
+        }
+        this.customPacks[id] = newPack;
     }
 
     getActiveReviews() {
@@ -298,7 +324,7 @@ class CustomPackProfile {
         return activeReviewsSRS;
     }
 
-    getSubjectInfo(cantorNum) {
+    getSubjectInfo(cantorNum) { // Get details of custom item for review page details display
         let [packID, itemID] = Utils.reverseCantorNumber(cantorNum);
         let item = this.getPack(packID).getItem(itemID);
         return makeDetailsHTML(item);
@@ -342,16 +368,22 @@ class Utils {
 class StorageManager {
     // Get custom packs saved in GM storage
     static async loadPackProfile(profileName) {
-        let savedPackProfile = new CustomPackProfile();
+        let savedPackProfile = CustomPackProfile.fromObject(await GM.getValue("customPackProfile_" + profileName, new CustomPackProfile()));
+        /*let savedPackProfile = new CustomPackProfile();
         Object.assign(savedPackProfile, await GM.getValue("customPackProfile_" + profileName, new CustomPackProfile()));
         // Convert CustomItemPacks and their CustomItems
-        savedPackProfile.customPacks = savedPackProfile.customPacks.map(pack => CustomItemPack.fromObject(pack));
+        savedPackProfile.customPacks = savedPackProfile.customPacks.map(pack => CustomItemPack.fromObject(pack));*/
         return savedPackProfile;
     }
 
     // Save custom packs to GM storage
     static async savePackProfile(packProfile, profileName) {
         GM.setValue("customPackProfile_" + profileName, packProfile);
+    }
+
+    static packFromJSON(json) {
+        let pack = CustomItemPack.fromObject(json);
+        return pack;
     }
 }
 

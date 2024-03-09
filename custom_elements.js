@@ -37,7 +37,7 @@ overviewPopupStyle.innerHTML = /*css*/ `
         background-color: transparent;
         border: none;
 
-        &[type="submit"] {
+        &[type="submit"], &.outline-button {
             border: 1px solid var(--color-text);
             border-radius: 5px;
             padding: 0.2rem 0.8rem;
@@ -46,7 +46,7 @@ overviewPopupStyle.innerHTML = /*css*/ `
     & button:hover {
         color: var(--color-tertiary, #a5a5a5);
 
-        &[type="submit"] {
+        &[type="submit"], &.outline-button {
             border-color: var(--color-tertiary, #a5a5a5) }
     }
     & > header {
@@ -128,8 +128,6 @@ overviewPopupStyle.innerHTML = /*css*/ `
         vertical-align: middle;
     }
 }
-#tabs .clickable {
-    cursor: pointer }
 
 /* Styling for the pack edit tab */
 #tab-3__content > .content-box {
@@ -158,6 +156,10 @@ overviewPopupStyle.innerHTML = /*css*/ `
 }
 #tab-3__content:has(#pack-select [value="new"]:checked) .content-box :is(div, ul) {
     display: none }
+#tab-3__content:has(#pack-select [value="import"]:checked) .pack-box {
+    display: none }
+#tab-3__content:has(#pack-select [value="import"]:checked) .import-box {
+    display: grid !important }
 
 #pack-items {
     background-color: var(--color-menu, white) }
@@ -169,7 +171,8 @@ overviewPopupStyle.innerHTML = /*css*/ `
     display: grid !important }
 #tab-4__content:has(#item-type [value="Kanji"]:checked) #item-kanji-specific {
     display: grid !important }
-#tab-4__content .content-box, #tab-4__content .content-box > div {
+#tab-4__content .content-box, #tab-4__content .content-box > div, #tab-3__content > .content-box {
+    display: grid;
     gap: 0.5rem;
     grid-template-columns: 1fr 1fr;
     align-items: center;
@@ -209,19 +212,24 @@ overviewPopup.innerHTML = /*html*/ `
         <div id="tab-3__content">
             <label for="pack-select">Pack: </label>
             <select id="pack-select"></select><br>
-            <form class="content-box">
+            <form class="content-box pack-box">
                 <label for="pack-name">Name: </label>
-                <input id="pack-name" required type="text"><br>
+                <input id="pack-name" required type="text">
                 <label for="pack-author">Author: </label>
-                <input id="pack-author" required type="text"><br>
+                <input id="pack-author" required type="text">
                 <label for="pack-version">Version: </label>
-                <input id="pack-version" required type="number" step="0.1"><br>
-                <button type="submit">Save</button>
-                <div>
+                <input id="pack-version" required type="number" step="0.1">
+                <div style="grid-column: 1 / span 2">
                     <p>Items: </p>
                     <button id="new-item-button" class="fa-regular fa-plus" title="Add Item" type="button"></button>
                 </div>
-                <ul class="content-box" id="pack-items"></ul>
+                <ul style="grid-column: 1 / span 2" class="content-box" id="pack-items"></ul>
+                <button style="grid-column: 1 / span 2" type="submit">Save</button>
+            </form>
+            <form class="content-box import-box" style="display: none;">
+                <label for="item-type">Paste Pack JSON here: </label>
+                <textarea id="pack-import" required></textarea>
+                <button style="grid-column: 1 / span 2" type="submit">Import</button>
             </form>
         </div>
 
@@ -275,7 +283,7 @@ overviewPopup.innerHTML = /*html*/ `
 
         <input type="radio" name="custom-srs-tab" id="tab-5">
         <label for="tab-5">Settings</label>
-        <div>TODO</div>
+        <div></div>
     </div>
 `;
 
@@ -371,12 +379,19 @@ function updatePacksTab() {
                 <span>Active: </span>
                 <input type="checkbox" id="pack-${i}-active" ${pack.active ? "checked" : ""}>
                 <button class="edit-pack fa-regular fa-pen-to-square" title="Edit Pack"></button>
-                <button class="fa-regular fa-file-export" title="Export Pack"></button>
+                <button class="export-pack fa-regular fa-file-export" title="Export Pack"></button>
                 <button class="delete-pack fa-regular fa-trash" title="Delete Pack"></button>
             </div>
         `;
         packElement.querySelector(".edit-pack").onclick = () => { // Pack edit button
             changeTab(3, i);
+        };
+        packElement.querySelector(".export-pack").onclick = () => { // Pack export button to make JSON and then copy it to the clipboard
+            let pack = activePackProfile.customPacks[i];
+            let data = JSON.stringify(pack);
+            navigator.clipboard.writeText(data).then(() => {
+                alert("Pack JSON copied to clipboard");
+            });
         };
         packElement.querySelector(".delete-pack").onclick = () => { // Pack delete button
             activePackProfile.removePack(i);
@@ -390,24 +405,29 @@ function updatePacksTab() {
         packsTab.appendChild(packElement);
     }
     // New pack button
-    let newPackButton = document.createElement("div");
-    newPackButton.classList = "pack content-box clickable";
-    newPackButton.innerHTML = "<h3>New Pack</h3>";
+    let newPackButton = document.createElement("button");
+    newPackButton.classList = "outline-button";
+    newPackButton.style = "width: 48%";
+    newPackButton.innerHTML = "New Pack";
     newPackButton.onclick = () => {
         changeTab(3, "new");
     };
-    packsTab.appendChild(newPackButton);
+    let importPackButton = document.createElement("button");
+    importPackButton.classList = "outline-button";
+    importPackButton.style = "width: 48%; float: right;";
+    importPackButton.innerHTML = "Import Pack";
+    importPackButton.onclick = () => {
+        changeTab(3, "import");
+    };
+    packsTab.append(newPackButton, importPackButton);
 }
 
 function updateEditPackTab(editPack) {
     let packSelect = document.querySelector("#pack-select");
-    packSelect.innerHTML = "<option value='new'>New Pack</option>";
+    packSelect.innerHTML = "<option value='new'>New Pack</option><option value='import'>Import Pack</option>";
     for(let i = 0; i < activePackProfile.customPacks.length; i++) {
         let pack = activePackProfile.customPacks[i];
-        let option = document.createElement("option");
-        option.value = i;
-        option.innerText = pack.name + " - " + pack.author;
-        packSelect.appendChild(option);
+        packSelect.innerHTML += `<option value="${i}">${pack.name} - ${pack.author}</option>`;
     }
     if(editPack !== undefined) packSelect.value = editPack;
     else packSelect.value = "new";
@@ -510,10 +530,13 @@ function loadPackEditDetails(i) {
     let packAuthorInput = document.querySelector("#pack-author");
     let packVersionInput = document.querySelector("#pack-version");
     let packItems = document.querySelector("#pack-items");
+    let importBox = document.querySelector("#pack-import");
     if(i === "new") { // If creating a new pack
         packNameInput.value = "";
         packAuthorInput.value = "";
         packVersionInput.value = 0.1;
+    } else if(i === "import") { // If importing a pack
+        importBox.value = "";
     } else { // If editing an existing pack
         let pack = activePackProfile.customPacks[i];
         packNameInput.value = pack.name;
@@ -541,9 +564,8 @@ function loadPackEditDetails(i) {
             packItems.appendChild(itemElement);
         }
     }
-    document.querySelector("#tab-3__content form").onsubmit = (e) => { // Pack save button
+    document.querySelector("#tab-3__content form.pack-box").onsubmit = (e) => { // Pack save button
         e.preventDefault();
-
         let packName = packNameInput.value;
         let packAuthor = packAuthorInput.value;
         let packVersion = packVersionInput.value;
@@ -559,6 +581,25 @@ function loadPackEditDetails(i) {
         }
         StorageManager.savePackProfile(activePackProfile, "main");
         changeTab(2);
+    };
+    document.querySelector("#tab-3__content form.import-box").onsubmit = (e) => { // Pack import button
+        e.preventDefault();
+        let pack = JSON.parse(importBox.value);
+
+        let packExistingStatus = activePackProfile.doesPackExist(pack.name, pack.author, pack.version); // Check if pack already exists
+        if(packExistingStatus == "exists") {
+            alert("A pack with the same name, author, and version already exists.");
+        } else if(packExistingStatus == "no") {
+            activePackProfile.addPack(StorageManager.packFromJSON(pack));
+            StorageManager.savePackProfile(activePackProfile, "main");
+            changeTab(2);
+        } else {
+            if(confirm("A pack with the same name, author, but different version already exists. Do you want to overwrite it?")) {
+                activePackProfile.updatePack(packExistingStatus, pack);
+                StorageManager.savePackProfile(activePackProfile, "main");
+                changeTab(2);
+            }
+        }
     };
 }
 

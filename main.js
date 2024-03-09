@@ -2,6 +2,8 @@ let activePackProfile = await StorageManager.loadPackProfile("main");
 
 // ----------- If on review page -----------
 if (window.location.pathname.includes("/review")) {
+    if(activePackProfile.getNumActiveReviews() === 0) return;
+
     // Add custom items to the quiz queue
     document.addEventListener("DOMContentLoaded", () => {
         let queueEl = document.getElementById('quiz-queue');
@@ -16,13 +18,27 @@ if (window.location.pathname.includes("/review")) {
         cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(quizQueue);
 
         parentEl.appendChild(cloneEl);
+
+        // Update remaining review count
+        let quizController;
+        let p = Utils.promise();
+        async function waitForController() {
+            quizController = Utils.get_controller('quiz-statistics');
+            if(quizController) {
+                quizController.remainingCountTarget.innerText = parseInt(quizController.remainingCountTarget.innerText) + 1;
+                p.resolve();
+            } else {
+                setTimeout(waitForController, 50);
+            }
+        }
+        waitForController();
     });
 
     // Catch submission fetch and stop it if submitted item is a custom item
     const { fetch: originalFetch } = unsafeWindow;
     unsafeWindow.fetch = async (...args) => {
         let [resource, config] = args;
-        if (resource.includes("/subjects/review") && config != null && config.method === "post") {
+        if (resource.includes("/subjects/review") && config != null && config.method === "POST") {
             let payload = JSON.parse(config.body);
             // Check if submitted item is a custom item
             if(payload.counts && payload.counts[0].id < 0) {
@@ -32,14 +48,13 @@ if (window.location.pathname.includes("/review")) {
             } else {
                 return originalFetch(...args);
             }
-        // Catch subject info fetch and return custom item details
-        } else if (resource.includes("/subject_info/") && config && config.method === "get") {
+        // Catch subject info fetch and return custom item details if the number at the end of the url is negative
+        } else if (resource.includes("/subject_info/") && config && config.method === "get" && resource.split("/").pop() < 0) {
             // Submit original fetch but to different URL to get usable headers
             args[0] = "https://www.wanikani.com/subject_info/1";
             let response = await originalFetch(...args);
             let subjectId = resource.split("/").pop();
             let subjectInfo = activePackProfile.getSubjectInfo(subjectId);
-            console.log(subjectInfo);
             return new Response(subjectInfo, {
                 status: response.status,
                 headers: response.headers
@@ -65,7 +80,19 @@ if (window.location.pathname.includes("/review")) {
             data = parseHTML(data);
 
             let reviewCountElement = data.querySelector("a[href='/subjects/review'] .lesson-and-review-count__count");
-            reviewCountElement.innerHTML = parseInt(reviewCountElement.innerHTML) + activePackProfile.getNumActiveReviews();
+            // If reviewCountElement is null, replace the span .lesson-and-review-count__item with some custom HTML
+            if(reviewCountElement === null && activePackProfile.getNumActiveReviews() > 0) {
+                let reviewTile = data.querySelector(".lesson-and-review-count__item:nth-child(2)");
+                let customHTML = `
+                <a class="lesson-and-review-count__item" target="_top" href="/subjects/review">
+                    <div class="lesson-and-review-count__count">${activePackProfile.getNumActiveReviews()}</div>
+                    <div class="lesson-and-review-count__label">Reviews</div>
+                </a>
+                `;
+                reviewTile.outerHTML = customHTML;
+            } else {
+                reviewCountElement.innerHTML = parseInt(reviewCountElement.innerHTML) + activePackProfile.getNumActiveReviews();
+            }
 
             // Convert the DocumentFragment back to a string and return it as a Response
             let serializedData = (new XMLSerializer()).serializeToString(data);
@@ -82,6 +109,20 @@ if (window.location.pathname.includes("/review")) {
     document.addEventListener("DOMContentLoaded", () => {
         let reviewNumberElement = document.querySelector(".reviews-dashboard .reviews-dashboard__count-text span");
         reviewNumberElement.innerHTML = parseInt(reviewNumberElement.innerHTML) + activePackProfile.getNumActiveReviews();
+        // Enable review button if 0 WaniKani reviews
+        let reviewTile = document.querySelector("div.reviews-dashboard");
+        if(reviewTile.querySelector(".reviews-dashboard__buttons") === null && activePackProfile.getNumActiveReviews() > 0) {
+            let buttonHTML = `
+            <div class="reviews-dashboard__buttons">
+                <div class="reviews-dashboard__button reviews-dashboard__button--start">
+                    <a href="/subjects/review" class="wk-button wk-button--modal-primary" data-turbo="false">
+                        <span class="wk-button__text">Start Reviews</span>
+                        <span class="wk-button__icon wk-button__icon--after"><i class="wk-icon fa-solid fa-chevron-right" aria-hidden="true"></i></span>
+                    </a>
+                </div>
+            </div>`;
+            reviewTile.innerHTML += buttonHTML;
+        }
     });
 }
 

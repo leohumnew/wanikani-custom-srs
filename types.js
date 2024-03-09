@@ -1,4 +1,4 @@
-const srsGaps = [0, 4*60*60*1000, 8*60*60*1000, 23*60*60*1000, 47*60*60*1000, 167*60*60*1000, 335*60*60*1000, 730*60*60*1000, 2920*60*60*1000]
+const srsGaps = [0, 4*60*60*1000, 8*60*60*1000, 23*60*60*1000, 47*60*60*1000, 167*60*60*1000, 335*60*60*1000, 730*60*60*1000, 2920*60*60*1000];
 
 class CustomItem {
     // WK variables
@@ -41,7 +41,7 @@ class CustomItem {
         StorageManager.savePackProfile(activePackProfile, "main");
     }
     getSRSText(packID) {
-        return "[" + MathUtils.cantorNumber(packID, this.id) + "," + this.srs_stage + "]";
+        return "[" + Utils.cantorNumber(packID, this.id) + "," + this.srs_stage + "]";
     }
 
     static fromObject(object) {
@@ -78,7 +78,7 @@ class RadicalCustomItem extends CustomItem {
 
     getQueueItem(packID) {
         return {
-            id: MathUtils.cantorNumber(packID, this.id),
+            id: Utils.cantorNumber(packID, this.id),
             type: this.type,
             subject_category: this.subject_category,
             characters: this.characters,
@@ -108,7 +108,7 @@ class KanjiCustomItem extends CustomItem {
 
     getQueueItem(packID) {
         return {
-            id: MathUtils.cantorNumber(packID, this.id),
+            id: Utils.cantorNumber(packID, this.id),
             type: this.type,
             subject_category: this.subject_category,
             characters: this.characters,
@@ -138,7 +138,7 @@ class VocabularyCustomItem extends CustomItem {
 
     getQueueItem(packID) {
         return {
-            id: MathUtils.cantorNumber(packID, this.id),
+            id: Utils.cantorNumber(packID, this.id),
             type: this.type,
             subject_category: this.subject_category,
             characters: this.characters,
@@ -162,7 +162,7 @@ class KanaVocabularyCustomItem extends CustomItem {
 
     getQueueItem(packID) {
         return {
-            id: MathUtils.cantorNumber(packID, this.id),
+            id: Utils.cantorNumber(packID, this.id),
             type: this.type,
             subject_category: this.subject_category,
             characters: this.characters,
@@ -178,6 +178,7 @@ class CustomItemPack {
     author;
     version;
     items = [];
+    active = true;
 
     constructor(name, author, version) {
         this.name = name;
@@ -239,18 +240,22 @@ class CustomItemPack {
     }
 
     getActiveReviews(packID) { // Get all items that were last reviewed more than 24 hours ago
+        if(!this.active) return [];
         return this.items.filter(item => item.isReadyForReview()).map(item => item.getQueueItem(packID)); // TODO: Change SRS stage check
     }
     getActiveReviewsSRSText(packID) {
+        if(!this.active) return [];
         return this.items.filter(item => item.isReadyForReview()).map(item => item.getSRSText(packID));
     }
     getNumActiveReviews() {
+        if(!this.active) return 0;
         return this.items.filter(item => item.isReadyForReview()).length;
     }
 
     static fromObject(object) {
         let pack = new CustomItemPack(object.name, object.author, object.version);
         pack.items = object.items.map(item => CustomItem.fromObject(item));
+        pack.active = object.active;
         return pack;
     }
 }
@@ -287,13 +292,13 @@ class CustomPackProfile {
     }
 
     getSubjectInfo(cantorNum) {
-        let [packID, itemID] = MathUtils.reverseCantorNumber(cantorNum);
+        let [packID, itemID] = Utils.reverseCantorNumber(cantorNum);
         let item = this.getPack(packID).getItem(itemID);
         return makeDetailsHTML(item);
     }
 
     submitReview(cantorNum, meaningIncorrectNum, readingIncorrectNum) {
-        let [packID, itemID] = MathUtils.reverseCantorNumber(cantorNum);
+        let [packID, itemID] = Utils.reverseCantorNumber(cantorNum);
         let item = this.customPacks[packID].items[itemID];
         if(meaningIncorrectNum > 0 || readingIncorrectNum > 0) {
             item.decrementSRS();
@@ -310,7 +315,7 @@ class CustomPackProfile {
 }
 
 // ------------------- Utility classes -------------------
-class MathUtils {
+class Utils {
     static cantorNumber(a, b) {
         return -(0.5 * (a + b) * (a + b + 1) + b) - 1;
     }
@@ -321,6 +326,10 @@ class MathUtils {
         let x = w - y;
         return [x, y];
     }
+    static get_controller(name) {
+        return Stimulus.getControllerForElementAndIdentifier(document.querySelector(`[data-controller~="${name}"]`),name);
+    }
+    static promise(){let a,b,c=new Promise(function(d,e){a=d;b=e;});c.resolve=a;c.reject=b;return c;}
 }
 
 class StorageManager {

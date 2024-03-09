@@ -1,5 +1,5 @@
 // ------------------------ Define and create custom HTML structures ------------------------
-const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"]
+const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"];
 
 // --------- Main popup ---------
 let overviewPopup = document.createElement("dialog");
@@ -123,6 +123,10 @@ overviewPopupStyle.innerHTML = /*css*/ `
         margin: auto 0 }
     & button {
         margin-left: 10px }
+    & > div > span, & > div > input {
+        margin: 0;
+        vertical-align: middle;
+    }
 }
 #tabs .clickable {
     cursor: pointer }
@@ -160,12 +164,20 @@ overviewPopupStyle.innerHTML = /*css*/ `
 
 /* Styling for the item edit tab */
 #tab-4__content:has(#item-type [value="Vocabulary"]:checked) #item-vocab-specific, #tab-4__content:has(#item-type [value="Kana-vocabulary"]:checked) #item-vocab-specific {
-    display: block !important }
+    display: grid !important }
 #tab-4__content:has(#item-type [value="Kanji"]:checked) #item-kanji-specific {
-    display: block !important }
+    display: grid !important }
+#tab-4__content .content-box, #tab-4__content .content-box > div {
+    gap: 0.5rem;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+
+    & input, & select {
+        justify-self: end }
+}
 `;
 
-overviewPopup.innerHTML = `
+overviewPopup.innerHTML = /*html*/ `
     <header>
         <h1>WaniKani Custom SRS</h1>
         <button class="close-button fa-regular fa-xmark" onclick="document.getElementById('overview-popup').close();"></button>
@@ -222,30 +234,36 @@ overviewPopup.innerHTML = `
                     <option value="Kanji">Kanji</option>
                     <option value="Vocabulary">Vocabulary</option>
                     <option value="Kana-vocabulary">Kana Vocabulary</option>
-                </select><br>
+                </select>
                 <label for="item-characters">Characters: </label>
-                <input id="item-characters" required type="text"><br>
+                <input id="item-characters" required type="text">
                 <label for="item-meanings">Meanings (comma separated): </label>
-                <input id="item-meanings" required type="text"><br>
-                <div id="item-vocab-specific" style="display: none;">
+                <input id="item-meanings" required type="text">
+                <label for="item-meaning-explanation">Meaning Explanation: </label>
+                <input id="item-meaning-explanation" type="text">
+                <div id="item-vocab-specific" style="display: none; grid-column: 1 / span 2">
                     <label for="item-readings">Readings (comma separated): </label>
-                    <input id="item-readings" type="text"><br>
+                    <input id="item-readings" type="text">
+                    <label for="item-reading-explanation">Reading Explanation: </label>
+                    <input id="item-reading-explanation" type="text">
                 </div>
-                <div id="item-kanji-specific" style="display: none;">
+                <div id="item-kanji-specific" style="display: none; grid-column: 1 / span 2">
                     <label for="knaji-primary-reading">Primary Reading: </label>
                     <select id="kanji-primary-reading">
                         <option value="onyomi">On'yomi</option>
                         <option value="kunyomi">Kun'yomi</option>
                         <option value="nanori">Nanori</option>
-                    </select><br>
+                    </select>
                     <label for="kanji-onyomi">On'yomi: </label>
-                    <input id="kanji-onyomi" type="text"><br>
+                    <input id="kanji-onyomi" type="text">
                     <label for="kanji-kunyomi">Kun'yomi: </label>
-                    <input id="kanji-kunyomi" type="text"><br>
+                    <input id="kanji-kunyomi" type="text">
                     <label for="kanji-nanori">Nanori: </label>
-                    <input id="kanji-nanori" type="text"><br>
+                    <input id="kanji-nanori" type="text">
+                    <label for="kanji-reading-explanation">Reading Explanation: </label>
+                    <input id="kanji-reading-explanation" type="text">
                 </div>
-                <button type="submit">Add</button>
+                <button style="grid-column: 1 / span 2" type="submit">Add</button>
             </form>
         </div>
 
@@ -344,6 +362,8 @@ function updatePacksTab() {
         packElement.innerHTML = `
             <h3>${pack.name}: <span>${pack.items.length} items</span><br><span>${pack.author}</span></h3>
             <div>
+                <span>Active: </span>
+                <input type="checkbox" id="pack-${i}-active" ${pack.active ? "checked" : ""}>
                 <button class="edit-pack fa-regular fa-pen-to-square" title="Edit Pack"></button>
                 <button class="fa-regular fa-file-export" title="Export Pack"></button>
                 <button class="delete-pack fa-regular fa-trash" title="Delete Pack"></button>
@@ -356,6 +376,10 @@ function updatePacksTab() {
             activePackProfile.removePack(i);
             StorageManager.savePackProfile(activePackProfile, "main");
             changeTab(2);
+        };
+        packElement.querySelector(`#pack-${i}-active`).onchange = () => { // Pack active checkbox
+            activePackProfile.customPacks[i].active = !activePackProfile.customPacks[i].active;
+            StorageManager.savePackProfile(activePackProfile, "main");
         };
         packsTab.appendChild(packElement);
     }
@@ -387,7 +411,7 @@ function updateEditPackTab(editPack) {
 function updateEditItemTab(editItem) {
     if(editItem !== undefined) {
         // Show add item edit tab and make sure inputs are empty
-        document.querySelector("#tab-4__content > form").style.display = "block";
+        document.querySelector("#tab-4__content > form").style.display = "grid";
         document.querySelector("#tab-4__content > div").style.display = "none";
         if(editItem !== null) {
             let editItemDetails = activePackProfile.customPacks[document.querySelector("#pack-select").value].getItem(editItem);
@@ -492,7 +516,7 @@ function loadPackEditDetails(i) {
             `;
             itemElement.querySelector(".edit-item").onclick = () => { // Item edit button
                 changeTab(4, j);
-            }
+            };
             itemElement.querySelector(".delete-item").onclick = () => { // Item delete button
                 pack.items.splice(j, 1);
                 loadPackEditDetails(i);
@@ -1006,7 +1030,7 @@ function makeDetailsHTML(item) {
                                                 <p class="wk-text" lang="ja">農業を行う</p>
                                                 <p class="wk-text">to carry out farming</p>
                                             </div>
-                                        </li>      
+                                        </li>
                                     </ul>
                                 </div>
                             </div>

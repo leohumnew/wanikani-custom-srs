@@ -387,8 +387,7 @@ function updatePacksTab() {
             changeTab(3, i);
         };
         packElement.querySelector(".export-pack").onclick = () => { // Pack export button to make JSON and then copy it to the clipboard
-            let pack = activePackProfile.customPacks[i];
-            let data = JSON.stringify(pack);
+            let data = StorageManager.packToJSON(activePackProfile.customPacks[i]);
             navigator.clipboard.writeText(data).then(() => {
                 alert("Pack JSON copied to clipboard");
             });
@@ -588,13 +587,13 @@ function loadPackEditDetails(i) {
 
         let packExistingStatus = activePackProfile.doesPackExist(pack.name, pack.author, pack.version); // Check if pack already exists
         if(packExistingStatus == "exists") {
-            alert("A pack with the same name, author, and version already exists.");
+            alert("Import failed: A pack with the same name, author, and version already exists.");
         } else if(packExistingStatus == "no") {
             activePackProfile.addPack(StorageManager.packFromJSON(pack));
             StorageManager.savePackProfile(activePackProfile, "main");
             changeTab(2);
         } else {
-            if(confirm("A pack with the same name, author, but different version already exists. Do you want to overwrite it?")) {
+            if(confirm("A pack with the same name and author but different version already exists. Do you want to update it?")) {
                 activePackProfile.updatePack(packExistingStatus, pack);
                 StorageManager.savePackProfile(activePackProfile, "main");
                 changeTab(2);

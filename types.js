@@ -385,6 +385,15 @@ class StorageManager {
         let pack = CustomItemPack.fromObject(json);
         return pack;
     }
+    static packToJSON(pack) {
+        let packJSON = JSON.parse(JSON.stringify(pack));
+        // Set all item last_reviewed_at and srs_stage to 0 to avoid saving unnecessary data
+        packJSON.items.forEach(item => {
+            item.last_reviewed_at = 0;
+            item.srs_stage = 0;
+        });
+        return JSON.stringify(packJSON);
+    }
 }
 
 class TestData {

@@ -563,7 +563,7 @@ function loadPackEditDetails(i) {
             let itemElement = document.createElement("li");
             itemElement.classList = "pack-item";
             itemElement.innerHTML = `
-                ${item.characters} - ${item.meanings[0]} - SRS: ${srsNames[item.srs_stage]}
+                ${item.characters} - ${item.meanings[0]} - SRS: ${srsNames[item.srs_stage]} - Due: ${item.getTimeUntilReview()}
                 <div>
                     <button class="edit-item fa-regular fa-pen-to-square" title="Edit Item" type="button"></button>
                     <button class="delete-item fa-regular fa-trash" title="Delete Item" type="button"></button>

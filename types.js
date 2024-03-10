@@ -27,6 +27,9 @@ class CustomItem {
     isReadyForReview() {
         return this.last_reviewed_at < Date.now() - srsGaps[this.srs_stage] && this.srs_stage > -1; // TODO: Change SRS stage check to > 0 once lessons are implemented
     }
+    getTimeUntilReview() { // In hours, rounded to integer
+        return this.isReadyForReview() ? "Now" : Math.round((srsGaps[this.srs_stage] - (Date.now() - this.last_reviewed_at)) / (60*60*1000)) + "h";
+    }
 
     incrementSRS() {
         if(this.srs_stage < 9) this.srs_stage++;

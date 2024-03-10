@@ -18,60 +18,33 @@ if (window.location.pathname.includes("/review")) {
     `;
     document.head.appendChild(style);
 
-    // Create observer objects to modify quiz queue and character header
-    let tempNode;
-    let scriptElementObserver = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length > 0) {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.tagName === "SCRIPT") {
-                        let newQuizQueueSRS = activePackProfile.getActiveReviewsSRS().join();
-                        node.innerHTML = "[" + newQuizQueueSRS + "," + node.innerHTML.slice(1);
-                        scriptElementObserver.disconnect();
-                    }
-                });
-            }
-        });
-    });
-    let observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length > 0) {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.classList && node.classList.contains("character-header")) {
-                        tempNode = node;
-                    }
-                    else if (node.id === "quiz-queue") {
-                        node.childNodes.forEach(function(childNode) {
-                            if(childNode.tagName==="SCRIPT") {
-                                quizQueue = activePackProfile.getActiveReviews();
-                                childNode.innerHTML = JSON.stringify(quizQueue).slice(0, -1) + "," + childNode.innerHTML.slice(1);
-                                scriptElementObserver.observe(node, {
-                                    childList: true,
-                                    subtree: true
-                                });
-                                observer.disconnect();
-                                for(className of tempNode.classList) {
-                                    if(className.includes("character-header--")) {
-                                        tempNode.classList.remove(className);
-                                        tempNode.classList.add("character-header--" + activePackProfile.getActiveReviews()[0].type.toLowerCase());
-                                        // Add loaded class to character-header after 250ms
-                                        setTimeout(() => {
-                                            tempNode.classList.add("character-header__loaded");
-                                        }, 700);
-                                        break;
-                                    }
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-        });
-    });
-    observer.observe(document, { childList: true, subtree: true });
-
     // Add custom items to the quiz queue
     document.addEventListener("DOMContentLoaded", () => {
+        let queueEl = document.getElementById('quiz-queue');
+        let parentEl = queueEl.parentElement;
+        queueEl.remove();
+        let cloneEl = queueEl.cloneNode(true);
+
+        let SRSElement = cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']");
+        SRSElement.innerHTML = "[" + activePackProfile.getActiveReviewsSRS().join() + "," + SRSElement.innerHTML.slice(1);
+        let queueElement = cloneEl.querySelector("script[data-quiz-queue-target='subjects']");
+        queueElement.innerHTML = JSON.stringify(activePackProfile.getActiveReviews()).slice(0, -1) + "," + queueElement.innerHTML.slice(1);
+
+        parentEl.appendChild(cloneEl);
+
+        let headerElement = document.querySelector(".character-header");
+        for(className of headerElement.classList) {
+            if(className.includes("character-header--")) {
+                headerElement.classList.remove(className);
+                headerElement.classList.add("character-header--" + activePackProfile.getActiveReviews()[0].type.toLowerCase());
+                // Add loaded class to character-header after 250ms
+                setTimeout(() => {
+                    headerElement.classList.add("character-header__loaded");
+                }, 500);
+                break;
+            }
+        }
+
         loadControllers();
     });
 

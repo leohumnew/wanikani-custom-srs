@@ -191,60 +191,65 @@ class CustomItemPack {
     }
 
     getItem(id) {
-        return this.items[id];
+        return this.items.find(item => item.id === id);
     }
-    addRadical(characters, meanings, meaning_explanation) {
+    addRadical(characters, meanings, meaning_explanation, srs_stage) {
         let id = this.nextID++;
         let radical = new RadicalCustomItem(id, "Radical", "Radical", characters, meanings, meaning_explanation);
+        if(srs_stage != 0) radical.srs_stage = srs_stage;
         this.items.push(radical);
     }
-    addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation) {
+    addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation, srs_stage) {
         let id = this.nextID++;
         let kanji = new KanjiCustomItem(id, "Kanji", "Kanji", characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation);
+        if(srs_stage != 0) kanji.srs_stage = srs_stage;
         this.items.push(kanji);
     }
-    addVocabulary(characters, meanings, readings, meaning_explanation, reading_explanation) {
+    addVocabulary(characters, meanings, readings, meaning_explanation, reading_explanation, srs_stage) {
         let id = this.nextID++;
         let vocabulary = new VocabularyCustomItem(id, "Vocabulary", "Vocabulary", characters, meanings, readings, meaning_explanation, reading_explanation);
+        if(srs_stage != 0) vocabulary.srs_stage = srs_stage;
         this.items.push(vocabulary);
     }
-    addKanaVocabulary(characters, meanings, readings, meaning_explanation) {
+    addKanaVocabulary(characters, meanings, readings, meaning_explanation, srs_stage) {
         let id = this.nextID++;
         let kanaVocabulary = new KanaVocabularyCustomItem(id, "KanaVocabulary", "Vocabulary", characters, meanings, readings, meaning_explanation);
+        if(srs_stage != 0) kanaVocabulary.srs_stage = srs_stage;
         this.items.push(kanaVocabulary);
     }
 
-    editItem(item, characters, meanings, meaning_explanation) {
+    editItem(item, characters, meanings, meaning_explanation, srs_stage) {
         item.characters = characters;
         item.meanings = meanings;
         item.meaning_explanation = meaning_explanation;
+        item.srs_stage = srs_stage;
     }
-    editRadical(id, characters, meanings, meaning_explanation) {
-        let radical = this.items[id];
-        this.editItem(radical, characters, meanings, meaning_explanation);
+    editRadical(id, characters, meanings, meaning_explanation, srs_stage) {
+        let radical = this.getItem(id);
+        this.editItem(radical, characters, meanings, meaning_explanation, srs_stage);
     }
-    editKanji(id, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation) {
-        let kanji = this.items[id];
-        this.editItem(kanji, characters, meanings, meaning_explanation);
+    editKanji(id, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation, srs_stage) {
+        let kanji = this.getItem(id);
+        this.editItem(kanji, characters, meanings, meaning_explanation, srs_stage);
         kanji.primary_reading_type = primary_reading_type;
         kanji.onyomi = onyomi;
         kanji.kunyomi = kunyomi;
         kanji.nanori = nanori;
         if(reading_explanation) kanji.reading_explanation = reading_explanation;
     }
-    editVocabulary(id, characters, meanings, readings, meaning_explanation, reading_explanation) {
-        let vocabulary = this.items[id];
-        this.editItem(vocabulary, characters, meanings, meaning_explanation);
+    editVocabulary(id, characters, meanings, readings, meaning_explanation, reading_explanation, srs_stage) {
+        let vocabulary = this.getItem(id);
+        this.editItem(vocabulary, characters, meanings, meaning_explanation, srs_stage);
         vocabulary.readings = readings;
         if(reading_explanation) vocabulary.reading_explanation = reading_explanation;
     }
-    editKanaVocabulary(id, characters, meanings, readings, meaning_explanation) {
-        let kanaVocabulary = this.items[id];
-        this.editItem(kanaVocabulary, characters, meanings, meaning_explanation);
+    editKanaVocabulary(id, characters, meanings, readings, meaning_explanation, srs_stage) {
+        let kanaVocabulary = this.getItem(id);
+        this.editItem(kanaVocabulary, characters, meanings, meaning_explanation, srs_stage);
         kanaVocabulary.readings = readings;
     }
-    removeItem(id) {
-        this.items.splice(id, 1);
+    removeItem(position) {
+        this.items.splice(position, 1);
     }
 
     getActiveReviews(packID) { // Get all items that were last reviewed more than 24 hours ago
@@ -264,7 +269,7 @@ class CustomItemPack {
         let pack = new CustomItemPack(object.name, object.author, object.version);
         pack.items = object.items.map(item => CustomItem.fromObject(item));
         pack.active = object.active;
-        pack.nextID = (object.lastID || pack.items.length); // If lastID is not present, use the length of the items array
+        pack.nextID = (object.nextID || pack.items.length); // If lastID is not present, use the length of the items array
         return pack;
     }
 }
@@ -332,7 +337,7 @@ class CustomPackProfile {
 
     submitReview(cantorNum, meaningIncorrectNum, readingIncorrectNum) {
         let [packID, itemID] = Utils.reverseCantorNumber(cantorNum);
-        let item = this.customPacks[packID].items[itemID];
+        let item = this.customPacks[packID].getItem(itemID);
         if(meaningIncorrectNum > 0 || readingIncorrectNum > 0) {
             item.decrementSRS();
         } else {
@@ -359,8 +364,13 @@ class Utils {
         let x = w - y;
         return [x, y];
     }
-    static get_controller(name) {
-        return Stimulus.getControllerForElementAndIdentifier(document.querySelector(`[data-controller~="${name}"]`),name);
+    static async get_controller(name) {
+        let controller;
+        while(!controller) {
+            controller = Stimulus.getControllerForElementAndIdentifier(document.querySelector(`[data-controller~="${name}"]`),name);
+            await new Promise(r => setTimeout(r, 50));
+        }
+        return controller;
     }
     static promise(){let a,b,c=new Promise(function(d,e){a=d;b=e;});c.resolve=a;c.reject=b;return c;}
 }

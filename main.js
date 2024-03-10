@@ -1,37 +1,78 @@
 let activePackProfile = await StorageManager.loadPackProfile("main");
+let quizStatsController;
 
 // ----------- If on review page -----------
 if (window.location.pathname.includes("/review")) {
     if(activePackProfile.getNumActiveReviews() === 0) return;
 
+    // Add style to root to prevent header flash
+    let style = document.createElement("style");
+    style.innerHTML = `
+    .character-header__characters {
+        opacity: 0;
+        transition: opacity 0.25s;
+    }
+    .character-header__loaded .character-header__characters {
+        opacity: 1;
+    }
+    `;
+    document.head.appendChild(style);
+
+    // Create observer objects to modify quiz queue and character header
+    let tempNode;
+    let scriptElementObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length > 0) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.tagName === "SCRIPT") {
+                        let newQuizQueueSRS = activePackProfile.getActiveReviewsSRS().join();
+                        node.innerHTML = "[" + newQuizQueueSRS + "," + node.innerHTML.slice(1);
+                        scriptElementObserver.disconnect();
+                    }
+                });
+            }
+        });
+    });
+    let observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length > 0) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.classList && node.classList.contains("character-header")) {
+                        tempNode = node;
+                    }
+                    else if (node.id === "quiz-queue") {
+                        node.childNodes.forEach(function(childNode) {
+                            if(childNode.tagName==="SCRIPT") {
+                                quizQueue = activePackProfile.getActiveReviews();
+                                childNode.innerHTML = JSON.stringify(quizQueue).slice(0, -1) + "," + childNode.innerHTML.slice(1);
+                                scriptElementObserver.observe(node, {
+                                    childList: true,
+                                    subtree: true
+                                });
+                                observer.disconnect();
+                                for(className of tempNode.classList) {
+                                    if(className.includes("character-header--")) {
+                                        tempNode.classList.remove(className);
+                                        tempNode.classList.add("character-header--" + activePackProfile.getActiveReviews()[0].type.toLowerCase());
+                                        // Add loaded class to character-header after 250ms
+                                        setTimeout(() => {
+                                            tempNode.classList.add("character-header__loaded");
+                                        }, 700);
+                                        break;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+    observer.observe(document, { childList: true, subtree: true });
+
     // Add custom items to the quiz queue
     document.addEventListener("DOMContentLoaded", () => {
-        let queueEl = document.getElementById('quiz-queue');
-        let parentEl = queueEl.parentElement;
-        queueEl.remove();
-        let cloneEl = queueEl.cloneNode(true);
-
-        let newQuizQueueSRS = activePackProfile.getActiveReviewsSRS().join();
-        cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML.replace("[", "[" + newQuizQueueSRS + ",");
-        let quizQueue = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
-        quizQueue = activePackProfile.getActiveReviews().concat(quizQueue);
-        cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(quizQueue);
-
-        parentEl.appendChild(cloneEl);
-
-        // Update remaining review count
-        let quizController;
-        let p = Utils.promise();
-        async function waitForController() {
-            quizController = Utils.get_controller('quiz-statistics');
-            if(quizController) {
-                quizController.remainingCountTarget.innerText = parseInt(quizController.remainingCountTarget.innerText) + 1;
-                p.resolve();
-            } else {
-                setTimeout(waitForController, 50);
-            }
-        }
-        waitForController();
+        loadControllers();
     });
 
     // Catch submission fetch and stop it if submitted item is a custom item
@@ -131,4 +172,10 @@ function parseHTML(html) {
     var t = document.createElement('template');
     t.innerHTML = html;
     return t.content;
+}
+
+async function loadControllers() {
+    quizStatsController = await Utils.get_controller('quiz-statistics');
+
+    quizStatsController.remainingCountTarget.innerText = parseInt(quizStatsController.remainingCountTarget.innerText) + activePackProfile.getNumActiveReviews();
 }

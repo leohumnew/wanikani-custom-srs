@@ -167,7 +167,7 @@ overviewPopupStyle.innerHTML = /*css*/ `
 /* Styling for the item edit tab */
 #tab-4__content:has(#item-type [value="Vocabulary"]:checked) #item-vocab-specific {
     display: grid !important }
-#tab-4__content:has(#item-type [value="Kana-vocabulary"]:checked) #item-kanavocab-specific {
+#tab-4__content:has(#item-type [value="KanaVocabulary"]:checked) #item-kanavocab-specific {
     display: grid !important }
 #tab-4__content:has(#item-type [value="Kanji"]:checked) #item-kanji-specific {
     display: grid !important }
@@ -243,7 +243,7 @@ overviewPopup.innerHTML = /*html*/ `
                     <option value="Radical">Radical</option>
                     <option value="Kanji">Kanji</option>
                     <option value="Vocabulary">Vocabulary</option>
-                    <option value="Kana-vocabulary">Kana Vocabulary</option>
+                    <option value="KanaVocabulary">Kana Vocabulary</option>
                 </select>
                 <label for="item-characters">Characters: </label>
                 <input id="item-characters" required type="text">
@@ -277,6 +277,19 @@ overviewPopup.innerHTML = /*html*/ `
                     <label for="kanji-reading-explanation">Reading Explanation: </label>
                     <input id="kanji-reading-explanation" type="text">
                 </div>
+                <label for="item-srs-stage">SRS Stage: </label>
+                <select id="item-srs-stage">
+                    <option value="0">Lesson</option>
+                    <option value="1">Apprentice 1</option>
+                    <option value="2">Apprentice 2</option>
+                    <option value="3">Apprentice 3</option>
+                    <option value="4">Apprentice 4</option>
+                    <option value="5">Guru 1</option>
+                    <option value="6">Guru 2</option>
+                    <option value="7">Master</option>
+                    <option value="8">Enlightened</option>
+                    <option value="9">Burned</option>
+                </select>
                 <button style="grid-column: 1 / span 2" type="submit">Add</button>
             </form>
         </div>
@@ -453,7 +466,8 @@ function updateEditItemTab(editItem) {
                 document.querySelector("#item-reading-explanation").value = editItemDetails.reading_explanation;
                 document.querySelector("#kanji-reading-explanation").value = editItemDetails.reading_explanation;
             }
-            document.querySelector("#tab-4__content button[type='submit']").innerText = "Update";
+            document.querySelector("#tab-4__content button[type='submit']").innerText = "Save";
+            document.querySelector("#item-srs-stage").value = editItemDetails.srs_stage;
         } else {
             document.querySelector("#item-characters").value = "";
             document.querySelector("#item-meanings").value = "";
@@ -465,6 +479,7 @@ function updateEditItemTab(editItem) {
             document.querySelector("#item-reading-explanation").value = "";
             document.querySelector("#kanji-reading-explanation").value = "";
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Add";
+            document.querySelector("#item-srs-stage").value = "0";
         }
         // Add event listener to form
         document.querySelector("#tab-4__content form").onsubmit = (e) => {
@@ -476,12 +491,13 @@ function updateEditItemTab(editItem) {
             let meaningExplanation = document.querySelector("#item-meaning-explanation").value;
             let readings, readingExplanation;
             let pack = activePackProfile.customPacks[document.querySelector("#pack-select").value];
+            let srs = document.querySelector("#item-srs-stage").value;
 
             // Add or edit item
             switch(itemType) {
                 case "Radical":
-                    if(editItem !== null) pack.editRadical(editItem, characters, meanings, meaningExplanation);
-                    else pack.addRadical(characters, meanings, meaningExplanation);
+                    if(editItem !== null) pack.editRadical(editItem, characters, meanings, meaningExplanation, srs);
+                    else pack.addRadical(characters, meanings, meaningExplanation, srs);
                     break;
                 case "Kanji":
                     let primary_reading_type = document.querySelector("#kanji-primary-reading").value;
@@ -492,19 +508,19 @@ function updateEditItemTab(editItem) {
                     let nanori = document.querySelector("#kanji-nanori").value;
                     nanori = nanori.trim() ? nanori.split(",").map(s => s.trim()) : [];
                     readingExplanation = document.querySelector("#kanji-reading-explanation").value;
-                    if(editItem !== null) pack.editKanji(editItem, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaningExplanation, readingExplanation);
-                    else pack.addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaningExplanation, readingExplanation);
+                    if(editItem !== null) pack.editKanji(editItem, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaningExplanation, readingExplanation, srs);
+                    else pack.addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaningExplanation, readingExplanation, srs);
                     break;
                 case "Vocabulary":
                     readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
                     readingExplanation = document.querySelector("#item-reading-explanation").value;
-                    if(editItem !== null) pack.editVocabulary(editItem, characters, meanings, readings, meaningExplanation, readingExplanation);
-                    else pack.addVocabulary(characters, meanings, readings, meaningExplanation, readingExplanation);
+                    if(editItem !== null) pack.editVocabulary(editItem, characters, meanings, readings, meaningExplanation, readingExplanation, srs);
+                    else pack.addVocabulary(characters, meanings, readings, meaningExplanation, readingExplanation, srs);
                     break;
                 case "KanaVocabulary":
                     readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
-                    if(editItem !== null) pack.editKanaVocabulary(editItem, characters, meanings, readings, meaningExplanation);
-                    else pack.addKanaVocabulary(characters, meanings, readings, meaningExplanation);
+                    if(editItem !== null) pack.editKanaVocabulary(editItem, characters, meanings, readings, meaningExplanation, srs);
+                    else pack.addKanaVocabulary(characters, meanings, readings, meaningExplanation, srs);
                     break;
                 default:
                     console.error("Invalid item type");
@@ -554,10 +570,10 @@ function loadPackEditDetails(i) {
                 </div>
             `;
             itemElement.querySelector(".edit-item").onclick = () => { // Item edit button
-                changeTab(4, j);
+                changeTab(4, item.id);
             };
             itemElement.querySelector(".delete-item").onclick = () => { // Item delete button
-                pack.items.splice(j, 1);
+                pack.removeItem(j);
                 loadPackEditDetails(i);
             };
             packItems.appendChild(itemElement);

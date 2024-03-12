@@ -4,57 +4,65 @@ let quizStatsController;
 
 // ----------- If on review page -----------
 if (window.location.pathname.includes("/review")) {
-    if(activePackProfile.getNumActiveReviews() === 0) return;
-
-    // Add style to root to prevent header flash
-    let headerStyle = document.createElement("style");
-    headerStyle.innerHTML = `
-    .character-header__characters {
-        opacity: 0;
-        transition: opacity 0.2s;
+    if(activePackProfile.getNumActiveReviews() !== 0) {
+        // Add style to root to prevent header flash
+        let headerStyle = document.createElement("style");
+        headerStyle.innerHTML = `
+        .character-header__characters {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .character-header__loaded .character-header__characters {
+            opacity: 1;
+        }
+        `;
+        document.head.append(headerStyle);
     }
-    .character-header__loaded .character-header__characters {
-        opacity: 1;
-    }
-    `;
-    document.head.append(headerStyle);
 
-    // Add custom items to the quiz queue
+    // Add custom items to the quiz queue and update captured WK review
     document.addEventListener("DOMContentLoaded", () => {
+        let changedFirstItem = false;
         let queueEl = document.getElementById('quiz-queue');
         let parentEl = queueEl.parentElement;
         queueEl.remove();
         let cloneEl = queueEl.cloneNode(true);
-
         let queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
         let SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
-        if((CustomSRSSettings.savedData.capturedWKReview && queueElement[0].id != CustomSRSSettings.savedData.capturedWKReview.id) || queueElement.length === 1) {
+
+        // Remove captured WK review from queue
+        if(queueElement.length === 1 || queueElement[1].id === CustomSRSSettings.savedData.capturedWKReview.id) {
             CustomSRSSettings.savedData.capturedWKReview = queueElement.shift();
             SRSElement.shift();
+            changedFirstItem = true;
         } else {
             CustomSRSSettings.savedData.capturedWKReview = queueElement[1];
             queueElement.splice(1, 1);
             SRSElement.splice(1, 1);
         }
-        queueElement = activePackProfile.getActiveReviews().concat(queueElement);
-        cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(queueElement);
 
-        SRSElement = JSON.parse("[" + activePackProfile.getActiveReviewsSRS().join(",") + "]").concat(SRSElement);
+        // Add custom items to queue
+        if(activePackProfile.getNumActiveReviews() !== 0) {
+            queueElement = activePackProfile.getActiveReviews().concat(queueElement);
+            SRSElement = JSON.parse("[" + activePackProfile.getActiveReviewsSRS().join(",") + "]").concat(SRSElement);
+            changedFirstItem = true;
+        }
+        cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(queueElement);
         cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = JSON.stringify(SRSElement);
 
         parentEl.appendChild(cloneEl);
-
         StorageManager.saveSettings();
 
-        let headerElement = document.querySelector(".character-header");
-        for(className of headerElement.classList) { // Fix header colour issues
-            if(className.includes("character-header--")) {
-                headerElement.classList.remove(className);
-                headerElement.classList.add("character-header--" + activePackProfile.getActiveReviews()[0].subject_category.toLowerCase());
-                setTimeout(() => {
-                    headerElement.classList.add("character-header__loaded");
-                }, 500);
-                break;
+        if(changedFirstItem) {
+            let headerElement = document.querySelector(".character-header");
+            for(className of headerElement.classList) { // Fix header colour issues
+                if(className.includes("character-header--")) {
+                    headerElement.classList.remove(className);
+                    headerElement.classList.add("character-header--" + activePackProfile.getActiveReviews()[0].subject_category.toLowerCase());
+                    setTimeout(() => {
+                        headerElement.classList.add("character-header__loaded");
+                    }, 500);
+                    break;
+                }
             }
         }
 
@@ -114,15 +122,14 @@ if (window.location.pathname.includes("/review")) {
             // If reviewCountElement is null, replace the span .lesson-and-review-count__item with some custom HTML
             if(reviewCountElement === null && activePackProfile.getNumActiveReviews() > 0) {
                 let reviewTile = data.querySelector(".lesson-and-review-count__item:nth-child(2)");
-                let customHTML = `
+                reviewTile.outerHTML = `
                 <a class="lesson-and-review-count__item" target="_top" href="/subjects/review">
                     <div class="lesson-and-review-count__count">${activePackProfile.getNumActiveReviews()}</div>
                     <div class="lesson-and-review-count__label">Reviews</div>
                 </a>
                 `;
-                reviewTile.outerHTML = customHTML;
             } else {
-                if(activePackProfile.getNumActiveReviews() > 0) reviewCountElement.innerHTML = parseInt(reviewCountElement.innerHTML) + activePackProfile.getNumActiveReviews() + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
+                if(activePackProfile.getNumActiveReviews() > 0 || (!CustomSRSSettings.savedData.capturedWKReview && parseInt(reviewCountElement.innerHTML) > 0) || parseInt(reviewCountElement.innerHTML) > 1) reviewCountElement.innerHTML = parseInt(reviewCountElement.innerHTML) + activePackProfile.getNumActiveReviews() + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
                 else {
                     let reviewTile = data.querySelector(".lesson-and-review-count__item:nth-child(2)");
                     reviewTile.outerHTML = `
@@ -149,7 +156,7 @@ if (window.location.pathname.includes("/review")) {
     document.addEventListener("DOMContentLoaded", () => {
         let reviewNumberElement = document.querySelector(".reviews-dashboard .reviews-dashboard__count-text span");
         reviewNumberElement.innerHTML = parseInt(reviewNumberElement.innerHTML) + activePackProfile.getNumActiveReviews() + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
-        console.log("Captured review item: " + CustomSRSSettings.savedData.capturedWKReview);
+        console.log("Captured review item: " + CustomSRSSettings.savedData.capturedWKReview.id);
 
         let reviewTile = document.querySelector("div.reviews-dashboard");
         if(reviewTile.querySelector(".reviews-dashboard__buttons") === null && activePackProfile.getNumActiveReviews() > 0) { // If failed to catch WK review and custom items are due, display error message
@@ -171,5 +178,5 @@ function parseHTML(html) {
 
 async function loadControllers() {
     quizStatsController = await Utils.get_controller('quiz-statistics');
-    quizStatsController.remainingCountTarget.innerText = parseInt(quizStatsController.remainingCountTarget.innerText) + activePackProfile.getNumActiveReviews();
+    quizStatsController.remainingCountTarget.innerText = parseInt(quizStatsController.remainingCountTarget.innerText) + activePackProfile.getNumActiveReviews() + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
 }

@@ -370,28 +370,46 @@ class Utils {
     static async get_controller(name) {
         let controller;
         while(!controller) {
-            controller = Stimulus.getControllerForElementAndIdentifier(document.querySelector(`[data-controller~="${name}"]`),name);
+            try {
+                controller = Stimulus.getControllerForElementAndIdentifier(document.querySelector(`[data-controller~="${name}"]`),name);
+            } catch(e) {
+                console.log("Waiting for controller " + name);
+            }
             await new Promise(r => setTimeout(r, 50));
         }
         return controller;
     }
-    static promise(){let a,b,c=new Promise(function(d,e){a=d;b=e;});c.resolve=a;c.reject=b;return c;}
+}
+
+class CustomSRSSettings {
+    static userSettings = {
+        showItemDueTime: true
+    };
+    static savedData = {
+        capturedWKReview: null
+    };
 }
 
 class StorageManager {
     // Get custom packs saved in GM storage
     static async loadPackProfile(profileName) {
         let savedPackProfile = CustomPackProfile.fromObject(await GM.getValue("customPackProfile_" + profileName, new CustomPackProfile()));
-        /*let savedPackProfile = new CustomPackProfile();
-        Object.assign(savedPackProfile, await GM.getValue("customPackProfile_" + profileName, new CustomPackProfile()));
-        // Convert CustomItemPacks and their CustomItems
-        savedPackProfile.customPacks = savedPackProfile.customPacks.map(pack => CustomItemPack.fromObject(pack));*/
         return savedPackProfile;
     }
 
     // Save custom packs to GM storage
     static async savePackProfile(packProfile, profileName) {
         GM.setValue("customPackProfile_" + profileName, packProfile);
+    }
+
+    // Settings
+    static async saveSettings() {
+        GM.setValue("custom_srs_user_data", CustomSRSSettings.userSettings);
+        GM.setValue("custom_srs_saved_data", CustomSRSSettings.savedData);
+    }
+    static async loadSettings() {
+        CustomSRSSettings.userSettings = await GM.getValue("custom_srs_user_data", CustomSRSSettings.userSettings);
+        CustomSRSSettings.savedData = await GM.getValue("custom_srs_saved_data", CustomSRSSettings.savedData);
     }
 
     static packFromJSON(json) {

@@ -54,7 +54,7 @@ if (window.location.pathname.includes("/review")) {
 
         if(changedFirstItem) {
             let headerElement = document.querySelector(".character-header");
-            for(className of headerElement.classList) { // Fix header colour issues
+            for(let className of headerElement.classList) { // Fix header colour issues
                 if(className.includes("character-header--")) {
                     headerElement.classList.remove(className);
                     headerElement.classList.add("character-header--" + activePackProfile.getActiveReviews()[0].subject_category.toLowerCase());

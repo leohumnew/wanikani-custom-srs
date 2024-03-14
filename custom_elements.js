@@ -1,16 +1,6 @@
 // ------------------------ Define and create custom HTML structures ------------------------
 const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"];
 
-// Util class
-function wkIcon(iconName) {
-    let icon = `
-    <svg class="wk-icon wk-icon--${iconName}" viewBox="0 0 512 512">
-        <use href="#wk-icon__${iconName}"></use>
-    </svg>
-    `
-    return icon;
-}
-
 // --------- Main popup ---------
 let overviewPopup = document.createElement("dialog");
 overviewPopup.id = "overview-popup";
@@ -203,7 +193,7 @@ overviewPopupStyle.innerHTML = /*css*/ `
 overviewPopup.innerHTML = /*html*/ `
     <header>
         <h1>WaniKani Custom SRS</h1>
-        <button class="close-button" onclick="document.getElementById('overview-popup').close();">${wkIcon("cross")}</button>
+        <button class="close-button" onclick="document.getElementById('overview-popup').close();">${Icons.customIconTxt("cross")}</button>
     </header>
     <div id="tabs">
         <input type="radio" name="custom-srs-tab" id="tab-1" checked>
@@ -239,7 +229,7 @@ overviewPopup.innerHTML = /*html*/ `
                 <input id="pack-version" required type="number" step="0.1">
                 <div style="grid-column: 1 / span 2">
                     <p>Items: </p>
-                    <button id="new-item-button"title="Add Item" type="button">${wkIcon("plus")}</button>
+                    <button id="new-item-button"title="Add Item" type="button">${Icons.customIconTxt("plus")}</button>
                 </div>
                 <ul style="grid-column: 1 / span 2" class="content-box" id="pack-items"></ul>
                 <button style="grid-column: 1 / span 2" type="submit">Save</button>
@@ -404,9 +394,9 @@ function updatePacksTab() {
             <div>
                 <span>Active: </span>
                 <input type="checkbox" id="pack-${i}-active" ${pack.active ? "checked" : ""}>
-                <button class="edit-pack" title="Edit Pack">${wkIcon("pencil")}</button>
-                <button class="export-pack" title="Export Pack">${wkIcon("globe")}</button>
-                <button class="delete-pack" title="Delete Pack">${wkIcon("cross")}</button>
+                <button class="edit-pack" title="Edit Pack">${Icons.customIconTxt("edit")}</button>
+                <button class="export-pack" title="Export Pack">${Icons.customIconTxt("download")}</button>
+                <button class="delete-pack" title="Delete Pack">${Icons.customIconTxt("cross")}</button>
             </div>
         `;
         packElement.querySelector(".edit-pack").onclick = () => { // Pack edit button
@@ -586,8 +576,8 @@ function loadPackEditDetails(i) {
             itemElement.innerHTML = `
                 ${item.characters} - ${item.meanings[0]} - SRS: ${srsNames[item.srs_stage]} ${CustomSRSSettings.userSettings.showItemDueTime ? "- Due: " + item.getTimeUntilReview() : ""}
                 <div>
-                    <button class="edit-item" title="Edit Item" type="button">${wkIcon("pencil")}</button>
-                    <button class="delete-item" title="Delete Item" type="button">${wkIcon("cross")}</button>
+                    <button class="edit-item" title="Edit Item" type="button">${Icons.customIconTxt("edit")}</button>
+                    <button class="delete-item" title="Delete Item" type="button">${Icons.customIconTxt("cross")}</button>
                 </div>
             `;
             itemElement.querySelector(".edit-item").onclick = () => { // Item edit button
@@ -650,7 +640,7 @@ function makeDetailsHTML(item) {
                     <a class='wk-nav__anchor' id='information'></a>
                     <h2 class='subject-section__title'>
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
-                            <span class="subject-section__toggle-icon">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
                             <span class='subject-section__title-text'>Name</span>
                         </a>
                     </h2>
@@ -675,7 +665,7 @@ function makeDetailsHTML(item) {
                             <p class="subject-section__text">${item.meaning_explanation}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
-                                    <i class="subject-hint__title-icon" aria-hidden="true">${wkIcon("info")}</i>
+                                    <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
                                     <span class="subject-hint__title-text">Hints</span>
                                 </h3>
                                 <p class="subject-hint__text"></p>
@@ -692,7 +682,7 @@ function makeDetailsHTML(item) {
                     <a class='wk-nav__anchor' id='amalgamations'></a>
                     <h2 class='subject-section__title'>
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-amalgamations">
-                            <span class="subject-section__toggle-icon">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
                             <span class='subject-section__title-text'>Found In Kanji</span>
                         </a>
                     </h2>
@@ -725,7 +715,7 @@ function makeDetailsHTML(item) {
                 <section class="subject-section subject-section--components subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
                     <h2 class="subject-section__title">
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-components" data-controller-connected="true">
-                            <span class="subject-section__toggle-icon" aria-hidden="true">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon" aria-hidden="true">${Icons.customIconTxt("chevron-right")}</span>
                             <span class="subject-section__title-text">Radical Combination</span>
                         </a>
                     </h2>
@@ -751,7 +741,7 @@ function makeDetailsHTML(item) {
                     <a class='wk-nav__anchor' id='meaning'></a>
                     <h2 class='subject-section__title'>
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
-                            <span class="subject-section__toggle-icon">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
                             <span class='subject-section__title-text'>Meaning</span>
                         </a>
                     </h2>
@@ -776,7 +766,7 @@ function makeDetailsHTML(item) {
                             <p class="subject-section__text">${item.meaning_explanation}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
-                                    <i class="subject-hint__title-icon" aria-hidden="true">${wkIcon("info")}</i>
+                                    <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
                                     <span class="subject-hint__title-text">Hints</span>
                                 </h3>
                                 <p class="subject-hint__text"></p>
@@ -793,7 +783,7 @@ function makeDetailsHTML(item) {
                     <a class='wk-nav__anchor' id='reading'></a>
                     <h2 class='subject-section__title'>
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-reading">
-                            <span class="subject-section__toggle-icon">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
                             <span class='subject-section__title-text'>Reading</span>
                         </a>
                     </h2>
@@ -825,7 +815,7 @@ function makeDetailsHTML(item) {
                             <p class="subject-section__text">${item.reading_explanation}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
-                                    <i class="subject-hint__title-icon" aria-hidden="true">${wkIcon("info")}</i>
+                                    <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
                                     <span class="subject-hint__title-text">Hints</span>
                                 </h3>
                                 <p class="subject-hint__text"></p>
@@ -842,7 +832,7 @@ function makeDetailsHTML(item) {
                     <a class="wk-nav__anchor" id="amalgamations"></a>
                     <h2 class="subject-section__title">
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-amalgamations" data-controller-connected="true">
-                            <span class="subject-section__toggle-icon" aria-hidden="true">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon" aria-hidden="true">${Icons.customIconTxt("chevron-right")}</span>
                             <span class="subject-section__title-text">Found In Vocabulary</span>
                         </a>
                     </h2>
@@ -876,7 +866,7 @@ function makeDetailsHTML(item) {
                     <a class='wk-nav__anchor' id='meaning'></a>
                     <h2 class='subject-section__title'>
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
-                            <span class="subject-section__toggle-icon">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
                             <span class='subject-section__title-text'>Meaning</span>
                         </a>
                     </h2>
@@ -905,7 +895,7 @@ function makeDetailsHTML(item) {
                             <p class="subject-section__text">${item.meaning_explanation}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
-                                    <i class="subject-hint__title-icon" aria-hidden="true"${wkIcon("info")}></i>
+                                    <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
                                     <span class="subject-hint__title-text">Hints</span>
                                 </h3>
                                 <p class="subject-hint__text"></p>
@@ -922,7 +912,7 @@ function makeDetailsHTML(item) {
                     <a class='wk-nav__anchor' id='reading'></a>
                     <h2 class='subject-section__title'>
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-reading">
-                            <span class="subject-section__toggle-icon">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
                             <span class='subject-section__title-text'>Reading</span>
                         </a>
                     </h2>
@@ -943,7 +933,7 @@ function makeDetailsHTML(item) {
                             <p class="subject-section__text">${item.reading_explanation}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
-                                    <i class="subject-hint__title-icon" aria-hidden="true">${wkIcon("info")}</i>
+                                    <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
                                     <span class="subject-hint__title-text">Hints</span>
                                 </h3>
                                 <p class="subject-hint__text"></p>
@@ -960,7 +950,7 @@ function makeDetailsHTML(item) {
                     <a class="wk-nav__anchor" id="context"></a>
                     <h2 class="subject-section__title">
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-context" data-controller-connected="true">
-                            <span class="subject-section__toggle-icon" aria-hidden="true">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon" aria-hidden="true">${Icons.customIconTxt("chevron-right")}</span>
                             <span class="subject-section__title-text">Context</span>
                         </a>
                     </h2>
@@ -1000,7 +990,7 @@ function makeDetailsHTML(item) {
                     <a class="wk-nav__anchor" id="components"></a>
                     <h2 class="subject-section__title">
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-components" data-controller-connected="true">
-                            <span class="subject-section__toggle-icon" aria-hidden="true">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon" aria-hidden="true">${Icons.customIconTxt("chevron-right")}</span>
                             <span class="subject-section__title-text">Kanji Composition</span>
                         </a>
                     </h2>
@@ -1034,7 +1024,7 @@ function makeDetailsHTML(item) {
                     <a class='wk-nav__anchor' id='meaning'></a>
                     <h2 class='subject-section__title'>
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
-                            <span class="subject-section__toggle-icon">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
                             <span class='subject-section__title-text'>Meaning</span>
                         </a>
                     </h2>
@@ -1063,7 +1053,7 @@ function makeDetailsHTML(item) {
                             <p class="subject-section__text">${item.meaning_explanation}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
-                                    <i class="subject-hint__title-icon" aria-hidden="true">${wkIcon("info")}</i>
+                                    <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
                                     <span class="subject-hint__title-text">Hints</span>
                                 </h3>
                                 <p class="subject-hint__text"></p>
@@ -1080,7 +1070,7 @@ function makeDetailsHTML(item) {
                     <a class='wk-nav__anchor' id='reading'></a>
                     <h2 class='subject-section__title'>
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-reading">
-                            <span class="subject-section__toggle-icon">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
                             <span class='subject-section__title-text'>Pronunciation</span>
                         </a>
                     </h2>
@@ -1103,7 +1093,7 @@ function makeDetailsHTML(item) {
                     <a class="wk-nav__anchor" id="context"></a>
                     <h2 class="subject-section__title">
                         <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-context" data-controller-connected="true">
-                            <span class="subject-section__toggle-icon" aria-hidden="true">${wkIcon("chevron-right")}</span>
+                            <span class="subject-section__toggle-icon" aria-hidden="true">${Icons.customIconTxt("chevron-right")}</span>
                             <span class="subject-section__title-text">Context</span>
                         </a>
                     </h2>

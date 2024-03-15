@@ -218,24 +218,24 @@ overviewPopup.innerHTML = /*html*/ `
         <input type="radio" name="custom-srs-tab" id="tab-3">
         <label for="tab-3">Edit Pack</label>
         <div id="tab-3__content">
-            <label for="pack-select">Pack: </label>
+            <label for="pack-select">Pack:</label>
             <select id="pack-select"></select><br>
             <form class="content-box pack-box">
-                <label for="pack-name">Name: </label>
+                <label for="pack-name">Name:</label>
                 <input id="pack-name" required type="text">
                 <label for="pack-author">Author: </label>
                 <input id="pack-author" required type="text">
-                <label for="pack-version">Version: </label>
+                <label for="pack-version">Version:</label>
                 <input id="pack-version" required type="number" step="0.1">
                 <div style="grid-column: 1 / span 2">
-                    <p>Items: </p>
+                    <p>Items:</p>
                     <button id="new-item-button"title="Add Item" type="button">${Icons.customIconTxt("plus")}</button>
                 </div>
                 <ul style="grid-column: 1 / span 2" class="content-box" id="pack-items"></ul>
                 <button style="grid-column: 1 / span 2" type="submit">Save</button>
             </form>
             <form class="content-box import-box" style="display: none;">
-                <label for="item-type">Paste Pack JSON here: </label>
+                <label for="item-type">Paste Pack JSON here:</label>
                 <textarea id="pack-import" required></textarea>
                 <button style="grid-column: 1 / span 2" type="submit">Import</button>
             </form>
@@ -246,46 +246,50 @@ overviewPopup.innerHTML = /*html*/ `
         <div id="tab-4__content">
             <div>Select item from Pack edit tab.</div>
             <form class="content-box" style="display: none;">
-                <label for="item-type">Type: </label>
+                <label for="item-type">Type:</label>
                 <select id="item-type">
                     <option value="Radical">Radical</option>
                     <option value="Kanji">Kanji</option>
                     <option value="Vocabulary">Vocabulary</option>
                     <option value="KanaVocabulary">Kana Vocabulary</option>
                 </select>
-                <label for="item-characters">Characters: </label>
+                <label for="item-characters">Characters:</label>
                 <input id="item-characters" required type="text">
-                <label for="item-meanings">Meanings (comma separated): </label>
+                <label for="item-meanings">Meanings (comma separated):</label>
                 <input id="item-meanings" required type="text">
-                <label for="item-meaning-explanation">Meaning Explanation: </label>
+                <label for="item-meaning-explanation">Meaning Explanation:</label>
                 <input id="item-meaning-explanation" type="text">
                 <div id="item-vocab-specific" style="display: none; grid-column: 1 / span 2">
-                    <label for="item-readings">Readings (comma separated): </label>
+                    <label for="item-readings">Readings (comma separated):</label>
                     <input id="item-readings" type="text">
-                    <label for="item-reading-explanation">Reading Explanation: </label>
+                    <label for="item-reading-explanation">Reading Explanation:</label>
                     <input id="item-reading-explanation" type="text">
+                    <label for="item-context-sentences">Context Sentences (comma separated - each jp,en):</label>
+                    <input id="item-context-sentences" type="text">
                 </div>
                 <div id="item-kanavocab-specific" style="display: none; grid-column: 1 / span 2">
-                    <label for="item-kana-readings">Readings (comma separated): </label>
-                    <input id="item-kana-readings" type="text">
+                    <label for="kana-readings">Readings (comma separated):</label>
+                    <input id="kana-readings" type="text">
+                    <label for="kana-context-sentences">Context Sentences (comma separated - each jp,en):</label>
+                    <input id="kana-context-sentences" type="text">
                 </div>
                 <div id="item-kanji-specific" style="display: none; grid-column: 1 / span 2">
-                    <label for="knaji-primary-reading">Primary Reading: </label>
+                    <label for="knaji-primary-reading">Primary Reading:</label>
                     <select id="kanji-primary-reading">
                         <option value="onyomi">On'yomi</option>
                         <option value="kunyomi">Kun'yomi</option>
                         <option value="nanori">Nanori</option>
                     </select>
-                    <label for="kanji-onyomi">On'yomi: </label>
+                    <label for="kanji-onyomi">On'yomi:</label>
                     <input id="kanji-onyomi" type="text">
-                    <label for="kanji-kunyomi">Kun'yomi: </label>
+                    <label for="kanji-kunyomi">Kun'yomi:</label>
                     <input id="kanji-kunyomi" type="text">
-                    <label for="kanji-nanori">Nanori: </label>
+                    <label for="kanji-nanori">Nanori:</label>
                     <input id="kanji-nanori" type="text">
-                    <label for="kanji-reading-explanation">Reading Explanation: </label>
+                    <label for="kanji-reading-explanation">Reading Explanation:</label>
                     <input id="kanji-reading-explanation" type="text">
                 </div>
-                <label for="item-srs-stage">SRS Stage: </label>
+                <label for="item-srs-stage">SRS Stage:</label>
                 <select id="item-srs-stage">
                     <option value="0">Lesson</option>
                     <option value="1">Apprentice 1</option>
@@ -306,7 +310,15 @@ overviewPopup.innerHTML = /*html*/ `
         <label for="tab-5">Settings</label>
         <div id="tab-5__content">
             <label for="settingsShowDueTime">Show item due times</label>
-            <input type="checkbox" id="settingsShowDueTime" checked>
+            <input type="checkbox" id="settingsShowDueTime" checked><br>
+            <label for="settingsExportSRSData">Include SRS data in exports</label>
+            <input type="checkbox" id="settingsExportSRSData"><br>
+            <label for="settingsItemQueueMode">Position to insert custom items in reviews</label>
+            <select id="settingsItemQueueMode">
+                <option value="start">Start</option>
+                <option value="weighted-start">Random, weighted towards start</option>
+                <option value="random">Random</option>
+            </select>
         </div>
     </div>
 `;
@@ -460,7 +472,10 @@ function updateEditItemTab(editItem) {
             document.querySelector("#item-characters").value = editItemDetails.characters;
             document.querySelector("#item-meanings").value = editItemDetails.meanings.join(", ");
             document.querySelector("#item-meaning-explanation").value = editItemDetails.meaning_explanation;
-            if(editItemDetails.readings) document.querySelector("#item-readings").value = editItemDetails.readings.join(", ");
+            if(editItemDetails.readings) {
+                document.querySelector("#item-readings").value = editItemDetails.readings.join(", ");
+                document.querySelector("#kana-readings").value = editItemDetails.readings.join(", ");
+            }
             if(editItemDetails.primary_reading_type) document.querySelector("#kanji-primary-reading").value = editItemDetails.primary_reading_type;
             if(editItemDetails.onyomi) document.querySelector("#kanji-onyomi").value = editItemDetails.onyomi.join(", ");
             if(editItemDetails.kunyomi) document.querySelector("#kanji-kunyomi").value = editItemDetails.kunyomi.join(", ");
@@ -469,18 +484,16 @@ function updateEditItemTab(editItem) {
                 document.querySelector("#item-reading-explanation").value = editItemDetails.reading_explanation;
                 document.querySelector("#kanji-reading-explanation").value = editItemDetails.reading_explanation;
             }
+            if(editItemDetails.context_sentences) {
+                document.querySelector("#item-context-sentences").value = editItemDetails.context_sentences.join(", ");
+                document.querySelector("#kana-context-sentences").value = editItemDetails.context_sentences.join(", ");
+            }
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Save";
             document.querySelector("#item-srs-stage").value = editItemDetails.srs_stage;
         } else {
-            document.querySelector("#item-characters").value = "";
-            document.querySelector("#item-meanings").value = "";
-            document.querySelector("#item-readings").value = "";
-            document.querySelector("#kanji-onyomi").value = "";
-            document.querySelector("#kanji-kunyomi").value = "";
-            document.querySelector("#kanji-nanori").value = "";
-            document.querySelector("#item-meaning-explanation").value = "";
-            document.querySelector("#item-reading-explanation").value = "";
-            document.querySelector("#kanji-reading-explanation").value = "";
+            ["#item-context-sentences", "#kana-context-sentences", "#kanji-reading-explanation", "#item-reading-explanation", "#item-meaning-explanation", "#item-characters", "#item-meanings", "#kana-readings", "#item-readings", "#kanji-onyomi", "#kanji-kunyomi", "#kanji-nanori"].forEach((s) => {
+                document.querySelector(s).value = "";
+            });
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Add";
             document.querySelector("#item-srs-stage").value = "0";
         }
@@ -492,7 +505,7 @@ function updateEditItemTab(editItem) {
             let characters = document.querySelector("#item-characters").value;
             let meanings = document.querySelector("#item-meanings").value.split(",").map(s => s.trim());
             let meaningExplanation = document.querySelector("#item-meaning-explanation").value;
-            let readings, readingExplanation;
+            let readings, readingExplanation, contextSentences;
             let pack = activePackProfile.customPacks[document.querySelector("#pack-select").value];
             let srs = document.querySelector("#item-srs-stage").value;
 
@@ -517,13 +530,17 @@ function updateEditItemTab(editItem) {
                 case "Vocabulary":
                     readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
                     readingExplanation = document.querySelector("#item-reading-explanation").value;
-                    if(editItem !== null) pack.editVocabulary(editItem, characters, meanings, readings, meaningExplanation, readingExplanation, srs);
-                    else pack.addVocabulary(characters, meanings, readings, meaningExplanation, readingExplanation, srs);
+                    let ctxEl = document.querySelector("#item-context-sentences").value;
+                    contextSentences = ctxEl.trim() ? ctxEl.split(",").map(s => s.trim()) : [];
+                    if(editItem !== null) pack.editVocabulary(editItem, characters, meanings, readings, meaningExplanation, readingExplanation, srs, contextSentences);
+                    else pack.addVocabulary(characters, meanings, readings, meaningExplanation, readingExplanation, srs, contextSentences);
                     break;
                 case "KanaVocabulary":
-                    readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
-                    if(editItem !== null) pack.editKanaVocabulary(editItem, characters, meanings, readings, meaningExplanation, srs);
-                    else pack.addKanaVocabulary(characters, meanings, readings, meaningExplanation, srs);
+                    readings = document.querySelector("#kana-readings").value.split(",").map(s => s.trim());
+                    let ctxEl2 = document.querySelector("#kana-context-sentences").value;
+                    contextSentences = ctxEl2.trim() ? ctxEl2.split(",").map(s => s.trim()): [];
+                    if(editItem !== null) pack.editKanaVocabulary(editItem, characters, meanings, readings, meaningExplanation, srs, contextSentences);
+                    else pack.addKanaVocabulary(characters, meanings, readings, meaningExplanation, srs, contextSentences);
                     break;
                 default:
                     console.error("Invalid item type");
@@ -546,6 +563,16 @@ function updateSettingsTab() {
     document.querySelector("#settingsShowDueTime").checked = CustomSRSSettings.userSettings.showItemDueTime;
     document.querySelector("#settingsShowDueTime").onchange = () => {
         CustomSRSSettings.userSettings.showItemDueTime = document.querySelector("#settingsShowDueTime").checked;
+        StorageManager.saveSettings();
+    };
+    document.querySelector("#settingsItemQueueMode").value = CustomSRSSettings.userSettings.itemQueueMode ? CustomSRSSettings.userSettings.itemQueueMode : "start";
+    document.querySelector("#settingsItemQueueMode").onchange = () => {
+        CustomSRSSettings.userSettings.itemQueueMode = document.querySelector("#settingsItemQueueMode").value;
+        StorageManager.saveSettings();
+    };
+    document.querySelector("#settingsExportSRSData").checked = CustomSRSSettings.userSettings.exportSRSData;
+    document.querySelector("#settingsExportSRSData").onchange = () => {
+        CustomSRSSettings.userSettings.exportSRSData = document.querySelector("#settingsExportSRSData").checked;
         StorageManager.saveSettings();
     };
 }
@@ -630,6 +657,18 @@ function loadPackEditDetails(i) {
 }
 
 // ---------- Item details ----------
+function buildContextSentencesHTML(ctxArray) {
+    let out = "";
+    for(let i = 0; i < ctxArray.length; i += 2) {
+        out += `
+        <div class="subject-section__text subject-section__text--grouped">
+            <p lang="ja">${ctxArray[i]}</p>
+            <p>${ctxArray[i+1]}</p>
+        </div>
+        `;
+    }
+    return out;
+}
 function makeDetailsHTML(item) {
     switch(item.type) {
         case "Radical":
@@ -978,10 +1017,7 @@ function makeDetailsHTML(item) {
                         </section>-->
                         <section class="subject-section__subsection">
                             <h3 class="subject-section__subtitle">Context Sentences</h3>
-                            <!--<div class="subject-section__text subject-section__text--grouped">
-                                <p lang="ja">私たちの町では、米の農業をしてる人々が多いです。</p>
-                                <p>In our town, there are many people who are farming rice.</p>
-                            </div>-->
+                            ${item.context_sentences.length > 0 ? buildContextSentencesHTML(item.context_sentences) : "No context sentences set."}
                         </section>
                     </section>
                 </section>
@@ -1121,10 +1157,7 @@ function makeDetailsHTML(item) {
                         </section>-->
                         <section class="subject-section__subsection">
                             <h3 class="subject-section__subtitle">Context Sentences</h3>
-                            <!--<div class="subject-section__text subject-section__text--grouped">
-                                <p lang="ja">このパン、５ドルだって。</p>
-                                <p>It says this bread costs $5.</p>
-                            </div>-->
+                            ${item.context_sentences.length > 0 ? buildContextSentencesHTML(item.context_sentences) : "No context sentences set."}
                         </section>
                     </section>
                 </section>

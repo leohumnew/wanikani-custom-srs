@@ -9,11 +9,10 @@ if (window.location.pathname.includes("/review")) {
         let headerStyle = document.createElement("style");
         headerStyle.innerHTML = `
         .character-header__characters {
-            opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.15s;
         }
-        .character-header__loaded .character-header__characters {
-            opacity: 1;
+        .character-header__loading .character-header__characters {
+            opacity: 0;
         }
         `;
         document.head.append(headerStyle);
@@ -28,7 +27,7 @@ if (window.location.pathname.includes("/review")) {
         let cloneEl = queueEl.cloneNode(true);
         let queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
         let SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
-
+        console.log("capturing");
         // Remove captured WK review from queue
         if(queueElement.length === 1 || (CustomSRSSettings.savedData.capturedWKReview && queueElement[1].id === CustomSRSSettings.savedData.capturedWKReview.id)) {
             CustomSRSSettings.savedData.capturedWKReview = queueElement.shift();
@@ -44,9 +43,33 @@ if (window.location.pathname.includes("/review")) {
 
         // Add custom items to queue
         if(activePackProfile.getNumActiveReviews() !== 0) {
-            queueElement = activePackProfile.getActiveReviews().concat(queueElement);
-            SRSElement = JSON.parse("[" + activePackProfile.getActiveReviewsSRS().join(",") + "]").concat(SRSElement);
-            changedFirstItem = true;
+            switch(CustomSRSSettings.userSettings.itemQueueMode) {
+                case "weighted-start":
+                    let reviewsToAddW = activePackProfile.getActiveReviews();
+                    let reviewsSRSToAddW = activePackProfile.getActiveReviewsSRS();
+                    for(let i = 0; i < reviewsToAddW.length; i++) {
+                        let pos = Math.floor(Math.random() * queueElement.length / 4);
+                        if(pos === 0) changedFirstItem = true;
+                        queueElement.splice(pos, 0, reviewsToAddW[i]);
+                        SRSElement.splice(pos, 0, reviewsSRSToAddW[i]);
+                    }
+                    break;
+                case "random":
+                    let reviewsToAdd = activePackProfile.getActiveReviews();
+                    let reviewsSRSToAdd = activePackProfile.getActiveReviewsSRS();
+                    for(let i = 0; i < reviewsToAdd.length; i++) {
+                        let pos = Math.floor(Math.random() * queueElement.length);
+                        if(pos === 0) changedFirstItem = true;
+                        queueElement.splice(pos, 0, reviewsToAdd[i]);
+                        SRSElement.splice(pos, 0, reviewsSRSToAdd[i]);
+                    }
+                    break;
+                case "start":
+                    changedFirstItem = true;
+                    queueElement = activePackProfile.getActiveReviews().concat(queueElement);
+                    SRSElement = activePackProfile.getActiveReviewsSRS().concat(SRSElement);
+                    break;
+            }
         }
         cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(queueElement);
         cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = JSON.stringify(SRSElement);
@@ -56,12 +79,13 @@ if (window.location.pathname.includes("/review")) {
 
         if(changedFirstItem) {
             let headerElement = document.querySelector(".character-header");
+            headerElement.classList.add("character-header__loading");
             for(let className of headerElement.classList) { // Fix header colour issues
                 if(className.includes("character-header--")) {
                     headerElement.classList.remove(className);
                     headerElement.classList.add("character-header--" + activePackProfile.getActiveReviews()[0].subject_category.toLowerCase());
                     setTimeout(() => {
-                        headerElement.classList.add("character-header__loaded");
+                        headerElement.classList.remove("character-header__loading");
                     }, 500);
                     break;
                 }

@@ -160,18 +160,22 @@ overviewPopupStyle.innerHTML = /*css*/ `
     display: none }
 #tab-3__content:has(#pack-select [value="import"]:checked) .import-box {
     display: grid !important }
+#tab-3__content:has(#pack-lvl-type [value="internal"]:checked) .pack-lvl-specific {
+    display: grid !important }
+#tab-3__content:has(#pack-lvl-type [value="wk"]:checked) .wk-lvl-warn {
+    display: grid !important }
 
 #pack-items {
     background-color: var(--color-menu, white) }
 
 /* Styling for the item edit tab */
-#tab-4__content:has(#item-type [value="Vocabulary"]:checked) #item-vocab-specific {
+#tab-4__content:has(#item-type [value="Vocabulary"]:checked) .item-vocab-specific {
     display: grid !important }
-#tab-4__content:has(#item-type [value="KanaVocabulary"]:checked) #item-kanavocab-specific {
+#tab-4__content:has(#item-type [value="KanaVocabulary"]:checked) .item-kanavocab-specific {
     display: grid !important }
-#tab-4__content:has(#item-type [value="Kanji"]:checked) #item-kanji-specific {
+#tab-4__content:has(#item-type [value="Kanji"]:checked) .item-kanji-specific {
     display: grid !important }
-#tab-4__content .content-box, #tab-4__content .content-box > div, #tab-3__content > .content-box {
+#tab-4__content .content-box, #tab-4__content .content-box > div, #tab-3__content > .content-box, #tab-3__content > .content-box > div {
     display: grid;
     gap: 0.5rem;
     grid-template-columns: 1fr 1fr;
@@ -227,9 +231,22 @@ overviewPopup.innerHTML = /*html*/ `
                 <input id="pack-author" required type="text">
                 <label for="pack-version">Version:</label>
                 <input id="pack-version" required type="number" step="0.1">
+                <label for="pack-lvl-type">Pack Levelling Type:</label>
+                <select id="pack-lvl-type" required>
+                    <option value="none">No Levels</option>
+                    <option value="internal">Pack Levels</option>
+                    <option value="wk">WaniKani Levels</option>
+                </select>
+                <div class="wk-lvl-warn" style="display: none; grid-column: 1 / span 2; margin: 0; color: red">
+                    <p style="grid-column: 1 / span 2"><i>Warning: Make sure API key is set in Custom SRS settings.</i></p>
+                </div>
+                <div class="pack-lvl-specific" style="display: none; grid-column: 1 / span 2; margin: 0">
+                    <label for="pack-lvl">Pack Level (start at 1 recommended):</label>
+                    <input id="pack-lvl" required type="number">
+                </div>
                 <div style="grid-column: 1 / span 2">
                     <p>Items:</p>
-                    <button id="new-item-button"title="Add Item" type="button">${Icons.customIconTxt("plus")}</button>
+                    <button id="new-item-button" title="Add Item" type="button" style="margin-left: auto">${Icons.customIconTxt("plus")}</button>
                 </div>
                 <ul style="grid-column: 1 / span 2" class="content-box" id="pack-items"></ul>
                 <button style="grid-column: 1 / span 2" type="submit">Save</button>
@@ -257,37 +274,24 @@ overviewPopup.innerHTML = /*html*/ `
                 <input id="item-characters" required type="text">
                 <label for="item-meanings">Meanings (comma separated):</label>
                 <input id="item-meanings" required type="text">
-                <label for="item-meaning-explanation">Meaning Explanation:</label>
-                <input id="item-meaning-explanation" type="text">
-                <div id="item-vocab-specific" style="display: none; grid-column: 1 / span 2">
+                <div class="item-vocab-specific item-kanavocab-specific" style="display: none; grid-column: 1 / span 2">
                     <label for="item-readings">Readings (comma separated):</label>
                     <input id="item-readings" type="text">
-                    <label for="item-reading-explanation">Reading Explanation:</label>
-                    <input id="item-reading-explanation" type="text">
-                    <label for="item-context-sentences">Context Sentences (comma separated - each jp,en):</label>
-                    <input id="item-context-sentences" type="text">
                 </div>
-                <div id="item-kanavocab-specific" style="display: none; grid-column: 1 / span 2">
-                    <label for="kana-readings">Readings (comma separated):</label>
-                    <input id="kana-readings" type="text">
-                    <label for="kana-context-sentences">Context Sentences (comma separated - each jp,en):</label>
-                    <input id="kana-context-sentences" type="text">
-                </div>
-                <div id="item-kanji-specific" style="display: none; grid-column: 1 / span 2">
+                <div class="item-kanji-specific" style="display: none; grid-column: 1 / span 2">
                     <label for="knaji-primary-reading">Primary Reading:</label>
                     <select id="kanji-primary-reading">
                         <option value="onyomi">On'yomi</option>
                         <option value="kunyomi">Kun'yomi</option>
                         <option value="nanori">Nanori</option>
                     </select>
+                    <p style="grid-column: 1 / span 2"><i>Please enter at least one of the three readings:</i></p>
                     <label for="kanji-onyomi">On'yomi:</label>
                     <input id="kanji-onyomi" type="text">
                     <label for="kanji-kunyomi">Kun'yomi:</label>
                     <input id="kanji-kunyomi" type="text">
                     <label for="kanji-nanori">Nanori:</label>
                     <input id="kanji-nanori" type="text">
-                    <label for="kanji-reading-explanation">Reading Explanation:</label>
-                    <input id="kanji-reading-explanation" type="text">
                 </div>
                 <label for="item-srs-stage">SRS Stage:</label>
                 <select id="item-srs-stage">
@@ -302,6 +306,19 @@ overviewPopup.innerHTML = /*html*/ `
                     <option value="8">Enlightened</option>
                     <option value="9">Burned</option>
                 </select>
+                <h3 style="grid-column: 1 / span 2">Optional</h3> <!-- Optional elements -->
+                <label for="item-level">Item Unlock Level:</label>
+                <input id="item-level" type="number">
+                <label for="item-meaning-explanation">Meaning Explanation:</label>
+                <input id="item-meaning-explanation" type="text">
+                <div class="item-kanji-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2">
+                    <label for="item-reading-explanation">Reading Explanation:</label>
+                    <input id="item-reading-explanation" type="text">
+                </div>
+                <div class="item-kanavocab-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2">
+                    <label for="item-context-sentences">Context Sentences (comma separated - each jp,en):</label>
+                    <input id="item-context-sentences" type="text">
+                </div>
                 <button style="grid-column: 1 / span 2" type="submit">Add</button>
             </form>
         </div>
@@ -318,7 +335,9 @@ overviewPopup.innerHTML = /*html*/ `
                 <option value="start">Start</option>
                 <option value="weighted-start">Random, weighted towards start</option>
                 <option value="random">Random</option>
-            </select>
+            </select><br>
+            <label for="settingsWKAPIKey">WaniKani API Key</label>
+            <input type="text" id="settingsWKAPIKey" placeholder="API key">
         </div>
     </div>
 `;
@@ -467,32 +486,24 @@ function updateEditItemTab(editItem) {
         document.querySelector("#tab-4__content > form").style.display = "grid";
         document.querySelector("#tab-4__content > div").style.display = "none";
         if(editItem !== null) {
-            let editItemDetails = activePackProfile.customPacks[document.querySelector("#pack-select").value].getItem(editItem);
-            document.querySelector("#item-type").value = editItemDetails.type;
-            document.querySelector("#item-characters").value = editItemDetails.characters;
-            document.querySelector("#item-meanings").value = editItemDetails.meanings.join(", ");
-            document.querySelector("#item-meaning-explanation").value = editItemDetails.meaning_explanation;
-            if(editItemDetails.readings) {
-                document.querySelector("#item-readings").value = editItemDetails.readings.join(", ");
-                document.querySelector("#kana-readings").value = editItemDetails.readings.join(", ");
-            }
-            if(editItemDetails.primary_reading_type) document.querySelector("#kanji-primary-reading").value = editItemDetails.primary_reading_type;
-            if(editItemDetails.onyomi) document.querySelector("#kanji-onyomi").value = editItemDetails.onyomi.join(", ");
-            if(editItemDetails.kunyomi) document.querySelector("#kanji-kunyomi").value = editItemDetails.kunyomi.join(", ");
-            if(editItemDetails.nanori) document.querySelector("#kanji-nanori").value = editItemDetails.nanori.join(", ");
-            if(editItemDetails.reading_explanation) {
-                document.querySelector("#item-reading-explanation").value = editItemDetails.reading_explanation;
-                document.querySelector("#kanji-reading-explanation").value = editItemDetails.reading_explanation;
-            }
-            if(editItemDetails.context_sentences) {
-                document.querySelector("#item-context-sentences").value = editItemDetails.context_sentences.join(", ");
-                document.querySelector("#kana-context-sentences").value = editItemDetails.context_sentences.join(", ");
-            }
+            let editItemInfo = activePackProfile.customPacks[document.querySelector("#pack-select").value].getItem(editItem).info;
+            document.querySelector("#item-srs-stage").value = editItemInfo.srs_lvl;
+            document.querySelector("#item-type").value = editItemInfo.type;
+            document.querySelector("#item-characters").value = editItemInfo.characters;
+            document.querySelector("#item-meanings").value = editItemInfo.meanings.join(", ");
+            if(editItemInfo.lvl) document.querySelector("#item-level").value = editItemInfo.lvl;
+            if(editItemInfo.meaning_expl) document.querySelector("#item-meaning-explanation").value = editItemInfo.meaning_expl;
+            if(editItemInfo.readings) document.querySelector("#item-readings").value = editItemInfo.readings.join(", ");
+            if(editItemInfo.primary_reading_type) document.querySelector("#kanji-primary-reading").value = editItemInfo.primary_reading_type;
+            if(editItemInfo.onyomi) document.querySelector("#kanji-onyomi").value = editItemInfo.onyomi.join(", ");
+            if(editItemInfo.kunyomi) document.querySelector("#kanji-kunyomi").value = editItemInfo.kunyomi.join(", ");
+            if(editItemInfo.nanori) document.querySelector("#kanji-nanori").value = editItemInfo.nanori.join(", ");
+            if(editItemInfo.reading_expl) document.querySelector("#item-reading-explanation").value = editItemInfo.reading_expl;
+            if(editItemInfo.context_sentences) document.querySelector("#item-context-sentences").value = editItemInfo.context_sentences.join(", ");
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Save";
-            document.querySelector("#item-srs-stage").value = editItemDetails.srs_stage;
         } else {
-            ["#item-context-sentences", "#kana-context-sentences", "#kanji-reading-explanation", "#item-reading-explanation", "#item-meaning-explanation", "#item-characters", "#item-meanings", "#kana-readings", "#item-readings", "#kanji-onyomi", "#kanji-kunyomi", "#kanji-nanori"].forEach((s) => {
-                document.querySelector(s).value = "";
+            ["item-context-sentences", "item-reading-explanation", "item-meaning-explanation", "item-characters", "item-meanings", "item-readings", "kanji-onyomi", "kanji-kunyomi", "item-level", "kanji-nanori"].forEach((s) => {
+                document.getElementById(s).value = "";
             });
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Add";
             document.querySelector("#item-srs-stage").value = "0";
@@ -502,49 +513,48 @@ function updateEditItemTab(editItem) {
             e.preventDefault();
 
             let itemType = document.querySelector("#item-type").value;
-            let characters = document.querySelector("#item-characters").value;
-            let meanings = document.querySelector("#item-meanings").value.split(",").map(s => s.trim());
-            let meaningExplanation = document.querySelector("#item-meaning-explanation").value;
-            let readings, readingExplanation, contextSentences;
+
+            let infoStruct = {
+                type: itemType,
+                characters: document.querySelector("#item-characters").value,
+                meanings: document.querySelector("#item-meanings").value.split(",").map(s => s.trim()),
+                srs_lvl: document.querySelector("#item-srs-stage").value
+            };
+            if(document.querySelector("#item-meaning-explanation").value != "") infoStruct.meaning_expl = document.querySelector("#item-meaning-explanation").value;
+            if(document.querySelector("#item-level").value != "") infoStruct.lvl = parseInt(document.querySelector("#item-level").value);
+
             let pack = activePackProfile.customPacks[document.querySelector("#pack-select").value];
-            let srs = document.querySelector("#item-srs-stage").value;
 
             // Add or edit item
             switch(itemType) {
                 case "Radical":
-                    if(editItem !== null) pack.editRadical(editItem, characters, meanings, meaningExplanation, srs);
-                    else pack.addRadical(characters, meanings, meaningExplanation, srs);
+                    infoStruct.category = infoStruct.type;
                     break;
                 case "Kanji":
-                    let primary_reading_type = document.querySelector("#kanji-primary-reading").value;
-                    let onyomi = document.querySelector("#kanji-onyomi").value;
-                    onyomi = onyomi.trim() ? onyomi.split(",").map(s => s.trim()) : [];
-                    let kunyomi = document.querySelector("#kanji-kunyomi").value;
-                    kunyomi = kunyomi.trim() ? kunyomi.split(",").map(s => s.trim()) : [];
-                    let nanori = document.querySelector("#kanji-nanori").value;
-                    nanori = nanori.trim() ? nanori.split(",").map(s => s.trim()) : [];
-                    readingExplanation = document.querySelector("#kanji-reading-explanation").value;
-                    if(editItem !== null) pack.editKanji(editItem, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaningExplanation, readingExplanation, srs);
-                    else pack.addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaningExplanation, readingExplanation, srs);
+                    infoStruct.category = infoStruct.type;
+                    infoStruct.primary_reading_type = document.querySelector("#kanji-primary-reading").value;
+                    if(document.querySelector("#kanji-onyomi").value != "") infoStruct.onyomi = document.querySelector("#kanji-onyomi").value.split(",").map(s => s.trim());
+                    if(document.querySelector("#kanji-kunyomi").value != "") infoStruct.kunyomi = document.querySelector("#kanji-kunyomi").value.split(",").map(s => s.trim());
+                    if(document.querySelector("#kanji-nanori").value != "") infoStruct.nanori = document.querySelector("#kanji-nanori").value.split(",").map(s => s.trim());
+                    if(document.querySelector("#item-reading-explanation").value != "") infoStruct.reading_expl = document.querySelector("#item-reading-explanation").value;
                     break;
                 case "Vocabulary":
-                    readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
-                    readingExplanation = document.querySelector("#item-reading-explanation").value;
-                    let ctxEl = document.querySelector("#item-context-sentences").value;
-                    contextSentences = ctxEl.trim() ? ctxEl.split(",").map(s => s.trim()) : [];
-                    if(editItem !== null) pack.editVocabulary(editItem, characters, meanings, readings, meaningExplanation, readingExplanation, srs, contextSentences);
-                    else pack.addVocabulary(characters, meanings, readings, meaningExplanation, readingExplanation, srs, contextSentences);
+                    infoStruct.category = infoStruct.type;
+                    infoStruct.readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
+                    if(document.querySelector("#item-reading-explanation").value != "") infoStruct.reading_expl = document.querySelector("#item-reading-explanation").value;
+                    if(document.querySelector("#item-context-sentences").value != "") infoStruct.context_sentences = document.querySelector("#item-context-sentences").value.split(",").map(s => s.trim());
                     break;
                 case "KanaVocabulary":
-                    readings = document.querySelector("#kana-readings").value.split(",").map(s => s.trim());
-                    let ctxEl2 = document.querySelector("#kana-context-sentences").value;
-                    contextSentences = ctxEl2.trim() ? ctxEl2.split(",").map(s => s.trim()): [];
-                    if(editItem !== null) pack.editKanaVocabulary(editItem, characters, meanings, readings, meaningExplanation, srs, contextSentences);
-                    else pack.addKanaVocabulary(characters, meanings, readings, meaningExplanation, srs, contextSentences);
+                    infoStruct.category = "Vocabulary";
+                    infoStruct.readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
+                    if(document.querySelector("#item-context-sentences").value != "") infoStruct.context_sentences = document.querySelector("#item-context-sentences").value.split(",").map(s => s.trim());
                     break;
                 default:
                     console.error("Invalid item type");
+                    return;
             }
+            if(editItem !== null) pack.editItem(editItem, infoStruct);
+            else pack.addItem(infoStruct);
 
             document.querySelector("#tab-4__content > form").style.display = "none";
             document.querySelector("#tab-4__content > div").style.display = "block";
@@ -575,6 +585,11 @@ function updateSettingsTab() {
         CustomSRSSettings.userSettings.exportSRSData = document.querySelector("#settingsExportSRSData").checked;
         StorageManager.saveSettings();
     };
+    document.querySelector("#settingsWKAPIKey").value = CustomSRSSettings.userSettings.apiKey;
+    document.querySelector("#settingsWKAPIKey").onchange = () => {
+        CustomSRSSettings.userSettings.apiKey = document.querySelector("#settingsWKAPIKey").value;
+        StorageManager.saveSettings();
+    };
 }
 
 // ---------- Tabs details ----------
@@ -582,12 +597,16 @@ function loadPackEditDetails(i) {
     let packNameInput = document.querySelector("#pack-name");
     let packAuthorInput = document.querySelector("#pack-author");
     let packVersionInput = document.querySelector("#pack-version");
+    let packLvlTypeInput = document.querySelector("#pack-lvl-type");
+    let packLvlInput = document.querySelector("#pack-lvl");
     let packItems = document.querySelector("#pack-items");
     let importBox = document.querySelector("#pack-import");
     if(i === "new") { // If creating a new pack
         packNameInput.value = "";
         packAuthorInput.value = "";
         packVersionInput.value = 0.1;
+        packLvlTypeInput.value = "none";
+        packLvlInput.value = 1;
     } else if(i === "import") { // If importing a pack
         importBox.value = "";
     } else { // If editing an existing pack
@@ -595,13 +614,15 @@ function loadPackEditDetails(i) {
         packNameInput.value = pack.name;
         packAuthorInput.value = pack.author;
         packVersionInput.value = pack.version;
+        packLvlTypeInput.value = pack.lvlType;
+        packLvlInput.value = pack.lvl;
         packItems.innerHTML = "";
         for(let j = 0; j < pack.items.length; j++) {
             let item = pack.items[j];
             let itemElement = document.createElement("li");
             itemElement.classList = "pack-item";
             itemElement.innerHTML = `
-                ${item.characters} - ${item.meanings[0]} - SRS: ${srsNames[item.srs_stage]} ${CustomSRSSettings.userSettings.showItemDueTime ? "- Due: " + item.getTimeUntilReview() : ""}
+                ${item.info.characters} - ${item.info.meanings[0]} - ${item.info.type} ${CustomSRSSettings.userSettings.showItemDueTime ? "- Due: " + pack.getItemTimeUntilReview(j) : ""}
                 <div>
                     <button class="edit-item" title="Edit Item" type="button">${Icons.customIconTxt("edit")}</button>
                     <button class="delete-item" title="Delete Item" type="button">${Icons.customIconTxt("cross")}</button>
@@ -619,18 +640,17 @@ function loadPackEditDetails(i) {
     }
     document.querySelector("#tab-3__content form.pack-box").onsubmit = (e) => { // Pack save button
         e.preventDefault();
-        let packName = packNameInput.value;
-        let packAuthor = packAuthorInput.value;
-        let packVersion = packVersionInput.value;
         
         if(i === "new") {
-            let pack = new CustomItemPack(packName, packAuthor, packVersion);
+            let pack = new CustomItemPack(packNameInput.value, packAuthorInput.value, packVersionInput.value, packLvlTypeInput.value, parseInt(packLvlInput.value));
             activePackProfile.addPack(pack);
             changeTab(3, activePackProfile.customPacks.length - 1);
         } else {
-            activePackProfile.customPacks[i].name = packName;
-            activePackProfile.customPacks[i].author = packAuthor;
-            activePackProfile.customPacks[i].version = packVersion;
+            activePackProfile.customPacks[i].name = packNameInput.value;
+            activePackProfile.customPacks[i].author = packAuthorInput.value;
+            activePackProfile.customPacks[i].version = packVersionInput.value;
+            activePackProfile.customPacks[i].lvlType = packLvlTypeInput.value;
+            activePackProfile.customPacks[i].lvl = packLvlInput.value;
         }
         StorageManager.savePackProfile(activePackProfile, "main");
         changeTab(2);
@@ -670,7 +690,7 @@ function buildContextSentencesHTML(ctxArray) {
     return out;
 }
 function makeDetailsHTML(item) {
-    switch(item.type) {
+    switch(item.info.type) {
         case "Radical":
         return /*html*/ `
         <turbo-frame class="subject-info" id="subject-info">
@@ -687,12 +707,12 @@ function makeDetailsHTML(item) {
                         <section class="subject-section__subsection">
                             <div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>Primary</h2>
-                                <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                                <p class='subject-section__meanings-items'>${item.info.meanings[0]}</p>
                             </div>
-                            ${item.meanings.length > 1 ? `
+                            ${item.info.meanings.length > 1 ? `
                             <div class="subject-section__meanings">
                                 <h2 class="subject-section__meanings-title">Alternatives</h2>
-                                <p class="subject-section__meanings-items">${item.meanings.slice(1).join(', ')}</p>
+                                <p class="subject-section__meanings-items">${item.info.meanings.slice(1).join(', ')}</p>
                             </div>` : ''}
                             <!--<div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>User Synonyms</h2>
@@ -701,7 +721,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                            <p class="subject-section__text">${item.meaning_explanation}</p>
+                            <p class="subject-section__text">${item.info.meaning_expl ? item.info.meaning_expl : "This item does not have a meaning explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -788,12 +808,12 @@ function makeDetailsHTML(item) {
                         <section class="subject-section__subsection">
                             <div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>Primary</h2>
-                                <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                                <p class='subject-section__meanings-items'>${item.info.meanings[0]}</p>
                             </div>
-                            ${item.meanings.length > 1 ? `
+                            ${item.info.meanings.length > 1 ? `
                             <div class="subject-section__meanings">
                                 <h2 class="subject-section__meanings-title">Alternative</h2>
-                                <p class="subject-section__meanings-items">${item.meanings.slice(1).join(', ')}</p>
+                                <p class="subject-section__meanings-items">${item.info.meanings.slice(1).join(', ')}</p>
                             </div>` : ''}
                             <!--<div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>User Synonyms</h2>
@@ -802,7 +822,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                            <p class="subject-section__text">${item.meaning_explanation}</p>
+                            <p class="subject-section__text">${item.info.meaning_expl ? item.info.meaning_expl : "This item does not have a reading explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -829,29 +849,29 @@ function makeDetailsHTML(item) {
                     <section id="section-reading" class="subject-section__content" data-toggle-target="content" hidden="hidden">
                         <section class="subject-section__subsection">
                             <div class="subject-readings">
-                                <div class="subject-readings__reading ${item.primary_reading_type == "onyomi" ? "subject-readings__reading--primary" : ""}">
+                                <div class="subject-readings__reading ${item.info.primary_reading_type == "onyomi" ? "subject-readings__reading--primary" : ""}">
                                     <h3 class="subject-readings__reading-title">On’yomi</h3>
                                     <p class="subject-readings__reading-items" lang="ja">
-                                        ${item.onyomi.length > 0 ? item.onyomi.join(', ') : "None"}
+                                        ${item.info.onyomi && item.info.onyomi.length > 0 ? item.info.onyomi.join(', ') : "None"}
                                     </p>
                                 </div>
-                                <div class="subject-readings__reading ${item.primary_reading_type == "kunyomi" ? "subject-readings__reading--primary" : ""}">
+                                <div class="subject-readings__reading ${item.info.primary_reading_type == "kunyomi" ? "subject-readings__reading--primary" : ""}">
                                     <h3 class="subject-readings__reading-title">Kun’yomi</h3>
                                     <p class="subject-readings__reading-items" lang="ja">
-                                        ${item.kunyomi.length > 0 ? item.kunyomi.join(', ') : "None"}
+                                        ${item.info.kunyomi && item.info.kunyomi.length > 0 ? item.info.kunyomi.join(', ') : "None"}
                                     </p>
                                 </div>
-                                <div class="subject-readings__reading ${item.primary_reading_type == "nanori" ? "subject-readings__reading--primary" : ""}">
+                                <div class="subject-readings__reading ${item.info.primary_reading_type == "nanori" ? "subject-readings__reading--primary" : ""}">
                                     <h3 class="subject-readings__reading-title">Nanori</h3>
                                     <p class="subject-readings__reading-items" lang="ja">
-                                        ${item.nanori.length > 0 ? item.nanori.join(', ') : "None"}
+                                        ${item.info.nanori && item.info.nanori.length > 0 ? item.info.nanori.join(', ') : "None"}
                                     </p>
                                 </div>
                             </div>
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                            <p class="subject-section__text">${item.reading_explanation}</p>
+                            <p class="subject-section__text">${item.info.reading_expl ? item.info.reading_expl : "This item does not have a reading explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -913,12 +933,12 @@ function makeDetailsHTML(item) {
                         <section class="subject-section__subsection">
                             <div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>Primary</h2>
-                                <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                                <p class='subject-section__meanings-items'>${item.info.meanings[0]}</p>
                             </div>
-                            ${item.meanings.length > 1 ? `
+                            ${item.info.meanings.length > 1 ? `
                             <div class="subject-section__meanings">
                                 <h2 class="subject-section__meanings-title">Alternatives</h2>
-                                <p class="subject-section__meanings-items">${item.meanings.slice(1).join(', ')}</p>
+                                <p class="subject-section__meanings-items">${item.info.meanings.slice(1).join(', ')}</p>
                             </div>` : ''}
                             <!--<div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>User Synonyms</h2>
@@ -931,7 +951,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Explanation</h3>
-                            <p class="subject-section__text">${item.meaning_explanation}</p>
+                            <p class="subject-section__text">${item.info.meaning_expl ? item.info.meaning_expl : "This item does not have a meaning explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -960,7 +980,7 @@ function makeDetailsHTML(item) {
                             <div class="subject-readings-with-audio">
                                 <div class="subject-readings-with-audio__item">
                                     <div class="reading-with-audio">
-                                        <div class="reading-with-audio__reading" lang='ja'>${item.readings[0]}</div>
+                                        <div class="reading-with-audio__reading" lang='ja'>${item.info.readings[0]}</div>
                                         <ul class="reading-with-audio__audio-items">
                                         </ul>
                                     </div>
@@ -969,7 +989,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Explanation</h3>
-                            <p class="subject-section__text">${item.reading_explanation}</p>
+                            <p class="subject-section__text">${item.info.reading_expl ? item.info.reading_expl : "This item does not have a reading explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1017,7 +1037,7 @@ function makeDetailsHTML(item) {
                         </section>-->
                         <section class="subject-section__subsection">
                             <h3 class="subject-section__subtitle">Context Sentences</h3>
-                            ${item.context_sentences.length > 0 ? buildContextSentencesHTML(item.context_sentences) : "No context sentences set."}
+                            ${item.info.context_sentences && item.info.context_sentences.length > 0 ? buildContextSentencesHTML(item.info.context_sentences) : "No context sentences set."}
                         </section>
                     </section>
                 </section>
@@ -1068,12 +1088,12 @@ function makeDetailsHTML(item) {
                         <section class="subject-section__subsection">
                             <div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>Primary</h2>
-                                <p class='subject-section__meanings-items'>${item.meanings[0]}</p>
+                                <p class='subject-section__meanings-items'>${item.info.meanings[0]}</p>
                             </div>
-                            ${item.meanings.length > 1 ? `
+                            ${item.info.meanings.length > 1 ? `
                             <div class="subject-section__meanings">
                                 <h2 class="subject-section__meanings-title">Alternatives</h2>
-                                <p class="subject-section__meanings-items">${item.meanings.slice(1).join(', ')}</p>
+                                <p class="subject-section__meanings-items">${item.info.meanings.slice(1).join(', ')}</p>
                             </div>` : ''}
                             <!--<div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>User Synonyms</h2>
@@ -1086,7 +1106,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Explanation</h3>
-                            <p class="subject-section__text">${item.meaning_explanation}</p>
+                            <p class="subject-section__text">${item.info.meaning_expl ? item.info.meaning_expl : "This item does not have a meaning explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1115,7 +1135,7 @@ function makeDetailsHTML(item) {
                             <div class="subject-readings-with-audio">
                                 <div class="subject-readings-with-audio__item">
                                     <div class="reading-with-audio">
-                                        <div class="reading-with-audio__reading" lang='ja'>${item.readings[0]}</div>
+                                        <div class="reading-with-audio__reading" lang='ja'>${item.info.readings[0]}</div>
                                         <ul class="reading-with-audio__audio-items">
                                         </ul>
                                     </div>
@@ -1157,7 +1177,7 @@ function makeDetailsHTML(item) {
                         </section>-->
                         <section class="subject-section__subsection">
                             <h3 class="subject-section__subtitle">Context Sentences</h3>
-                            ${item.context_sentences.length > 0 ? buildContextSentencesHTML(item.context_sentences) : "No context sentences set."}
+                            ${item.info.context_sentences && item.info.context_sentences.length > 0 ? buildContextSentencesHTML(item.info.context_sentences) : "No context sentences set."}
                         </section>
                     </section>
                 </section>

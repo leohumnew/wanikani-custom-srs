@@ -27,7 +27,6 @@ if (window.location.pathname.includes("/review")) {
         let cloneEl = queueEl.cloneNode(true);
         let queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
         let SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
-        console.log("capturing");
         // Remove captured WK review from queue
         if(queueElement.length === 1 || (CustomSRSSettings.savedData.capturedWKReview && queueElement[1].id === CustomSRSSettings.savedData.capturedWKReview.id)) {
             CustomSRSSettings.savedData.capturedWKReview = queueElement.shift();
@@ -166,6 +165,13 @@ if (window.location.pathname.includes("/review")) {
             reviewTile.querySelector(".reviews-dashboard__text .wk-text").innerHTML = "There are no more reviews to do right now.";
         }
     });
+
+    // Update the stored user level
+    let response = await Utils.wkAPIRequest("user");
+    if(response && response.data && response.data.level) {
+        CustomSRSSettings.userSettings.lastKnownLevel = response.data.level;
+        StorageManager.saveSettings();
+    }
 } else {
     // Catch lesson / review count fetch and update it with custom item count
     const { fetch: originalFetch } = unsafeWindow;
@@ -197,16 +203,17 @@ function updateLessonReviewCountData(data) {
 
     let reviewCountElement = data.querySelector("a[href='/subjects/review'] .lesson-and-review-count__count");
     // If reviewCountElement is null, replace the span .lesson-and-review-count__item with some custom HTML
-    if(reviewCountElement === null && activePackProfile.getNumActiveReviews() > 0) {
+    let numActiveReviews = activePackProfile.getNumActiveReviews();
+    if(reviewCountElement === null && numActiveReviews > 0) {
         let reviewTile = data.querySelector(".lesson-and-review-count__item:nth-child(2)");
         reviewTile.outerHTML = `
         <a class="lesson-and-review-count__item" target="_top" href="/subjects/review">
-            <div class="lesson-and-review-count__count">${activePackProfile.getNumActiveReviews()}</div>
+            <div class="lesson-and-review-count__count">${numActiveReviews}</div>
             <div class="lesson-and-review-count__label">Reviews</div>
         </a>
         `;
     } else {
-        if(activePackProfile.getNumActiveReviews() > 0 || (!CustomSRSSettings.savedData.capturedWKReview && parseInt(reviewCountElement.innerHTML) > 0) || parseInt(reviewCountElement.innerHTML) > 1) reviewCountElement.innerHTML = parseInt(reviewCountElement.innerHTML) + activePackProfile.getNumActiveReviews() + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
+        if(numActiveReviews > 0 || (!CustomSRSSettings.savedData.capturedWKReview && parseInt(reviewCountElement.innerHTML) > 0) || parseInt(reviewCountElement.innerHTML) > 1) reviewCountElement.innerHTML = parseInt(reviewCountElement.innerHTML) + numActiveReviews + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
         else {
             let reviewTile = data.querySelector(".lesson-and-review-count__item:nth-child(2)");
             reviewTile.outerHTML = `

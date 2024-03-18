@@ -1,185 +1,138 @@
 const srsGaps = [0, 4*60*60*1000, 8*60*60*1000, 23*60*60*1000, 47*60*60*1000, 167*60*60*1000, 335*60*60*1000, 730*60*60*1000, 2920*60*60*1000];
 
 class CustomItem {
-    // WK variables
+    // Root variables
     id;
-    type; // KanaVocabulary, Vocabulary, Kanji, Radical
-    subject_category; // Vocabulary, Kanji, Radical
-    characters;
-    meanings;
-    auxiliary_meanings = [];
-
-    // Custom variables
-    srs_stage = 0;
     last_reviewed_at = 0;
-    meaning_explanation = "This item does not have a meaning explanation.";
 
-    constructor(id, type, subject_category, characters, meanings, meaning_explanation) {
+    // Item main info. Should always contain at least: 
+    // type (KanaVocabulary, Vocabulary, Kanji, Radical), category (Vocabulary, Kanji, Radical), srs_lvl, characters, meanings, aux_meanings
+    // Optional: meaning_expl, lvl
+    // Radicals: --
+    // Kanji: primary_reading_type, onyomi, kunyomi, nanori || reading_expl
+    // Vocabulary: readings, aux_readings || context_sentences, reading_expl
+    // KanaVocabulary: || context_sentences
+    info;
+
+    constructor(id, info) {
         this.id = id;
-        this.type = type;
-        this.subject_category = subject_category;
-        this.characters = characters;
-        this.meanings = meanings;
+        this.info = info;
         this.last_reviewed_at = Date.now();
-        if(meaning_explanation) this.meaning_explanation = meaning_explanation;
     }
 
-    isReadyForReview() {
-        return this.last_reviewed_at < Date.now() - srsGaps[this.srs_stage] && this.srs_stage > -1; // TODO: Change SRS stage check to > 0 once lessons are implemented
+    isReadyForReview(levelingType = "none", level = 0) { // levelingType: none, internal, wk
+        if(this.last_reviewed_at < Date.now() - srsGaps[this.info.srs_lvl] && this.info.srs_lvl > -1) { // TODO: Change SRS stage check to > 0 once lessons are implemented
+            if(this.info.srs_lvl > 0) return true; // If item is already in SRS, ignore levels
+            else if(levelingType == "none") return true;
+            else if(levelingType == "internal" && (!this.info.lvl || level >= this.info.lvl)) return true;
+            else if(levelingType == "wk" && (!this.info.lvl || CustomSRSSettings.userSettings.lastKnownLevel >= this.info.lvl)) return true;
+        }
+        return false;
     }
-    getTimeUntilReview() { // In hours, rounded to integer
-        return this.isReadyForReview() ? "Now" : Math.round((srsGaps[this.srs_stage] - (Date.now() - this.last_reviewed_at)) / (60*60*1000)) + "h";
+    getTimeUntilReview(levelingType, level) { // In hours, rounded to integer
+        if(this.isReadyForReview(levelingType, level)) {
+            return "Now";
+        } else {
+            if((levelingType == "internal" && this.info.lvl && level < this.info.lvl) || (levelingType == "wk" && level < CustomSRSSettings.userSettings.lastKnownLevel)) {
+                return "Locked";
+            } else return Math.round((srsGaps[this.info.srs_lvl] - (Date.now() - this.last_reviewed_at)) / (60*60*1000)) + "h";
+        }
     }
 
     incrementSRS() {
-        if(this.srs_stage < 9) this.srs_stage++;
+        if(this.info.srs_lvl < 9) this.info.srs_lvl++;
         this.last_reviewed_at = Date.now();
         StorageManager.savePackProfile(activePackProfile, "main");
     }
     decrementSRS() {
-        if(this.srs_stage > 1) {
-            if(this.srs_stage < 5) this.srs_stage--;
-            else this.srs_stage -= 2;
+        if(this.info.srs_lvl > 1) {
+            if(this.info.srs_lvl < 5) this.info.srs_lvl--;
+            else this.info.srs_lvl -= 2;
         }
         this.last_reviewed_at = Date.now();
         StorageManager.savePackProfile(activePackProfile, "main");
     }
     getSRS(packID) {
-        return [Utils.cantorNumber(packID, this.id), parseInt(this.srs_stage)];
+        return [Utils.cantorNumber(packID, this.id), parseInt(this.info.srs_lvl)];
+    }
+
+    getQueueItem(packID) {
+        switch(this.info.type) {
+            case "Radical":
+                return {
+                    id: Utils.cantorNumber(packID, this.id),
+                    type: this.info.type,
+                    subject_category: this.info.category,
+                    characters: this.info.characters,
+                    meanings: this.info.meanings,
+                    auxiliary_meanings: this.info.aux_meanings || [],
+                    kanji: this.info.kanji || []
+                };
+            case "Kanji":
+                return {
+                    id: Utils.cantorNumber(packID, this.id),
+                    type: this.info.type,
+                    subject_category: this.info.category,
+                    characters: this.info.characters,
+                    meanings: this.info.meanings,
+                    auxiliary_meanings: this.info.aux_meanings || [],
+                    primary_reading_type: this.info.primary_reading_type,
+                    onyomi: this.info.onyomi || [],
+                    kunyomi: this.info.kunyomi || [],
+                    nanori: this.info.nanori || [],
+                    auxiliary_readings: this.info.aux_readings || [],
+                    radicals: this.info.radicals || [],
+                    vocabulary: this.info.vocabulary || []
+                };
+            case "Vocabulary":
+                return {
+                    id: Utils.cantorNumber(packID, this.id),
+                    type: this.info.type,
+                    subject_category: this.info.category,
+                    characters: this.info.characters,
+                    meanings: this.info.meanings,
+                    auxiliary_meanings: this.info.aux_meanings || [],
+                    readings: this.info.readings.map(reading => ({"reading": reading, "pronunciations": []})),
+                    auxiliary_readings: this.info.aux_readings || [],
+                    kanji: this.info.kanji || []
+                };
+            case "KanaVocabulary":
+                return {
+                    id: Utils.cantorNumber(packID, this.id),
+                    type: this.info.type,
+                    subject_category: this.info.category,
+                    characters: this.info.characters,
+                    meanings: this.info.meanings,
+                    auxiliary_meanings: this.info.aux_meanings || [],
+                    readings: this.info.readings.map(reading => ({"reading": reading, "pronunciations": []}))
+                };
+        }
     }
 
     static fromObject(object) {
         let item;
-        switch(object.type) {
-            case "Radical":
-                item = new RadicalCustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.meaning_explanation);
-                break;
-            case "Kanji":
-                item = new KanjiCustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.primary_reading_type, object.onyomi, object.kunyomi, object.nanori, object.meaning_explanation, object.reading_explanation);
-                break;
-            case "Vocabulary":
-                item = new VocabularyCustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.readings, object.meaning_explanation, object.reading_explanation, object.context_sentences);
-                break;
-            case "KanaVocabulary":
-                item = new KanaVocabularyCustomItem(object.id, object.type, object.subject_category, object.characters, object.meanings, object.readings, object.meaning_explanation, object.context_sentences);
-                break;
+        if(!object.info) { // If item from before update
+            let newInfo = {};
+            newInfo.type = object.type;
+            newInfo.category = object.subject_category;
+            newInfo.srs_lvl = object.srs_stage;
+            newInfo.characters = object.characters;
+            newInfo.meanings = object.meanings;
+            if(object.readings) newInfo.readings = object.readings;
+            if(object.auxiliary_readings && object.auxiliary_readings.length > 0) newInfo.aux_readings = object.auxiliary_readings;
+            if(object.auxiliary_meanings && object.auxiliary_meanings.length > 0) newInfo.aux_meanings = object.auxiliary_meanings;
+            if(object.meaning_explanation) newInfo.meaning_expl = object.meaning_explanation;
+            if(object.reading_explanation && (object.type == "Vocabulary" || object.type == "Kanji")) newInfo.reading_expl = object.reading_explanation;
+            if(object.primary_reading_type) newInfo.primary_reading_type = object.primary_reading_type;
+            if(object.onyomi) newInfo.onyomi = object.onyomi;
+            if(object.kunyomi) newInfo.kunyomi = object.kunyomi;
+            if(object.nanori) newInfo.nanori = object.nanori;
+            item = new CustomItem(object.id, newInfo);
         }
-        /*item.auxiliary_meanings = object.auxiliary_meanings;
-        item.auxiliary_readings = object.auxiliary_readings;
-        item.kanji = object.kanji;*/
-        item.srs_stage = object.srs_stage;
+        else item = new CustomItem(object.id, object.info);
+
         item.last_reviewed_at = object.last_reviewed_at;
         return item;
-    }
-}
-
-class RadicalCustomItem extends CustomItem {
-    kanji = [];
-
-    constructor(id, type, subject_category, characters, meanings, meaning_explanation) {
-        super(id, type, subject_category, characters, meanings, meaning_explanation);
-    }
-
-    getQueueItem(packID) {
-        return {
-            id: Utils.cantorNumber(packID, this.id),
-            type: this.type,
-            subject_category: this.subject_category,
-            characters: this.characters,
-            meanings: this.meanings,
-            auxiliary_meanings: this.auxiliary_meanings,
-            kanji: this.kanji
-        };
-    }
-}
-
-class KanjiCustomItem extends CustomItem {
-    primary_reading_type;
-    onyomi = [];
-    kunyomi = [];
-    nanori = [];
-    radicals = [];
-    vocabulary = [];
-    reading_explanation = "This item does not have a reading explanation.";
-
-    constructor(id, type, subject_category, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation) {
-        super(id, type, subject_category, characters, meanings, meaning_explanation);
-        this.primary_reading_type = primary_reading_type;
-        this.onyomi = onyomi;
-        this.kunyomi = kunyomi;
-        this.nanori = nanori;
-        if(reading_explanation) this.reading_explanation = reading_explanation;
-    }
-
-    getQueueItem(packID) {
-        return {
-            id: Utils.cantorNumber(packID, this.id),
-            type: this.type,
-            subject_category: this.subject_category,
-            characters: this.characters,
-            meanings: this.meanings,
-            auxiliary_meanings: this.auxiliary_meanings,
-            primary_reading_type: this.primary_reading_type,
-            onyomi: this.onyomi,
-            kunyomi: this.kunyomi,
-            nanori: this.nanori,
-            auxiliary_readings: [],
-            radicals: this.radicals,
-            vocabulary: this.vocabulary
-        };
-    }
-}
-
-class VocabularyCustomItem extends CustomItem {
-    readings;
-    auxiliary_readings = [];
-    kanji = [];
-    reading_explanation = "This item does not have a reading explanation.";
-    context_sentences = [];
-
-    constructor(id, type, subject_category, characters, meanings, readings, meaning_explanation, reading_explanation, context_sentences) {
-        super(id, type, subject_category, characters, meanings, meaning_explanation);
-        this.readings = readings;
-        if(reading_explanation) this.reading_explanation = reading_explanation;
-        if(context_sentences) this.context_sentences = context_sentences;
-    }
-
-    getQueueItem(packID) {
-        return {
-            id: Utils.cantorNumber(packID, this.id),
-            type: this.type,
-            subject_category: this.subject_category,
-            characters: this.characters,
-            meanings: this.meanings,
-            auxiliary_meanings: this.auxiliary_meanings,
-            readings: this.readings.map(reading => ({"reading": reading, "pronunciations": []})),
-            auxiliary_readings: this.auxiliary_readings,
-            kanji: this.kanji
-        };
-    }
-}
-
-class KanaVocabularyCustomItem extends CustomItem {
-    readings;
-    reading_explanation = "Kana vocab is pronounced as per the kana, so no need to learn any other readings!";
-    context_sentences = [];
-
-    constructor(id, type, subject_category, characters, meanings, readings, meaning_explanation, context_sentences) {
-        super(id, type, subject_category, characters, meanings, meaning_explanation);
-        this.readings = readings;
-        if(context_sentences) this.context_sentences = context_sentences;
-    }
-
-    getQueueItem(packID) {
-        return {
-            id: Utils.cantorNumber(packID, this.id),
-            type: this.type,
-            subject_category: this.subject_category,
-            characters: this.characters,
-            meanings: this.meanings,
-            auxiliary_meanings: this.auxiliary_meanings,
-            readings: this.readings.map(reading => ({"reading": reading, "pronunciations": []}))
-        };
     }
 }
 
@@ -190,92 +143,57 @@ class CustomItemPack {
     items = [];
     active = true;
     nextID = 0;
+    lvlType = "none"; // "none", "internal", "wk"
+    lvl = 1;
 
-    constructor(name, author, version) {
+    constructor(name, author, version, lvlType, lvl = 1) {
         this.name = name;
         this.author = author;
         this.version = version;
+        this.lvlType = lvlType;
+        this.lvl = lvl;
     }
 
     getItem(id) {
         return this.items.find(item => item.id === id);
     }
-    addRadical(characters, meanings, meaning_explanation, srs_stage) {
+    addItem(itemInfo) {
         let id = this.nextID++;
-        let radical = new RadicalCustomItem(id, "Radical", "Radical", characters, meanings, meaning_explanation);
-        if(srs_stage != 0) radical.srs_stage = srs_stage;
-        this.items.push(radical);
+        let item = new CustomItem(id, itemInfo);
+        this.items.push(item);
     }
-    addKanji(characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation, srs_stage) {
-        let id = this.nextID++;
-        let kanji = new KanjiCustomItem(id, "Kanji", "Kanji", characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation);
-        if(srs_stage != 0) kanji.srs_stage = srs_stage;
-        this.items.push(kanji);
-    }
-    addVocabulary(characters, meanings, readings, meaning_explanation, reading_explanation, srs_stage, context_sentences) {
-        let id = this.nextID++;
-        let vocabulary = new VocabularyCustomItem(id, "Vocabulary", "Vocabulary", characters, meanings, readings, meaning_explanation, reading_explanation, context_sentences);
-        if(srs_stage != 0) vocabulary.srs_stage = srs_stage;
-        this.items.push(vocabulary);
-    }
-    addKanaVocabulary(characters, meanings, readings, meaning_explanation, srs_stage, context_sentences) {
-        let id = this.nextID++;
-        let kanaVocabulary = new KanaVocabularyCustomItem(id, "KanaVocabulary", "Vocabulary", characters, meanings, readings, meaning_explanation, context_sentences);
-        if(srs_stage != 0) kanaVocabulary.srs_stage = srs_stage;
-        this.items.push(kanaVocabulary);
+    editItem(id, itemInfo) {
+        let item = this.getItem(id);
+        delete item.info;
+        item.info = itemInfo;    
     }
 
-    editItem(item, characters, meanings, meaning_explanation, srs_stage) {
-        item.characters = characters;
-        item.meanings = meanings;
-        item.meaning_explanation = meaning_explanation;
-        item.srs_stage = srs_stage;
-    }
-    editRadical(id, characters, meanings, meaning_explanation, srs_stage) {
-        let radical = this.getItem(id);
-        this.editItem(radical, characters, meanings, meaning_explanation, srs_stage);
-    }
-    editKanji(id, characters, meanings, primary_reading_type, onyomi, kunyomi, nanori, meaning_explanation, reading_explanation, srs_stage) {
-        let kanji = this.getItem(id);
-        this.editItem(kanji, characters, meanings, meaning_explanation, srs_stage);
-        kanji.primary_reading_type = primary_reading_type;
-        kanji.onyomi = onyomi;
-        kanji.kunyomi = kunyomi;
-        kanji.nanori = nanori;
-        if(reading_explanation) kanji.reading_explanation = reading_explanation;
-    }
-    editVocabulary(id, characters, meanings, readings, meaning_explanation, reading_explanation, srs_stage, context_sentences) {
-        let vocabulary = this.getItem(id);
-        this.editItem(vocabulary, characters, meanings, meaning_explanation, srs_stage);
-        vocabulary.readings = readings;
-        if(reading_explanation) vocabulary.reading_explanation = reading_explanation;
-        if(context_sentences) vocabulary.context_sentences = context_sentences;
-    }
-    editKanaVocabulary(id, characters, meanings, readings, meaning_explanation, srs_stage, context_sentences) {
-        let kanaVocabulary = this.getItem(id);
-        this.editItem(kanaVocabulary, characters, meanings, meaning_explanation, srs_stage);
-        kanaVocabulary.readings = readings;
-        if(context_sentences) kanaVocabulary.context_sentences = context_sentences;
-    }
     removeItem(position) {
         this.items.splice(position, 1);
     }
 
     getActiveReviews(packID) { // Get all items that were last reviewed more than 24 hours ago
         if(!this.active) return [];
-        return this.items.filter(item => item.isReadyForReview()).map(item => item.getQueueItem(packID)); // TODO: Change SRS stage check
+        return this.items.filter(item => item.isReadyForReview(this.lvlType, this.lvl)).map(item => item.getQueueItem(packID));
     }
     getActiveReviewsSRS(packID) {
         if(!this.active) return [];
-        return this.items.filter(item => item.isReadyForReview()).map(item => item.getSRS(packID));
+        return this.items.filter(item => item.isReadyForReview(this.lvlType, this.lvl)).map(item => item.getSRS(packID));
     }
     getNumActiveReviews() {
         if(!this.active) return 0;
-        return this.items.filter(item => item.isReadyForReview()).length;
+        let num = 0;
+        for(let item of this.items) {
+            if(item.isReadyForReview(this.lvlType, this.lvl)) num++;
+        }
+        return num;
+    }
+    getItemTimeUntilReview(itemIndex) {
+        return this.items[itemIndex].getTimeUntilReview(this.lvlType, this.lvl);
     }
 
     static fromObject(object) {
-        let pack = new CustomItemPack(object.name, object.author, object.version);
+        let pack = new CustomItemPack(object.name, object.author, object.version, (object.lvlType ? object.lvlType : "none"), (object.lvl ? object.lvl : 1)); // TODO: Remove lvlType and lvl checks after a few weeks
         pack.items = object.items.map(item => CustomItem.fromObject(item));
         pack.active = object.active;
         pack.nextID = (object.nextID || pack.items.length); // If lastID is not present, use the length of the items array
@@ -313,7 +231,7 @@ class CustomPackProfile {
             let newItem = newPack.items[i];
             let oldItem = oldPack.items.find(item => item.id === newItem.id);
             if(oldItem) {
-                newItem.srs_stage = oldItem.srs_stage;
+                newItem.info.srs_lvl = oldItem.info.srs_lvl;
                 newItem.last_reviewed_at = oldItem.last_reviewed_at;
             }
         }
@@ -351,6 +269,14 @@ class CustomPackProfile {
             item.decrementSRS();
         } else {
             item.incrementSRS();
+            // Check if pack should level up
+            let pack = this.customPacks[packID];
+            if(pack.lvlType == "internal") {
+                for(let item of pack.items) {
+                    if((!item.info.lvl || item.info.lvl <= pack.lvl) && item.info.srs_lvl < 5) break;
+                }
+                pack.lvl++;
+            }
         }
     }
 
@@ -385,13 +311,30 @@ class Utils {
         }
         return controller;
     }
+    static async wkAPIRequest(endpoint, method = "GET", data = null) {
+        if(!CustomSRSSettings.userSettings.apiKey) console.error("CustomSRS: No API key set");
+        let url = "https://api.wanikani.com/v2/" + endpoint;
+        let headers = new Headers({
+            Authorization: "Bearer " + CustomSRSSettings.userSettings.apiKey,
+        });
+        let apiRequest = new Request(url, {
+            method: method,
+            headers: headers
+        });
+        if(data) apiRequest.body = JSON.stringify(data);
+
+        let response = await fetch(apiRequest);
+        return response.json();
+    }
 }
 
 class CustomSRSSettings {
     static defaultUserSettings = {
         showItemDueTime: true,
         itemQueueMode: "start",
-        exportSRSData: false
+        exportSRSData: false,
+        lastKnownLevel: 0,
+        apiKey: null
     };
     static userSettings = this.defaultUserSettings;
     static savedData = {
@@ -436,7 +379,7 @@ class StorageManager {
         if(!CustomSRSSettings.userSettings.exportSRSData) {
             packJSON.items.forEach(item => {
                 item.last_reviewed_at = 0;
-                item.srs_stage = 0;
+                item.info.srs_lvl = 0;
             });
         }
         return JSON.stringify(packJSON);

@@ -10,8 +10,8 @@ class CustomItem {
     // Optional: meaning_expl, lvl
     // Radicals: --
     // Kanji: primary_reading_type, onyomi, kunyomi, nanori || reading_expl
-    // Vocabulary: readings, aux_readings || context_sentences, reading_expl
-    // KanaVocabulary: || context_sentences
+    // Vocabulary: readings, aux_readings || ctx_jp, ctx_en, reading_expl, kanji
+    // KanaVocabulary: || crx_jp, ctx_en
     info;
 
     constructor(id, info) {
@@ -111,7 +111,7 @@ class CustomItem {
 
     static fromObject(object) {
         let item;
-        if(!object.info) { // If item from before update
+        if(!object.info) { // If item from before update TODO: remove after a few weeks
             let newInfo = {};
             newInfo.type = object.type;
             newInfo.category = object.subject_category;
@@ -130,6 +130,16 @@ class CustomItem {
             item = new CustomItem(object.id, newInfo);
         }
         else item = new CustomItem(object.id, object.info);
+
+        if(item.info.context_sentences) { // Convert context_sentences to ctx_jp and ctx_en TODO: remove after a few weeks
+            for(let i = 0; i < item.info.context_sentences.length; i++) {
+                item.info.ctx_jp = [];
+                item.info.ctx_en = [];
+                if(i % 2 == 0) item.info.ctx_jp.push(item.info.context_sentences[i]);
+                else item.info.ctx_en.push(item.info.context_sentences[i]);
+            }
+            delete item.info.context_sentences;
+        }
 
         item.last_reviewed_at = object.last_reviewed_at;
         return item;
@@ -156,6 +166,11 @@ class CustomItemPack {
 
     getItem(id) {
         return this.items.find(item => item.id === id);
+    }
+    getItemID(itemType, itemChar) {
+        let item = this.items.find(item => item.info.characters === itemChar && item.info.type === itemType);
+        if(item) return item.id;
+        else return null;
     }
     addItem(itemInfo) {
         let id = this.nextID++;

@@ -28,11 +28,11 @@ overviewPopupStyle.innerHTML = /*css*/ `
 
     &:focus-visible {
         border: none }
-    & p {
+    p {
         margin: 0 }
-    & input, & select {
+    input, select {
         margin-bottom: 0.5rem }
-    & button {
+    button {
         cursor: pointer;
         background-color: transparent;
         border: none;
@@ -43,23 +43,23 @@ overviewPopupStyle.innerHTML = /*css*/ `
             padding: 0.2rem 0.8rem;
         }
     }
-    & button:hover {
+    button:hover {
         color: var(--color-tertiary, #a5a5a5);
 
         &[type="submit"], &.outline-button {
             border-color: var(--color-tertiary, #a5a5a5) }
     }
-    & > header {
+    > header {
         display: flex;
         justify-content: space-between;
         border-bottom: 1px solid var(--color-tertiary, --color-text);
         margin-bottom: 1rem;
 
-        & > h1 {
+        > h1 {
             font-size: x-large;
             color: var(--color-tertiary, --color-text);
         }
-        & > button {
+        > button {
             border: none;
             color: var(--color-tertiary, --color-text);
             font-size: x-large;
@@ -79,24 +79,24 @@ overviewPopupStyle.innerHTML = /*css*/ `
     display: flex;
     flex-wrap: wrap;
 
-    & > input {
+    > input {
         display: none }
-    & > label {
+    > label {
         cursor: pointer;
         padding: 0.5rem 1rem;
         max-width: 20%;
     }
-    & > div {
+    > div {
         display: none;
         padding: 1rem;
         order: 1;
         width: 100%;
     }
-    & > input:checked + label {
+    > input:checked + label {
         color: var(--color-tertiary, --color-text);
         border-bottom: 2px solid var(--color-tertiary, gray);
     }
-    & > input:checked + label + div {
+    > input:checked + label + div {
         display: initial }
 }
 
@@ -107,7 +107,7 @@ overviewPopupStyle.innerHTML = /*css*/ `
     column-gap: 1.5rem;
     text-align: center;
 
-    & p {
+    p {
         font-size: xx-large }
 }
 
@@ -117,13 +117,13 @@ overviewPopupStyle.innerHTML = /*css*/ `
     justify-content: space-between;
     margin-bottom: 1rem;
 
-    & span {
+    span {
         font-style: italic }
-    & > div {
+    > div {
         margin: auto 0 }
-    & button {
+    button {
         margin-left: 10px }
-    & > div > span, & > div > input {
+    > div > span, & > div > input {
         margin: 0;
         vertical-align: middle;
     }
@@ -133,16 +133,16 @@ overviewPopupStyle.innerHTML = /*css*/ `
 #tab-3__content > .content-box {
     margin: 1rem 0;
 
-    & input, & ul {
+    input, ul {
         margin-left: 0 }
-    & > div {
+    > div {
         margin-top: 1.5rem }
-    & div {
+    div {
         display: flex;
         justify-content: space-between;
         margin-bottom: 0.5rem;
     }
-    & li {
+    li {
         margin: 0.25rem;
         justify-content: space-between;
         display: flex;
@@ -150,44 +150,82 @@ overviewPopupStyle.innerHTML = /*css*/ `
         & button {
             margin-left: 10px }
     }
-    & li:hover {
+    li:hover {
         color: var(--color-tertiary, rgb(165, 165, 165));
     }
 }
-#tab-3__content:has(#pack-select [value="new"]:checked) .content-box :is(div, ul) {
-    display: none }
-#tab-3__content:has(#pack-select [value="import"]:checked) .pack-box {
-    display: none }
-#tab-3__content:has(#pack-select [value="import"]:checked) .import-box {
-    display: grid !important }
-#tab-3__content:has(#pack-lvl-type [value="internal"]:checked) .pack-lvl-specific {
-    display: grid !important }
-#tab-3__content:has(#pack-lvl-type [value="wk"]:checked) .wk-lvl-warn {
-    display: grid !important }
+#tab-3__content {
+    &:has(#pack-select [value="new"]:checked) .content-box :is(div, ul) {
+        display: none }
+    &:has(#pack-select [value="import"]:checked) .pack-box {
+        display: none }
+    &:has(#pack-select [value="import"]:checked) .import-box {
+        display: grid !important }
+    &:has(#pack-lvl-type [value="internal"]:checked) .pack-lvl-specific {
+        display: grid !important }
+    &:has(#pack-lvl-type [value="wk"]:checked) .wk-lvl-warn {
+        display: grid !important }
+}
 
 #pack-items {
     background-color: var(--color-menu, white) }
 
 /* Styling for the item edit tab */
-#tab-4__content:has(#item-type [value="Vocabulary"]:checked) .item-vocab-specific {
-    display: grid !important }
-#tab-4__content:has(#item-type [value="KanaVocabulary"]:checked) .item-kanavocab-specific {
-    display: grid !important }
-#tab-4__content:has(#item-type [value="Kanji"]:checked) .item-kanji-specific {
-    display: grid !important }
+#tab-4__content {
+    hr {
+        margin: 0;
+        border-color: var(--color-wk-panel-background, gray)
+    }
+    .ctx-sentence-div {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    .item-info-edit-container {
+        padding: 1rem;
+        border-radius: 3px;
+        background-color: var(--color-wk-panel-content-background, white);
+        button {
+            margin-left: auto }
+        input, label {
+            margin-right: 0.5rem }
+        label {
+            opacity: 0.5 }
+    }
+    .component-div {
+        display: grid;
+        grid-template-columns: 1fr 0.2fr;
+    }
+
+    &:has(#item-type [value="Radical"]:checked) .item-radical-specific {
+        display: grid !important }
+    &:has(#item-type [value="Kanji"]:checked) .item-kanji-specific {
+        display: grid !important }
+    &:has(#item-type [value="Vocabulary"]:checked) .item-vocab-specific {
+        display: grid !important }
+    &:has(#item-type [value="KanaVocabulary"]:checked) .item-kanavocab-specific {
+        display: grid !important }
+
+    &:has(#component-type [value="internal"]:checked), &:has(#component-type [value="wk"]:checked) {
+        #component-type-container {
+            display: none !important }
+        #component-id-container {
+            display: block !important }
+    }
+}
 #tab-4__content .content-box, #tab-4__content .content-box > div, #tab-3__content > .content-box, #tab-3__content > .content-box > div {
     display: grid;
     gap: 0.5rem;
     grid-template-columns: 1fr 1fr;
     align-items: center;
 
-    & input, & select {
+    input, select {
         justify-self: end }
 }
 
 /* Styling for the settings tab */
 #tab-5__content {
-    & label {
+    label {
         margin-right: 1rem;
         float: left;
     }
@@ -315,9 +353,31 @@ overviewPopup.innerHTML = /*html*/ `
                     <label for="item-reading-explanation">Reading Explanation:</label>
                     <input id="item-reading-explanation" type="text">
                 </div>
-                <div class="item-kanavocab-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2">
-                    <label for="item-context-sentences">Context Sentences (comma separated - each jp,en):</label>
-                    <input id="item-context-sentences" type="text">
+                <div class="item-info-edit-container item-kanavocab-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2">
+                    <p>Context Sentences</p>
+                    <button id="ctx-add-btn">${Icons.customIconTxt("plus")}</button>
+                    <div id="item-context-sentences-container" style="grid-column: 1 / span 2"></div>
+                </div>
+                <div class="item-info-edit-container item-vocab-specific item-radical-specific" style="display: none; grid-column: 1 / span 2">
+                    <p style="grid-column: 1 / span 2">Kanji Components</p>
+                    <span>
+                        <span id="component-type-container">
+                            <label for="component-type" style="float: left">Type:</label>
+                            <select id="component-type">
+                                <option value=""><i>Select type</i></option>
+                                <option value="internal">This Pack</option>
+                                <!--<option value="wk">WaniKani</option>-->
+                            </select>
+                        </span>
+                        <span id="component-id-container" style="display: none">
+                            <label id="component-id-label" for="component-id" style="float: left">Kanji</label>
+                            <input id="component-id" type="text">
+                        </span>
+                    </span>
+                    <button id="component-add-btn">${Icons.customIconTxt("plus")}</button>
+                    <p style="display: none; grid-column: 1 / span 2"><i>Failed to find component.</i></p>
+                    <hr style="grid-column: 1 / span 2">
+                    <div id="components-container" style="grid-column: 1 / span 2"></div>
                 </div>
                 <button style="grid-column: 1 / span 2" type="submit">Add</button>
             </form>
@@ -485,6 +545,34 @@ function updateEditItemTab(editItem) {
         // Show add item edit tab and make sure inputs are empty
         document.querySelector("#tab-4__content > form").style.display = "grid";
         document.querySelector("#tab-4__content > div").style.display = "none";
+        document.getElementById("ctx-add-btn").onclick = (e) => {
+            e.preventDefault();
+            document.getElementById("item-context-sentences-container").innerHTML += buildContextSentenceEditHTML("", "");
+        };
+        document.getElementById("component-add-btn").onclick = (e) => { // Handle adding kanji components
+            e.preventDefault();
+            let type = document.getElementById("component-type").value;
+            let id = document.getElementById("component-id").value;
+            if(type === "" || id === "") return;
+            // Check if component exists. When type is internal id is the item character to search for
+            switch(type) {
+                case "internal":
+                    let type = document.getElementById("component-id-label").innerText;
+                    let itemID = activePackProfile.customPacks[document.querySelector("#pack-select").value].getItemID(type, document.getElementById("component-id").value);
+                    if(itemID) {
+                        document.getElementById("component-add-btn").nextElementSibling.style.display = "none";
+                        document.getElementById("components-container").innerHTML += buildKanjiComponentEditHTML(type, document.querySelector("#pack-select").value, itemID);
+                        document.getElementById("component-type").value = "";
+                        document.getElementById("component-id").value = "";
+                    } else {
+                        document.getElementById("component-add-btn").nextElementSibling.style.display = "block";
+                    }
+                    break;
+                case "wk":
+                    // TODO: Add WaniKani component check
+                    break;
+            }
+        };
         if(editItem !== null) {
             let editItemInfo = activePackProfile.customPacks[document.querySelector("#pack-select").value].getItem(editItem).info;
             document.querySelector("#item-srs-stage").value = editItemInfo.srs_lvl;
@@ -499,14 +587,25 @@ function updateEditItemTab(editItem) {
             if(editItemInfo.kunyomi) document.querySelector("#kanji-kunyomi").value = editItemInfo.kunyomi.join(", ");
             if(editItemInfo.nanori) document.querySelector("#kanji-nanori").value = editItemInfo.nanori.join(", ");
             if(editItemInfo.reading_expl) document.querySelector("#item-reading-explanation").value = editItemInfo.reading_expl;
-            if(editItemInfo.context_sentences) document.querySelector("#item-context-sentences").value = editItemInfo.context_sentences.join(", ");
+            if(editItemInfo.ctx_jp) {
+                document.getElementById("item-context-sentences-container").innerHTML = editItemInfo.ctx_jp.map((s, i) => {
+                    return buildContextSentenceEditHTML(s, editItemInfo.ctx_en[i]);
+                }).join("");
+            }
+            if(editItemInfo.kanji) {
+                document.getElementById("components-container").innerHTML = editItemInfo.kanji.map((k) => {
+                    return buildKanjiComponentEditHTML(k[0], k[1], k[2]);
+                }).join("");
+            }
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Save";
         } else {
-            ["item-context-sentences", "item-reading-explanation", "item-meaning-explanation", "item-characters", "item-meanings", "item-readings", "kanji-onyomi", "kanji-kunyomi", "item-level", "kanji-nanori"].forEach((s) => {
+            ["item-reading-explanation", "item-meaning-explanation", "item-characters", "item-meanings", "item-readings", "kanji-onyomi", "kanji-kunyomi", "item-level", "kanji-nanori"].forEach((s) => {
                 document.getElementById(s).value = "";
             });
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Add";
             document.querySelector("#item-srs-stage").value = "0";
+            document.querySelector("#item-context-sentences-container").innerHTML = "";
+            document.querySelector("#components-container").innerHTML = "";
         }
         // Add event listener to form
         document.querySelector("#tab-4__content form").onsubmit = (e) => {
@@ -524,11 +623,20 @@ function updateEditItemTab(editItem) {
             if(document.querySelector("#item-level").value != "") infoStruct.lvl = parseInt(document.querySelector("#item-level").value);
 
             let pack = activePackProfile.customPacks[document.querySelector("#pack-select").value];
+            let ctxDivs = document.querySelector("#item-context-sentences-container").children;
 
             // Add or edit item
             switch(itemType) {
                 case "Radical":
                     infoStruct.category = infoStruct.type;
+                    if(document.getElementById("components-container").children.length > 0) {
+                        infoStruct.kanji = [];
+                        let container = document.getElementById("components-container");
+                        for(let i = 0; i < container.children.length; i++) {
+                            let [type, pack, id] = container.children[i].querySelector(".component-info").innerText.split(",");
+                            infoStruct.kanji.push([type, parseInt(pack), parseInt(id)]);
+                        }
+                    }
                     break;
                 case "Kanji":
                     infoStruct.category = infoStruct.type;
@@ -542,12 +650,36 @@ function updateEditItemTab(editItem) {
                     infoStruct.category = infoStruct.type;
                     infoStruct.readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
                     if(document.querySelector("#item-reading-explanation").value != "") infoStruct.reading_expl = document.querySelector("#item-reading-explanation").value;
-                    if(document.querySelector("#item-context-sentences").value != "") infoStruct.context_sentences = document.querySelector("#item-context-sentences").value.split(",").map(s => s.trim());
+                    if(document.querySelector("#item-context-sentences-container").children.length > 0) {
+                        infoStruct.ctx_jp = [];
+                        infoStruct.ctx_en = [];
+                        for(let i = 0; i < ctxDivs.length; i++) {
+                            let ctxDiv = ctxDivs[i];
+                            infoStruct.ctx_jp.push(ctxDiv.children[0].value);
+                            infoStruct.ctx_en.push(ctxDiv.children[1].value);
+                        }
+                    }
+                    if(document.getElementById("components-container").children.length > 0) {
+                        infoStruct.kanji = [];
+                        let container = document.getElementById("components-container");
+                        for(let i = 0; i < container.children.length; i++) {
+                            let [type, pack, id] = container.children[i].querySelector(".component-info").innerText.split(",");
+                            infoStruct.kanji.push([type, parseInt(pack), parseInt(id)]);
+                        }
+                    }
                     break;
                 case "KanaVocabulary":
                     infoStruct.category = "Vocabulary";
                     infoStruct.readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
-                    if(document.querySelector("#item-context-sentences").value != "") infoStruct.context_sentences = document.querySelector("#item-context-sentences").value.split(",").map(s => s.trim());
+                    if(document.querySelector("#item-context-sentences-container").children.length > 0) {
+                        infoStruct.ctx_jp = [];
+                        infoStruct.ctx_en = [];
+                        for(let i = 0; i < ctxDivs.length; i++) {
+                            let ctxDiv = ctxDivs[i];
+                            infoStruct.ctx_jp.push(ctxDiv.children[0].value);
+                            infoStruct.ctx_en.push(ctxDiv.children[1].value);
+                        }
+                    }
                     break;
                 default:
                     console.error("Invalid item type");
@@ -680,14 +812,52 @@ function loadPackEditDetails(i) {
     }
 }
 
+// ---------- Item info procedural edit structures ----------
+function buildKanjiComponentEditHTML(type, pack, id) {
+    return /*html*/ `
+    <div class="component-div">
+        <p>${type == "wk" ? "WaniKani" : "This Pack"} Kanji. ID: ${id} Character: ${activePackProfile.getPack(pack).getItem(id).info.characters}</p>
+        <button class="delete-component" title="Delete Component" onclick="this.parentElement.remove()">${Icons.customIconTxt("cross")}</button>
+        <span class="component-info" style="display: none">${type},${pack},${id}</span>
+    </div>
+    `;
+}
+
+function buildContextSentenceEditHTML(jp, en) {
+    return /*html*/ `
+    <div class="ctx-sentence-div">
+        <input type="text" value="${jp}" placeholder="Japanese" required>
+        <input type="text" value="${en}" placeholder="English" required>
+        <button class="delete-sentence" title="Delete Sentence" onclick="this.parentElement.remove()">${Icons.customIconTxt("cross")}</button>
+    </div>
+    `;
+}
 // ---------- Item details ----------
-function buildContextSentencesHTML(ctxArray) {
+function buildKanjiComponentHTML(type, pack, id) {
+    let item;
+    if(pack >= 0) item = activePackProfile.getPack(pack).getItem(id);
+    else item = null; // TODO: Add WaniKani component check
+    return /*html*/ `
+    <li class="subject-character-grid__item">
+        <a class="subject-character subject-character--${type.toLowerCase()} subject-character--grid ${item.info.srs_lvl > 8 ? "subject-character--burned" : ""}" data-turbo-frame="_blank">
+            <div class="subject-character__content">
+                <span class="subject-character__characters" lang="ja">${item.info.characters}</span>
+                <div class="subject-character__info">
+                    <span class="subject-character__reading">${item.primary_reading_type == "onyomi" ? item.info.onyomi[0] : item.primary_reading_type == "kunyomi" ? item.info.kunyomi[0] : item.info.nanori[0]}</span>
+                    <span class="subject-character__meaning">${item.info.meanings[0]}</span>
+                </div>
+            </div>
+        </a>
+    </li>
+    `;
+}
+function buildContextSentencesHTML(ctxArrayJP, ctxArrayEN) {
     let out = "";
-    for(let i = 0; i < ctxArray.length; i += 2) {
+    for(let i = 0; i < ctxArrayJP.length; i++) {
         out += `
         <div class="subject-section__text subject-section__text--grouped">
-            <p lang="ja">${ctxArray[i]}</p>
-            <p>${ctxArray[i+1]}</p>
+            <p lang="ja">${ctxArrayJP[i]}</p>
+            <p>${ctxArrayEN[i]}</p>
         </div>
         `;
     }
@@ -752,17 +922,7 @@ function makeDetailsHTML(item) {
                     <section id="section-amalgamations" class="subject-section__content" data-toggle-target="content" hidden="hidden">
                         <div class="subject-character-grid">
                             <ol class="subject-character-grid__items">
-                                <!--<li class="subject-character-grid__item">
-                                    <a class="subject-character subject-character--kanji subject-character--grid subject-character--burned" title="じょう" href="https://www.wanikani.com/kanji/%E4%B8%8A" data-turbo-frame="_blank">
-                                        <div class="subject-character__content">
-                                            <span class="subject-character__characters" lang="ja">上</span>
-                                            <div class="subject-character__info">
-                                                <span class="subject-character__reading">じょう</span>
-                                                <span class="subject-character__meaning">Above</span>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </li>-->
+                                ${item.info.kanji ? item.info.kanji.map(k => buildKanjiComponentHTML(k[0], k[1], k[2])).join('') : "No found in kanji set."}
                             </ol>
                         </div>
                     </section>
@@ -1041,7 +1201,7 @@ function makeDetailsHTML(item) {
                         </section>-->
                         <section class="subject-section__subsection">
                             <h3 class="subject-section__subtitle">Context Sentences</h3>
-                            ${item.info.context_sentences && item.info.context_sentences.length > 0 ? buildContextSentencesHTML(item.info.context_sentences) : "No context sentences set."}
+                            ${item.info.ctx_jp ? buildContextSentencesHTML(item.info.ctx_jp, item.info.ctx_en) : "No context sentences set."}
                         </section>
                     </section>
                 </section>
@@ -1057,17 +1217,7 @@ function makeDetailsHTML(item) {
                     <section id="section-components" class="subject-section__content" data-toggle-target="content">
                         <div class="subject-character-grid">
                             <ol class="subject-character-grid__items">
-                                <!--<li class="subject-character-grid__item">
-                                    <a class="subject-character subject-character--kanji subject-character--grid subject-character--burned" title="のう" href="https://www.wanikani.com/kanji/%E8%BE%B2" data-turbo-frame="_blank">
-                                        <div class="subject-character__content">
-                                            <span class="subject-character__characters" lang="ja">農</span>
-                                            <div class="subject-character__info">
-                                                <span class="subject-character__reading">のう</span>
-                                                <span class="subject-character__meaning">Farming</span>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </li>-->
+                                ${item.info.kanji ? item.info.kanji.map(k => buildKanjiComponentHTML(k[0], k[1], k[2])).join('') : "No kanji components set."}
                             </ol>
                         </div>
                     </section>
@@ -1181,7 +1331,7 @@ function makeDetailsHTML(item) {
                         </section>-->
                         <section class="subject-section__subsection">
                             <h3 class="subject-section__subtitle">Context Sentences</h3>
-                            ${item.info.context_sentences && item.info.context_sentences.length > 0 ? buildContextSentencesHTML(item.info.context_sentences) : "No context sentences set."}
+                            ${item.info.ctx_jp ? buildContextSentencesHTML(item.info.ctx_jp, item.info.ctx_en) : "No context sentences set."}
                         </section>
                     </section>
                 </section>

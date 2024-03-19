@@ -20,7 +20,7 @@ class CustomItem {
         this.last_reviewed_at = Date.now();
     }
 
-    isReadyForReview(levelingType = "none", level = 0) { // levelingType: none, internal, wk
+    isReadyForReview(levelingType, level) { // levelingType: none, internal, wk
         if(this.last_reviewed_at < Date.now() - srsGaps[this.info.srs_lvl] && this.info.srs_lvl > -1) { // TODO: Change SRS stage check to > 0 once lessons are implemented
             if(this.info.srs_lvl > 0) return true; // If item is already in SRS, ignore levels
             else if(levelingType == "none") return true;
@@ -33,7 +33,7 @@ class CustomItem {
         if(this.isReadyForReview(levelingType, level)) {
             return "Now";
         } else {
-            if((levelingType == "internal" && this.info.lvl && level < this.info.lvl) || (levelingType == "wk" && level < CustomSRSSettings.userSettings.lastKnownLevel)) {
+            if((levelingType == "internal" && this.info.lvl && level < this.info.lvl) || (levelingType == "wk" && this.info.lvl && CustomSRSSettings.userSettings.lastKnownLevel < this.info.lvl)) {
                 return "Locked";
             } else return Math.round((srsGaps[this.info.srs_lvl] - (Date.now() - this.last_reviewed_at)) / (60*60*1000)) + "h";
         }

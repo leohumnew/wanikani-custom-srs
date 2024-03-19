@@ -20,7 +20,7 @@ overviewPopupStyle.innerHTML = /*css*/ `
     background-color: var(--color-menu, white);
     width: 60%;
     max-width: 50rem;
-    height: 50%;
+    height: 60%;
     max-height: 40rem;
     border: none;
     border-radius: 3px;
@@ -629,6 +629,7 @@ function loadPackEditDetails(i) {
                 </div>
             `;
             itemElement.querySelector(".edit-item").onclick = () => { // Item edit button
+                savePack();
                 changeTab(4, item.id);
             };
             itemElement.querySelector(".delete-item").onclick = () => { // Item delete button
@@ -640,19 +641,7 @@ function loadPackEditDetails(i) {
     }
     document.querySelector("#tab-3__content form.pack-box").onsubmit = (e) => { // Pack save button
         e.preventDefault();
-        
-        if(i === "new") {
-            let pack = new CustomItemPack(packNameInput.value, packAuthorInput.value, packVersionInput.value, packLvlTypeInput.value, parseInt(packLvlInput.value));
-            activePackProfile.addPack(pack);
-            changeTab(3, activePackProfile.customPacks.length - 1);
-        } else {
-            activePackProfile.customPacks[i].name = packNameInput.value;
-            activePackProfile.customPacks[i].author = packAuthorInput.value;
-            activePackProfile.customPacks[i].version = packVersionInput.value;
-            activePackProfile.customPacks[i].lvlType = packLvlTypeInput.value;
-            activePackProfile.customPacks[i].lvl = packLvlInput.value;
-        }
-        StorageManager.savePackProfile(activePackProfile, "main");
+        savePack();
         changeTab(2);
     };
     document.querySelector("#tab-3__content form.import-box").onsubmit = (e) => { // Pack import button
@@ -674,6 +663,21 @@ function loadPackEditDetails(i) {
             }
         }
     };
+
+    function savePack() {
+        if(i === "new") {
+            let pack = new CustomItemPack(packNameInput.value, packAuthorInput.value, packVersionInput.value, packLvlTypeInput.value, parseInt(packLvlInput.value));
+            activePackProfile.addPack(pack);
+            changeTab(3, activePackProfile.customPacks.length - 1);
+        } else {
+            activePackProfile.customPacks[i].name = packNameInput.value;
+            activePackProfile.customPacks[i].author = packAuthorInput.value;
+            activePackProfile.customPacks[i].version = packVersionInput.value;
+            activePackProfile.customPacks[i].lvlType = packLvlTypeInput.value;
+            activePackProfile.customPacks[i].lvl = packLvlInput.value;
+        }
+        StorageManager.savePackProfile(activePackProfile, "main");
+    }
 }
 
 // ---------- Item details ----------

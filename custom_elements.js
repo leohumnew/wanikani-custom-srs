@@ -1,3 +1,5 @@
+let tempVar = {}; // Temporary variable for multiple things
+
 // ------------------------ Define and create custom HTML structures ------------------------
 const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"];
 
@@ -20,8 +22,8 @@ overviewPopupStyle.innerHTML = /*css*/ `
     background-color: var(--color-menu, white);
     width: 60%;
     max-width: 50rem;
-    height: 60%;
-    max-height: 40rem;
+    height: 70%;
+    max-height: 45rem;
     border: none;
     border-radius: 3px;
     box-shadow: 0 0 1rem rgb(0 0 0 / .5);
@@ -176,10 +178,14 @@ overviewPopupStyle.innerHTML = /*css*/ `
         margin: 0;
         border-color: var(--color-wk-panel-background, gray)
     }
+    i {
+        opacity: 0.5 }
     .ctx-sentence-div {
         display: flex;
         justify-content: space-between;
         margin-bottom: 0.5rem;
+        input {
+            margin-right: 0.5rem }
     }
     .item-info-edit-container {
         padding: 1rem;
@@ -187,10 +193,8 @@ overviewPopupStyle.innerHTML = /*css*/ `
         background-color: var(--color-wk-panel-content-background, white);
         button {
             margin-left: auto }
-        input, label {
-            margin-right: 0.5rem }
         label {
-            opacity: 0.5 }
+            margin-right: 0.5rem }
     }
     .component-div {
         display: grid;
@@ -308,6 +312,19 @@ overviewPopup.innerHTML = /*html*/ `
                     <option value="Vocabulary">Vocabulary</option>
                     <option value="KanaVocabulary">Kana Vocabulary</option>
                 </select>
+                <label for="item-srs-stage">SRS Stage:</label>
+                <select id="item-srs-stage">
+                    <option value="0">Lesson</option>
+                    <option value="1">Apprentice 1</option>
+                    <option value="2">Apprentice 2</option>
+                    <option value="3">Apprentice 3</option>
+                    <option value="4">Apprentice 4</option>
+                    <option value="5">Guru 1</option>
+                    <option value="6">Guru 2</option>
+                    <option value="7">Master</option>
+                    <option value="8">Enlightened</option>
+                    <option value="9">Burned</option>
+                </select>
                 <label for="item-characters">Characters:</label>
                 <input id="item-characters" required type="text">
                 <label for="item-meanings">Meanings (comma separated):</label>
@@ -316,7 +333,7 @@ overviewPopup.innerHTML = /*html*/ `
                     <label for="item-readings">Readings (comma separated):</label>
                     <input id="item-readings" type="text">
                 </div>
-                <div class="item-kanji-specific" style="display: none; grid-column: 1 / span 2">
+                <div class="item-info-edit-container item-kanji-specific" style="display: none; grid-column: 1 / span 2">
                     <label for="knaji-primary-reading">Primary Reading:</label>
                     <select id="kanji-primary-reading">
                         <option value="onyomi">On'yomi</option>
@@ -331,27 +348,22 @@ overviewPopup.innerHTML = /*html*/ `
                     <label for="kanji-nanori">Nanori:</label>
                     <input id="kanji-nanori" type="text">
                 </div>
-                <label for="item-srs-stage">SRS Stage:</label>
-                <select id="item-srs-stage">
-                    <option value="0">Lesson</option>
-                    <option value="1">Apprentice 1</option>
-                    <option value="2">Apprentice 2</option>
-                    <option value="3">Apprentice 3</option>
-                    <option value="4">Apprentice 4</option>
-                    <option value="5">Guru 1</option>
-                    <option value="6">Guru 2</option>
-                    <option value="7">Master</option>
-                    <option value="8">Enlightened</option>
-                    <option value="9">Burned</option>
-                </select>
-                <h3 style="grid-column: 1 / span 2">Optional</h3> <!-- Optional elements -->
+                <!----------- Optional elements ----------->
+                <h3 style="grid-column: 1 / span 2">Optional</h3>
                 <label for="item-level">Item Unlock Level:</label>
                 <input id="item-level" type="number">
-                <label for="item-meaning-explanation">Meaning Explanation:</label>
-                <input id="item-meaning-explanation" type="text">
-                <div class="item-kanji-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2">
-                    <label for="item-reading-explanation">Reading Explanation:</label>
-                    <input id="item-reading-explanation" type="text">
+                <div class="item-vocab-specific item-kanavocab-specific" style="display: none; grid-column: 1 / span 2">
+                    <label for="item-word-function">Item Word Functions (e.g. noun, の adjective):</label>
+                    <input id="item-word-function" type="text">
+                </div>
+                <div class="item-info-edit-container" style="grid-column: 1 / span 2">
+                    <p style="grid-column: 1 / span 2"><i>In explanations you can use tags to highlight &lt;r&gt;radicals&lt;/r&gt;, &lt;k&gt;kanji&lt;/k&gt;, &lt;v&gt;vocabulary&lt;/v&gt;, &lt;m&gt;meanings&lt;/m&gt;, and &lt;r&gt;readings&lt;/r&gt;.</i></p>
+                    <label for="item-meaning-explanation">Meaning Explanation:</label>
+                    <input id="item-meaning-explanation" type="text">
+                    <div class="item-kanji-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2; grid-template-columns: 1fr 1fr">
+                        <label for="item-reading-explanation">Reading Explanation:</label>
+                        <input id="item-reading-explanation" type="text">
+                    </div>
                 </div>
                 <div class="item-info-edit-container item-kanavocab-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2">
                     <p>Context Sentences</p>
@@ -360,13 +372,14 @@ overviewPopup.innerHTML = /*html*/ `
                 </div>
                 <div class="item-info-edit-container item-vocab-specific item-radical-specific" style="display: none; grid-column: 1 / span 2">
                     <p style="grid-column: 1 / span 2">Kanji Components</p>
+                    <p style="grid-column: 1 / span 2"><i>If custom item, enter the character. If WaniKani item, enter the ID found on the WK item page.</i></p>
                     <span>
                         <span id="component-type-container">
                             <label for="component-type" style="float: left">Type:</label>
                             <select id="component-type">
                                 <option value=""><i>Select type</i></option>
                                 <option value="internal">This Pack</option>
-                                <!--<option value="wk">WaniKani</option>-->
+                                <option value="wk">WaniKani</option>
                             </select>
                         </span>
                         <span id="component-id-container" style="display: none">
@@ -375,9 +388,21 @@ overviewPopup.innerHTML = /*html*/ `
                         </span>
                     </span>
                     <button id="component-add-btn">${Icons.customIconTxt("plus")}</button>
-                    <p style="display: none; grid-column: 1 / span 2"><i>Failed to find component.</i></p>
+                    <p style="display: none; grid-column: 1 / span 2; color: red"><i>Failed to find component.</i></p>
                     <hr style="grid-column: 1 / span 2">
                     <div id="components-container" style="grid-column: 1 / span 2"></div>
+                </div>
+                <div class="item-info-edit-container" style="grid-column: 1 / span 2">
+                    <label for="item-meaning-whitelist">Meaning Whitelist:</label>
+                    <input id="item-meaning-whitelist" type="text">
+                    <label for="item-meaning-blacklist">Meaning Blacklist:</label>
+                    <input id="item-meaning-blacklist" type="text">
+                    <div class="item-kanji-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2; grid-template-columns: 1fr 1fr">
+                        <label for="item-reading-whitelist">Reading Whitelist:</label>
+                        <input id="item-reading-whitelist" type="text">
+                        <label for="item-reading-blacklist">Reading Blacklist:</label>
+                        <input id="item-reading-blacklist" type="text">
+                    </div>
                 </div>
                 <button style="grid-column: 1 / span 2" type="submit">Add</button>
             </form>
@@ -433,13 +458,13 @@ if (window.location.pathname.includes("/dashboard") || window.location.pathname 
             document.querySelector(`#tab-${i}`).onchange = () => {
                 changeTab(i) };
         }
-        document.querySelector("#pack-select").onchange = () => {
-            loadPackEditDetails(document.querySelector("#pack-select").value) };
-        document.querySelector("#new-item-button").onclick = () => {
+        document.getElementById("pack-select").onchange = () => {
+            loadPackEditDetails(document.getElementById("pack-select").value) };
+        document.getElementById("new-item-button").onclick = () => {
             changeTab(4, null) };
         // Add popup button to page
         if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
-            document.querySelector("#sitemap").prepend(buttonLI);
+            document.getElementById("sitemap").prepend(buttonLI);
         }
     });
 }
@@ -469,12 +494,11 @@ function changeTab(tab, data) {
 
 // ---------- Update popup content ----------
 function updateOverviewTab() {
-    //document.querySelector("#tab-1__content .content-box:first-child p").innerText = activePackProfile.getActiveLessons().length;
     document.querySelector("#tab-1__content .content-box:last-child p").innerText = activePackProfile.getNumActiveReviews();
 }
 
 function updatePacksTab() {
-    let packsTab = document.querySelector("#tab-2__content");
+    let packsTab = document.getElementById("tab-2__content");
     packsTab.innerHTML = "";
     for(let i = 0; i < activePackProfile.customPacks.length; i++) {
         let pack = activePackProfile.customPacks[i];
@@ -529,7 +553,7 @@ function updatePacksTab() {
 }
 
 function updateEditPackTab(editPack) {
-    let packSelect = document.querySelector("#pack-select");
+    let packSelect = document.getElementById("pack-select");
     packSelect.innerHTML = "<option value='new'>New Pack</option><option value='import'>Import Pack</option>";
     for(let i = 0; i < activePackProfile.customPacks.length; i++) {
         let pack = activePackProfile.customPacks[i];
@@ -541,6 +565,7 @@ function updateEditPackTab(editPack) {
 }
 
 function updateEditItemTab(editItem) {
+    tempVar.components = [];
     if(editItem !== undefined) {
         // Show add item edit tab and make sure inputs are empty
         document.querySelector("#tab-4__content > form").style.display = "grid";
@@ -552,16 +577,18 @@ function updateEditItemTab(editItem) {
         document.getElementById("component-add-btn").onclick = (e) => { // Handle adding kanji components
             e.preventDefault();
             let type = document.getElementById("component-type").value;
-            let id = document.getElementById("component-id").value;
+            let id = parseInt(document.getElementById("component-id").value);
+            let subjectType = document.getElementById("component-id-label").innerText;
             if(type === "" || id === "") return;
             // Check if component exists. When type is internal id is the item character to search for
             switch(type) {
                 case "internal":
-                    let type = document.getElementById("component-id-label").innerText;
-                    let itemID = activePackProfile.customPacks[document.querySelector("#pack-select").value].getItemID(type, document.getElementById("component-id").value);
+                    let itemID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItemID(subjectType, document.getElementById("component-id").value);
                     if(itemID) {
+                        let itemFromID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItem(itemID);
+                        tempVar.components.push({id: itemID, pack: parseInt(document.getElementById("pack-select").value), type: subjectType, characters: itemFromID.info.characters, meanings: itemFromID.info.meanings, readings: itemFromID.info.readings ? itemFromID.info.readings : itemFromID.info.onyomi ? itemFromID.info.onyomi.concat(itemFromID.info.kunyomi).concat(itemFromID.info.nanori) : null});
                         document.getElementById("component-add-btn").nextElementSibling.style.display = "none";
-                        document.getElementById("components-container").innerHTML += buildKanjiComponentEditHTML(type, document.querySelector("#pack-select").value, itemID);
+                        document.getElementById("components-container").appendChild(buildKanjiComponentEditHTML(tempVar.components[tempVar.components.length - 1]));
                         document.getElementById("component-type").value = "";
                         document.getElementById("component-id").value = "";
                     } else {
@@ -569,88 +596,110 @@ function updateEditItemTab(editItem) {
                     }
                     break;
                 case "wk":
-                    // TODO: Add WaniKani component check
+                    // Fetch wk api item to check it's valid
+                    Utils.wkAPIRequest("subjects/" + id).then((response) => {
+                        if(response) {
+                            tempVar.components.push({id: id, pack: -1, type: subjectType, characters: response.data.characters, meanings: response.data.meanings.map(m => m.meaning), readings: response.data.readings ? response.data.readings.map(r => r.reading) : response.data.onyomi ? response.data.onyomi.concat(response.data.kunyomi).concat(response.data.nanori) : null});
+                            document.getElementById("component-add-btn").nextElementSibling.style.display = "none";
+                            document.getElementById("components-container").appendChild(buildKanjiComponentEditHTML(tempVar.components[tempVar.components.length - 1]));
+                            document.getElementById("component-type").value = "";
+                            document.getElementById("component-id").value = "";
+                        } else {
+                            document.getElementById("component-add-btn").nextElementSibling.style.display = "block";
+                        }
+                    });
                     break;
             }
         };
         if(editItem !== null) {
-            let editItemInfo = activePackProfile.customPacks[document.querySelector("#pack-select").value].getItem(editItem).info;
-            document.querySelector("#item-srs-stage").value = editItemInfo.srs_lvl;
-            document.querySelector("#item-type").value = editItemInfo.type;
-            document.querySelector("#item-characters").value = editItemInfo.characters;
-            document.querySelector("#item-meanings").value = editItemInfo.meanings.join(", ");
-            if(editItemInfo.lvl) document.querySelector("#item-level").value = editItemInfo.lvl;
-            if(editItemInfo.meaning_expl) document.querySelector("#item-meaning-explanation").value = editItemInfo.meaning_expl;
-            if(editItemInfo.readings) document.querySelector("#item-readings").value = editItemInfo.readings.join(", ");
-            if(editItemInfo.primary_reading_type) document.querySelector("#kanji-primary-reading").value = editItemInfo.primary_reading_type;
-            if(editItemInfo.onyomi) document.querySelector("#kanji-onyomi").value = editItemInfo.onyomi.join(", ");
-            if(editItemInfo.kunyomi) document.querySelector("#kanji-kunyomi").value = editItemInfo.kunyomi.join(", ");
-            if(editItemInfo.nanori) document.querySelector("#kanji-nanori").value = editItemInfo.nanori.join(", ");
-            if(editItemInfo.reading_expl) document.querySelector("#item-reading-explanation").value = editItemInfo.reading_expl;
+            let editItemInfo = activePackProfile.customPacks[document.getElementById("pack-select").value].getItem(editItem).info;
+            document.getElementById("item-srs-stage").value = editItemInfo.srs_lvl;
+            document.getElementById("item-type").value = editItemInfo.type;
+            document.getElementById("item-characters").value = editItemInfo.characters;
+            document.getElementById("item-meanings").value = editItemInfo.meanings.join(", ");
+            if(editItemInfo.lvl) document.getElementById("item-level").value = editItemInfo.lvl;
+            if(editItemInfo.meaning_expl) document.getElementById("item-meaning-explanation").value = editItemInfo.meaning_expl;
+            if(editItemInfo.readings) document.getElementById("item-readings").value = editItemInfo.readings.join(", ");
+            if(editItemInfo.primary_reading_type) document.getElementById("kanji-primary-reading").value = editItemInfo.primary_reading_type;
+            if(editItemInfo.onyomi) document.getElementById("kanji-onyomi").value = editItemInfo.onyomi.join(", ");
+            if(editItemInfo.kunyomi) document.getElementById("kanji-kunyomi").value = editItemInfo.kunyomi.join(", ");
+            if(editItemInfo.nanori) document.getElementById("kanji-nanori").value = editItemInfo.nanori.join(", ");
+            if(editItemInfo.reading_expl) document.getElementById("item-reading-explanation").value = editItemInfo.reading_expl;
+            if(editItemInfo.func) document.getElementById("item-word-function").value = editItemInfo.func;
+            if(editItemInfo.meaning_wl) document.getElementById("item-meaning-whitelist").value = editItemInfo.meaning_wl.join(", ");
+            if(editItemInfo.meaning_bl) document.getElementById("item-meaning-blacklist").value = editItemInfo.meaning_bl.join(", ");
+            if(editItemInfo.reading_wl) document.getElementById("item-reading-whitelist").value = editItemInfo.reading_wl.join(", ");
+            if(editItemInfo.reading_bl) document.getElementById("item-reading-blacklist").value = editItemInfo.reading_bl.join(", ");
             if(editItemInfo.ctx_jp) {
                 document.getElementById("item-context-sentences-container").innerHTML = editItemInfo.ctx_jp.map((s, i) => {
                     return buildContextSentenceEditHTML(s, editItemInfo.ctx_en[i]);
                 }).join("");
             }
             if(editItemInfo.kanji) {
-                document.getElementById("components-container").innerHTML = editItemInfo.kanji.map((k) => {
-                    return buildKanjiComponentEditHTML(k[0], k[1], k[2]);
-                }).join("");
-            }
+                tempVar.components = editItemInfo.kanji;
+                let container = document.getElementById("components-container");
+                container.innerHTML = "";
+                editItemInfo.kanji.forEach(k => {
+                    container.appendChild(buildKanjiComponentEditHTML(k));
+                });
+            } else tempVar.components = [];
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Save";
         } else {
-            ["item-reading-explanation", "item-meaning-explanation", "item-characters", "item-meanings", "item-readings", "kanji-onyomi", "kanji-kunyomi", "item-level", "kanji-nanori"].forEach((s) => {
+            ["item-reading-explanation", "item-meaning-explanation", "item-characters", "item-meanings", "item-readings", "kanji-onyomi", "kanji-kunyomi", "item-level", "kanji-nanori", "item-word-function", "item-meaning-whitelist", "item-meaning-blacklist", "item-reading-whitelist", "item-reading-blacklist"].forEach(s => {
                 document.getElementById(s).value = "";
             });
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Add";
             document.querySelector("#item-srs-stage").value = "0";
-            document.querySelector("#item-context-sentences-container").innerHTML = "";
-            document.querySelector("#components-container").innerHTML = "";
+            document.getElementById("item-context-sentences-container").innerHTML = "";
+            document.getElementById("components-container").innerHTML = "";
+            tempVar.components = [];
         }
         // Add event listener to form
         document.querySelector("#tab-4__content form").onsubmit = (e) => {
             e.preventDefault();
 
-            let itemType = document.querySelector("#item-type").value;
+            let itemType = document.getElementById("item-type").value;
 
             let infoStruct = {
                 type: itemType,
-                characters: document.querySelector("#item-characters").value,
-                meanings: document.querySelector("#item-meanings").value.split(",").map(s => s.trim()),
-                srs_lvl: document.querySelector("#item-srs-stage").value
+                characters: document.getElementById("item-characters").value,
+                meanings: document.getElementById("item-meanings").value.split(",").map(s => s.trim()),
+                srs_lvl: document.getElementById("item-srs-stage").value
             };
-            if(document.querySelector("#item-meaning-explanation").value != "") infoStruct.meaning_expl = document.querySelector("#item-meaning-explanation").value;
-            if(document.querySelector("#item-level").value != "") infoStruct.lvl = parseInt(document.querySelector("#item-level").value);
+            if(document.getElementById("item-meaning-explanation").value != "") infoStruct.meaning_expl = document.getElementById("item-meaning-explanation").value;
+            if(document.getElementById("item-level").value != "") infoStruct.lvl = parseInt(document.getElementById("item-level").value);
+            if(document.getElementById("item-meaning-whitelist").value != "") infoStruct.meaning_wl = document.getElementById("item-meaning-whitelist").value.split(",").map(s => s.trim());
+            if(document.getElementById("item-meaning-blacklist").value != "") infoStruct.meaning_bl = document.getElementById("item-meaning-blacklist").value.split(",").map(s => s.trim());
 
-            let pack = activePackProfile.customPacks[document.querySelector("#pack-select").value];
-            let ctxDivs = document.querySelector("#item-context-sentences-container").children;
+            let pack = activePackProfile.customPacks[document.getElementById("pack-select").value];
+            let ctxDivs = document.getElementById("item-context-sentences-container").children;
 
             // Add or edit item
             switch(itemType) {
                 case "Radical":
                     infoStruct.category = infoStruct.type;
-                    if(document.getElementById("components-container").children.length > 0) {
-                        infoStruct.kanji = [];
-                        let container = document.getElementById("components-container");
-                        for(let i = 0; i < container.children.length; i++) {
-                            let [type, pack, id] = container.children[i].querySelector(".component-info").innerText.split(",");
-                            infoStruct.kanji.push([type, parseInt(pack), parseInt(id)]);
-                        }
-                    }
+                    if(tempVar.components.length > 0) infoStruct.kanji = tempVar.components;
                     break;
                 case "Kanji":
                     infoStruct.category = infoStruct.type;
-                    infoStruct.primary_reading_type = document.querySelector("#kanji-primary-reading").value;
-                    if(document.querySelector("#kanji-onyomi").value != "") infoStruct.onyomi = document.querySelector("#kanji-onyomi").value.split(",").map(s => s.trim());
-                    if(document.querySelector("#kanji-kunyomi").value != "") infoStruct.kunyomi = document.querySelector("#kanji-kunyomi").value.split(",").map(s => s.trim());
-                    if(document.querySelector("#kanji-nanori").value != "") infoStruct.nanori = document.querySelector("#kanji-nanori").value.split(",").map(s => s.trim());
-                    if(document.querySelector("#item-reading-explanation").value != "") infoStruct.reading_expl = document.querySelector("#item-reading-explanation").value;
+                    infoStruct.primary_reading_type = document.getElementById("kanji-primary-reading").value;
+                    if(document.getElementById("kanji-" + infoStruct.primary_reading_type.toLowerCase()).value == "") {
+                        alert("Primary reading must be set");
+                        return;
+                    }
+                    if(document.getElementById("kanji-onyomi").value != "") infoStruct.onyomi = document.getElementById("kanji-onyomi").value.split(",").map(s => s.trim());
+                    if(document.getElementById("kanji-kunyomi").value != "") infoStruct.kunyomi = document.getElementById("kanji-kunyomi").value.split(",").map(s => s.trim());
+                    if(document.getElementById("kanji-nanori").value != "") infoStruct.nanori = document.getElementById("kanji-nanori").value.split(",").map(s => s.trim());
+                    if(document.getElementById("item-reading-explanation").value != "") infoStruct.reading_expl = document.getElementById("item-reading-explanation").value;
+                    if(document.getElementById("item-reading-whitelist").value != "") infoStruct.reading_wl = document.getElementById("item-reading-whitelist").value.split(",").map(s => s.trim());
+                    if(document.getElementById("item-reading-blacklist").value != "") infoStruct.reading_bl = document.getElementById("item-reading-blacklist").value.split(",").map(s => s.trim());
                     break;
                 case "Vocabulary":
                     infoStruct.category = infoStruct.type;
-                    infoStruct.readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
-                    if(document.querySelector("#item-reading-explanation").value != "") infoStruct.reading_expl = document.querySelector("#item-reading-explanation").value;
-                    if(document.querySelector("#item-context-sentences-container").children.length > 0) {
+                    infoStruct.readings = document.getElementById("item-readings").value.split(",").map(s => s.trim());
+                    if(document.getElementById("item-reading-explanation").value != "") infoStruct.reading_expl = document.getElementById("item-reading-explanation").value;
+                    if(document.getElementById("item-word-function").value != "") infoStruct.func = document.getElementById("item-word-function").value;
+                    if(document.getElementById("item-context-sentences-container").children.length > 0) {
                         infoStruct.ctx_jp = [];
                         infoStruct.ctx_en = [];
                         for(let i = 0; i < ctxDivs.length; i++) {
@@ -659,19 +708,13 @@ function updateEditItemTab(editItem) {
                             infoStruct.ctx_en.push(ctxDiv.children[1].value);
                         }
                     }
-                    if(document.getElementById("components-container").children.length > 0) {
-                        infoStruct.kanji = [];
-                        let container = document.getElementById("components-container");
-                        for(let i = 0; i < container.children.length; i++) {
-                            let [type, pack, id] = container.children[i].querySelector(".component-info").innerText.split(",");
-                            infoStruct.kanji.push([type, parseInt(pack), parseInt(id)]);
-                        }
-                    }
+                    if(tempVar.components.length > 0) infoStruct.kanji = tempVar.components;
                     break;
                 case "KanaVocabulary":
                     infoStruct.category = "Vocabulary";
-                    infoStruct.readings = document.querySelector("#item-readings").value.split(",").map(s => s.trim());
-                    if(document.querySelector("#item-context-sentences-container").children.length > 0) {
+                    infoStruct.readings = document.getElementById("item-readings").value.split(",").map(s => s.trim());
+                    if(document.getElementById("item-word-function").value != "") infoStruct.func = document.getElementById("item-word-function").value;
+                    if(document.getElementById("item-context-sentences-container").children.length > 0) {
                         infoStruct.ctx_jp = [];
                         infoStruct.ctx_en = [];
                         for(let i = 0; i < ctxDivs.length; i++) {
@@ -690,9 +733,9 @@ function updateEditItemTab(editItem) {
 
             document.querySelector("#tab-4__content > form").style.display = "none";
             document.querySelector("#tab-4__content > div").style.display = "block";
-            loadPackEditDetails(document.querySelector("#pack-select").value);
+            loadPackEditDetails(document.getElementById("pack-select").value);
             StorageManager.savePackProfile(activePackProfile, "main");
-            changeTab(3, document.querySelector("#pack-select").value);
+            changeTab(3, document.getElementById("pack-select").value);
         };
     } else {
         // Hide add item edit tab
@@ -702,37 +745,37 @@ function updateEditItemTab(editItem) {
 }
 
 function updateSettingsTab() {
-    document.querySelector("#settingsShowDueTime").checked = CustomSRSSettings.userSettings.showItemDueTime;
-    document.querySelector("#settingsShowDueTime").onchange = () => {
-        CustomSRSSettings.userSettings.showItemDueTime = document.querySelector("#settingsShowDueTime").checked;
+    document.getElementById("settingsShowDueTime").checked = CustomSRSSettings.userSettings.showItemDueTime;
+    document.getElementById("settingsShowDueTime").onchange = () => {
+        CustomSRSSettings.userSettings.showItemDueTime = document.getElementById("settingsShowDueTime").checked;
         StorageManager.saveSettings();
     };
-    document.querySelector("#settingsItemQueueMode").value = CustomSRSSettings.userSettings.itemQueueMode ? CustomSRSSettings.userSettings.itemQueueMode : "start";
-    document.querySelector("#settingsItemQueueMode").onchange = () => {
-        CustomSRSSettings.userSettings.itemQueueMode = document.querySelector("#settingsItemQueueMode").value;
+    document.getElementById("settingsItemQueueMode").value = CustomSRSSettings.userSettings.itemQueueMode ? CustomSRSSettings.userSettings.itemQueueMode : "start";
+    document.getElementById("settingsItemQueueMode").onchange = () => {
+        CustomSRSSettings.userSettings.itemQueueMode = document.getElementById("settingsItemQueueMode").value;
         StorageManager.saveSettings();
     };
-    document.querySelector("#settingsExportSRSData").checked = CustomSRSSettings.userSettings.exportSRSData;
-    document.querySelector("#settingsExportSRSData").onchange = () => {
-        CustomSRSSettings.userSettings.exportSRSData = document.querySelector("#settingsExportSRSData").checked;
+    document.getElementById("settingsExportSRSData").checked = CustomSRSSettings.userSettings.exportSRSData;
+    document.getElementById("settingsExportSRSData").onchange = () => {
+        CustomSRSSettings.userSettings.exportSRSData = document.getElementById("settingsExportSRSData").checked;
         StorageManager.saveSettings();
     };
-    document.querySelector("#settingsWKAPIKey").value = CustomSRSSettings.userSettings.apiKey;
-    document.querySelector("#settingsWKAPIKey").onchange = () => {
-        CustomSRSSettings.userSettings.apiKey = document.querySelector("#settingsWKAPIKey").value;
+    document.getElementById("settingsWKAPIKey").value = CustomSRSSettings.userSettings.apiKey;
+    document.getElementById("settingsWKAPIKey").onchange = () => {
+        CustomSRSSettings.userSettings.apiKey = document.getElementById("settingsWKAPIKey").value;
         StorageManager.saveSettings();
     };
 }
 
 // ---------- Tabs details ----------
 function loadPackEditDetails(i) {
-    let packNameInput = document.querySelector("#pack-name");
-    let packAuthorInput = document.querySelector("#pack-author");
-    let packVersionInput = document.querySelector("#pack-version");
-    let packLvlTypeInput = document.querySelector("#pack-lvl-type");
-    let packLvlInput = document.querySelector("#pack-lvl");
-    let packItems = document.querySelector("#pack-items");
-    let importBox = document.querySelector("#pack-import");
+    let packNameInput = document.getElementById("pack-name");
+    let packAuthorInput = document.getElementById("pack-author");
+    let packVersionInput = document.getElementById("pack-version");
+    let packLvlTypeInput = document.getElementById("pack-lvl-type");
+    let packLvlInput = document.getElementById("pack-lvl");
+    let packItems = document.getElementById("pack-items");
+    let importBox = document.getElementById("pack-import");
     if(i === "new") { // If creating a new pack
         packNameInput.value = "";
         packAuthorInput.value = "";
@@ -813,14 +856,19 @@ function loadPackEditDetails(i) {
 }
 
 // ---------- Item info procedural edit structures ----------
-function buildKanjiComponentEditHTML(type, pack, id) {
-    return /*html*/ `
+function buildKanjiComponentEditHTML(item) {
+    let template = document.createElement('template');
+    template.innerHTML = /*html*/ `
     <div class="component-div">
-        <p>${type == "wk" ? "WaniKani" : "This Pack"} Kanji. ID: ${id} Character: ${activePackProfile.getPack(pack).getItem(id).info.characters}</p>
-        <button class="delete-component" title="Delete Component" onclick="this.parentElement.remove()">${Icons.customIconTxt("cross")}</button>
-        <span class="component-info" style="display: none">${type},${pack},${id}</span>
+        <p>${item.pack < 0 ? "WaniKani" : "This Pack"} ${item.type}. Character: ${item.characters} | Meaning: ${item.meanings[0]}</p>
+        <button class="delete-component" title="Delete Component">${Icons.customIconTxt("cross")}</button>
     </div>
     `;
+    template.content.querySelector(".delete-component").onclick = function() {
+        tempVar.components.splice(tempVar.components.findIndex(c => c.id == item.id && c.pack == item.pack), 1);
+        this.parentElement.remove();
+    };
+    return template.content;
 }
 
 function buildContextSentenceEditHTML(jp, en) {
@@ -832,19 +880,16 @@ function buildContextSentenceEditHTML(jp, en) {
     </div>
     `;
 }
-// ---------- Item details ----------
-function buildKanjiComponentHTML(type, pack, id) {
-    let item;
-    if(pack >= 0) item = activePackProfile.getPack(pack).getItem(id);
-    else item = null; // TODO: Add WaniKani component check
+// ---------- Item details HTML and formatting ----------
+function buildKanjiComponentHTML(item) {
     return /*html*/ `
     <li class="subject-character-grid__item">
-        <a class="subject-character subject-character--${type.toLowerCase()} subject-character--grid ${item.info.srs_lvl > 8 ? "subject-character--burned" : ""}" data-turbo-frame="_blank">
+        <a class="subject-character subject-character--${item.type.toLowerCase()} subject-character--grid" data-turbo-frame="_blank" ${item.pack < 0 ? 'href="https://www.wanikani.com/' + item.type.toLowerCase() + '/' + item.characters + '"' : ""}>
             <div class="subject-character__content">
-                <span class="subject-character__characters" lang="ja">${item.info.characters}</span>
+                <span class="subject-character__characters" lang="ja">${item.characters}</span>
                 <div class="subject-character__info">
-                    <span class="subject-character__reading">${item.primary_reading_type == "onyomi" ? item.info.onyomi[0] : item.primary_reading_type == "kunyomi" ? item.info.kunyomi[0] : item.info.nanori[0]}</span>
-                    <span class="subject-character__meaning">${item.info.meanings[0]}</span>
+                    <span class="subject-character__reading">${item.readings ? item.readings[0] : item.primary_reading_type == "onyomi" ? item.onyomi[0] : item.primary_reading_type == "kunyomi" ? item.kunyomi[0] : item.primary_reading_type == "nanori" ? item.nanori[0] : "-"}</span>
+                    <span class="subject-character__meaning">${item.meanings[0]}</span>
                 </div>
             </div>
         </a>
@@ -862,6 +907,9 @@ function buildContextSentencesHTML(ctxArrayJP, ctxArrayEN) {
         `;
     }
     return out;
+}
+function explFormat(expl) {
+    return expl.replace(/<r>(.*?)<\/r>/g, "<mark title='Radical' class='radical-highlight'>$1</mark>").replace(/<k>(.*?)<\/k>/g, "<mark title='Kanji' class='kanji-highlight'>$1</mark>").replace(/<v>(.*?)<\/v>/g, "<mark title='Vocabulary' class='vocabulary-highlight'>$1</mark>").replace(/<m>(.*?)<\/m>/g, "<mark title='Meaning' class='meaning-highlight'>$1</mark>").replace(/<r>(.*?)<\/r>/g, "<mark title='Reading' class='reading-highlight'>$1</mark>");
 }
 function makeDetailsHTML(item) {
     switch(item.info.type) {
@@ -895,7 +943,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                            <p class="subject-section__text">${item.info.meaning_expl ? item.info.meaning_expl : "This item does not have a meaning explanation. Good luck!"}</p>
+                            <p class="subject-section__text">${item.info.meaning_expl ? explFormat(item.info.meaning_expl) : "This item does not have a meaning explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -922,7 +970,7 @@ function makeDetailsHTML(item) {
                     <section id="section-amalgamations" class="subject-section__content" data-toggle-target="content" hidden="hidden">
                         <div class="subject-character-grid">
                             <ol class="subject-character-grid__items">
-                                ${item.info.kanji ? item.info.kanji.map(k => buildKanjiComponentHTML(k[0], k[1], k[2])).join('') : "No found in kanji set."}
+                                ${item.info.kanji ? item.info.kanji.map(k => buildKanjiComponentHTML(k)).join('') : "No found in kanji set."}
                             </ol>
                         </div>
                     </section>
@@ -986,7 +1034,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                            <p class="subject-section__text">${item.info.meaning_expl ? item.info.meaning_expl : "This item does not have a reading explanation. Good luck!"}</p>
+                            <p class="subject-section__text">${item.info.meaning_expl ? explFormat(item.info.meaning_expl) : "This item does not have a reading explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1035,7 +1083,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                            <p class="subject-section__text">${item.info.reading_expl ? item.info.reading_expl : "This item does not have a reading explanation. Good luck!"}</p>
+                            <p class="subject-section__text">${item.info.reading_expl ? explFormat(item.info.reading_expl) : "This item does not have a reading explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1108,14 +1156,14 @@ function makeDetailsHTML(item) {
                                 <h2 class='subject-section__meanings-title'>User Synonyms</h2>
                                 <p class='subject-section__meanings-items'><i>User synonyms are currently disabled for custom items.</i></p>
                             </div>-->
-                            <!--<div class="subject-section__meanings">
+                            ${item.info.func ? `<div class="subject-section__meanings">
                                 <h2 class="subject-section__meanings-title">Word Type</h2>
-                                <p class="subject-section__meanings-items">noun, の adjective</p>
-                            </div>-->
+                                <p class="subject-section__meanings-items">${item.info.func}</p>
+                            </div>` : ''}
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Explanation</h3>
-                            <p class="subject-section__text">${item.info.meaning_expl ? item.info.meaning_expl : "This item does not have a meaning explanation. Good luck!"}</p>
+                            <p class="subject-section__text">${item.info.meaning_expl ? explFormat(item.info.meaning_expl) : "This item does not have a meaning explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1153,7 +1201,7 @@ function makeDetailsHTML(item) {
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Explanation</h3>
-                            <p class="subject-section__text">${item.info.reading_expl ? item.info.reading_expl : "This item does not have a reading explanation. Good luck!"}</p>
+                            <p class="subject-section__text">${item.info.reading_expl ? explFormat(item.info.reading_expl) : "This item does not have a reading explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1217,7 +1265,7 @@ function makeDetailsHTML(item) {
                     <section id="section-components" class="subject-section__content" data-toggle-target="content">
                         <div class="subject-character-grid">
                             <ol class="subject-character-grid__items">
-                                ${item.info.kanji ? item.info.kanji.map(k => buildKanjiComponentHTML(k[0], k[1], k[2])).join('') : "No kanji components set."}
+                                ${item.info.kanji ? item.info.kanji.map(k => buildKanjiComponentHTML(k)).join('') : "No kanji components set."}
                             </ol>
                         </div>
                     </section>
@@ -1253,14 +1301,14 @@ function makeDetailsHTML(item) {
                                 <h2 class='subject-section__meanings-title'>User Synonyms</h2>
                                 <p class='subject-section__meanings-items'><i>User synonyms are currently disabled for custom items.</i></p>
                             </div>-->
-                            <!--<div class="subject-section__meanings">
+                            ${item.info.func ? `<div class="subject-section__meanings">
                                 <h2 class="subject-section__meanings-title">Word Type</h2>
-                                <p class="subject-section__meanings-items">noun, suffix</p>
-                            </div>-->
+                                <p class="subject-section__meanings-items">${item.info.func}</p>
+                            </div>` : ''}
                         </section>
                         <section class="subject-section__subsection">
                             <h3 class='subject-section__subtitle'>Explanation</h3>
-                            <p class="subject-section__text">${item.info.meaning_expl ? item.info.meaning_expl : "This item does not have a meaning explanation. Good luck!"}</p>
+                            <p class="subject-section__text">${item.info.meaning_expl ? explFormat(item.info.meaning_expl) : "This item does not have a meaning explanation. Good luck!"}</p>
                             <!--<aside class="subject-hint">
                                 <h3 class="subject-hint__title">
                                     <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>

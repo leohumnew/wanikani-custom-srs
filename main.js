@@ -189,6 +189,16 @@ if (window.location.pathname.includes("/review")) {
             return originalFetch(...args);
         }
     };
+
+    // Add event listener for turbo:load, then check if the site address includes /radicals /kanji or /vocabulary
+    document.addEventListener("turbo:frame-load", () => {
+        if(window.location.pathname.includes("/radicals/") || window.location.pathname.includes("/kanji/") || window.location.pathname.includes("/vocabulary/")) {
+            // Use the meta tag in the header with name subject_id to get the subject ID
+            let itemHeader = document.querySelector("header.page-header");
+            if(itemHeader.querySelector("h3")) itemHeader.querySelector("h3").innerText = "ID: " + document.querySelector("meta[name='subject_id']").content;
+            else itemHeader.innerHTML += "<h3> ID: " + document.querySelector("meta[name='subject_id']").content + "</h3>";
+        }
+    });
 }
 
 // ----------- UTILITIES -----------

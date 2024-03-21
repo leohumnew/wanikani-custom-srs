@@ -57,6 +57,11 @@ class CustomItem {
     }
 
     getQueueItem(packID) {
+        let aux_meanings = [], aux_readings = [];
+        if(this.info.meaning_wl) aux_meanings = aux_meanings.concat(this.info.meaning_wl.map(m => ({"type": "whitelist", "meaning": m})));
+        if(this.info.meaning_bl) aux_meanings = aux_meanings.concat(this.info.meaning_bl.map(m => ({"type": "blacklist", "meaning": m})));
+        if(this.info.reading_wl) aux_readings = aux_readings.concat(this.info.reading_wl.map(r => ({"type": "whitelist", "reading": r})));
+        if(this.info.reading_bl) aux_readings = aux_readings.concat(this.info.reading_bl.map(r => ({"type": "blacklist", "reading": r})));
         switch(this.info.type) {
             case "Radical":
                 return {
@@ -65,7 +70,7 @@ class CustomItem {
                     subject_category: this.info.category,
                     characters: this.info.characters,
                     meanings: this.info.meanings,
-                    auxiliary_meanings: this.info.aux_meanings || [],
+                    auxiliary_meanings: aux_meanings,
                     kanji: this.info.kanji || []
                 };
             case "Kanji":
@@ -75,12 +80,12 @@ class CustomItem {
                     subject_category: this.info.category,
                     characters: this.info.characters,
                     meanings: this.info.meanings,
-                    auxiliary_meanings: this.info.aux_meanings || [],
+                    auxiliary_meanings: aux_meanings,
                     primary_reading_type: this.info.primary_reading_type,
                     onyomi: this.info.onyomi || [],
                     kunyomi: this.info.kunyomi || [],
                     nanori: this.info.nanori || [],
-                    auxiliary_readings: this.info.aux_readings || [],
+                    auxiliary_readings: aux_readings,
                     radicals: this.info.radicals || [],
                     vocabulary: this.info.vocabulary || []
                 };
@@ -91,9 +96,9 @@ class CustomItem {
                     subject_category: this.info.category,
                     characters: this.info.characters,
                     meanings: this.info.meanings,
-                    auxiliary_meanings: this.info.aux_meanings || [],
+                    auxiliary_meanings: aux_meanings,
                     readings: this.info.readings.map(reading => ({"reading": reading, "pronunciations": []})),
-                    auxiliary_readings: this.info.aux_readings || [],
+                    auxiliary_readings: aux_readings,
                     kanji: this.info.kanji || []
                 };
             case "KanaVocabulary":
@@ -103,7 +108,7 @@ class CustomItem {
                     subject_category: this.info.category,
                     characters: this.info.characters,
                     meanings: this.info.meanings,
-                    auxiliary_meanings: this.info.aux_meanings || [],
+                    auxiliary_meanings: aux_meanings,
                     readings: this.info.readings.map(reading => ({"reading": reading, "pronunciations": []}))
                 };
         }
@@ -111,6 +116,7 @@ class CustomItem {
 
     static fromObject(object) {
         let item;
+        if(object.info.kanji && object.info.kanji[0] && !object.info.kanji[0].characters) delete object.info.kanji; // Remove old component format TODO: remove after a few weeks
         if(!object.info) { // If item from before update TODO: remove after a few weeks
             let newInfo = {};
             newInfo.type = object.type;
@@ -119,8 +125,6 @@ class CustomItem {
             newInfo.characters = object.characters;
             newInfo.meanings = object.meanings;
             if(object.readings) newInfo.readings = object.readings;
-            if(object.auxiliary_readings && object.auxiliary_readings.length > 0) newInfo.aux_readings = object.auxiliary_readings;
-            if(object.auxiliary_meanings && object.auxiliary_meanings.length > 0) newInfo.aux_meanings = object.auxiliary_meanings;
             if(object.meaning_explanation) newInfo.meaning_expl = object.meaning_explanation;
             if(object.reading_explanation && (object.type == "Vocabulary" || object.type == "Kanji")) newInfo.reading_expl = object.reading_explanation;
             if(object.primary_reading_type) newInfo.primary_reading_type = object.primary_reading_type;

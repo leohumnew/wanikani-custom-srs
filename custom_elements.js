@@ -357,7 +357,7 @@ overviewPopup.innerHTML = /*html*/ `
                     <input id="item-word-function" type="text">
                 </div>
                 <div class="item-info-edit-container" style="grid-column: 1 / span 2">
-                    <p style="grid-column: 1 / span 2"><i>In explanations you can use tags to highlight &lt;r&gt;radicals&lt;/r&gt;, &lt;k&gt;kanji&lt;/k&gt;, &lt;v&gt;vocabulary&lt;/v&gt;, &lt;m&gt;meanings&lt;/m&gt;, and &lt;r&gt;readings&lt;/r&gt;.</i></p>
+                    <p style="grid-column: 1 / span 2"><i>In explanations you can use tags to highlight &lt;r&gt;radicals&lt;/r&gt;, &lt;k&gt;kanji&lt;/k&gt;, &lt;v&gt;vocabulary&lt;/v&gt;, &lt;me&gt;meanings&lt;/me&gt;, and &lt;re&gt;readings&lt;/re&gt;.</i></p>
                     <label for="item-meaning-explanation">Meaning Explanation:</label>
                     <input id="item-meaning-explanation" type="text">
                     <div class="item-kanji-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2; grid-template-columns: 1fr 1fr">
@@ -572,7 +572,7 @@ function updateEditItemTab(editItem) {
         document.querySelector("#tab-4__content > div").style.display = "none";
         document.getElementById("ctx-add-btn").onclick = (e) => {
             e.preventDefault();
-            document.getElementById("item-context-sentences-container").innerHTML += buildContextSentenceEditHTML("", "");
+            document.getElementById("item-context-sentences-container").appendChild(buildContextSentenceEditHTML("", ""));
         };
         document.getElementById("component-add-btn").onclick = (e) => { // Handle adding kanji components
             e.preventDefault();
@@ -611,6 +611,14 @@ function updateEditItemTab(editItem) {
                     break;
             }
         };
+        // Clear old data and set new data
+        ["item-reading-explanation", "item-meaning-explanation", "item-characters", "item-meanings", "item-readings", "kanji-onyomi", "kanji-kunyomi", "item-level", "kanji-nanori", "item-word-function", "item-meaning-whitelist", "item-meaning-blacklist", "item-reading-whitelist", "item-reading-blacklist"].forEach(s => {
+            document.getElementById(s).value = "";
+        });
+        document.getElementById("item-context-sentences-container").innerHTML = "";
+        document.getElementById("components-container").innerHTML = "";
+        tempVar.components = [];
+
         if(editItem !== null) {
             let editItemInfo = activePackProfile.customPacks[document.getElementById("pack-select").value].getItem(editItem).info;
             document.getElementById("item-srs-stage").value = editItemInfo.srs_lvl;
@@ -631,9 +639,11 @@ function updateEditItemTab(editItem) {
             if(editItemInfo.reading_wl) document.getElementById("item-reading-whitelist").value = editItemInfo.reading_wl.join(", ");
             if(editItemInfo.reading_bl) document.getElementById("item-reading-blacklist").value = editItemInfo.reading_bl.join(", ");
             if(editItemInfo.ctx_jp) {
-                document.getElementById("item-context-sentences-container").innerHTML = editItemInfo.ctx_jp.map((s, i) => {
-                    return buildContextSentenceEditHTML(s, editItemInfo.ctx_en[i]);
-                }).join("");
+                let ctxContainer = document.getElementById("item-context-sentences-container");
+                ctxContainer.innerHTML = "";
+                editItemInfo.ctx_jp.forEach((s, i) => {
+                    ctxContainer.appendChild(buildContextSentenceEditHTML(s, editItemInfo.ctx_en[i]));
+                });
             }
             if(editItemInfo.kanji) {
                 tempVar.components = editItemInfo.kanji;
@@ -645,14 +655,8 @@ function updateEditItemTab(editItem) {
             } else tempVar.components = [];
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Save";
         } else {
-            ["item-reading-explanation", "item-meaning-explanation", "item-characters", "item-meanings", "item-readings", "kanji-onyomi", "kanji-kunyomi", "item-level", "kanji-nanori", "item-word-function", "item-meaning-whitelist", "item-meaning-blacklist", "item-reading-whitelist", "item-reading-blacklist"].forEach(s => {
-                document.getElementById(s).value = "";
-            });
             document.querySelector("#tab-4__content button[type='submit']").innerText = "Add";
             document.querySelector("#item-srs-stage").value = "0";
-            document.getElementById("item-context-sentences-container").innerHTML = "";
-            document.getElementById("components-container").innerHTML = "";
-            tempVar.components = [];
         }
         // Add event listener to form
         document.querySelector("#tab-4__content form").onsubmit = (e) => {
@@ -872,13 +876,14 @@ function buildKanjiComponentEditHTML(item) {
 }
 
 function buildContextSentenceEditHTML(jp, en) {
-    return /*html*/ `
-    <div class="ctx-sentence-div">
-        <input type="text" value="${jp}" placeholder="Japanese" required>
-        <input type="text" value="${en}" placeholder="English" required>
-        <button class="delete-sentence" title="Delete Sentence" onclick="this.parentElement.remove()">${Icons.customIconTxt("cross")}</button>
-    </div>
+    let contextSentence = document.createElement('div');
+    contextSentence.classList = "ctx-sentence-div";
+    contextSentence.innerHTML = /*html*/ `
+    <input type="text" value="${jp}" placeholder="Japanese" required>
+    <input type="text" value="${en}" placeholder="English" required>
+    <button class="delete-sentence" title="Delete Sentence" onclick="this.parentElement.remove()">${Icons.customIconTxt("cross")}</button>
     `;
+    return contextSentence;
 }
 // ---------- Item details HTML and formatting ----------
 function buildKanjiComponentHTML(item) {
@@ -909,7 +914,7 @@ function buildContextSentencesHTML(ctxArrayJP, ctxArrayEN) {
     return out;
 }
 function explFormat(expl) {
-    return expl.replace(/<r>(.*?)<\/r>/g, "<mark title='Radical' class='radical-highlight'>$1</mark>").replace(/<k>(.*?)<\/k>/g, "<mark title='Kanji' class='kanji-highlight'>$1</mark>").replace(/<v>(.*?)<\/v>/g, "<mark title='Vocabulary' class='vocabulary-highlight'>$1</mark>").replace(/<m>(.*?)<\/m>/g, "<mark title='Meaning' class='meaning-highlight'>$1</mark>").replace(/<r>(.*?)<\/r>/g, "<mark title='Reading' class='reading-highlight'>$1</mark>");
+    return expl.replace(/<r>(.*?)<\/r>/g, "<mark title='Radical' class='radical-highlight'>$1</mark>").replace(/<k>(.*?)<\/k>/g, "<mark title='Kanji' class='kanji-highlight'>$1</mark>").replace(/<v>(.*?)<\/v>/g, "<mark title='Vocabulary' class='vocabulary-highlight'>$1</mark>").replace(/<me>(.*?)<\/me>/g, "<mark title='Meaning' class='meaning-highlight'>$1</mark>").replace(/<re>(.*?)<\/re>/g, "<mark title='Reading' class='reading-highlight'>$1</mark>");
 }
 function makeDetailsHTML(item) {
     switch(item.info.type) {

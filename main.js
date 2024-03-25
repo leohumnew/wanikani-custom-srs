@@ -27,49 +27,59 @@ if (window.location.pathname.includes("/review")) {
         let cloneEl = queueEl.cloneNode(true);
         let queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
         let SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
-        // Remove captured WK review from queue
-        if(queueElement.length === 1 || (CustomSRSSettings.savedData.capturedWKReview && queueElement[1].id === CustomSRSSettings.savedData.capturedWKReview.id)) {
-            CustomSRSSettings.savedData.capturedWKReview = queueElement.shift();
-            SRSElement.shift();
-            changedFirstItem = true;
-            console.log("CustomSRS: Captured first item from queue.");
-        } else {
-            CustomSRSSettings.savedData.capturedWKReview = queueElement[1];
-            queueElement.splice(1, 1);
-            SRSElement.splice(1, 1);
-            console.log("CustomSRS: Captured second item from queue.");
-        }
 
-        // Add custom items to queue
-        if(activePackProfile.getNumActiveReviews() !== 0) {
-            switch(CustomSRSSettings.userSettings.itemQueueMode) {
-                case "weighted-start":
-                    let reviewsToAddW = activePackProfile.getActiveReviews();
-                    let reviewsSRSToAddW = activePackProfile.getActiveReviewsSRS();
-                    for(let i = 0; i < reviewsToAddW.length; i++) {
-                        let pos = Math.floor(Math.random() * queueElement.length / 4);
-                        if(pos === 0) changedFirstItem = true;
-                        queueElement.splice(pos, 0, reviewsToAddW[i]);
-                        SRSElement.splice(pos, 0, reviewsSRSToAddW[i]);
-                    }
-                    break;
-                case "random":
-                    let reviewsToAdd = activePackProfile.getActiveReviews();
-                    let reviewsSRSToAdd = activePackProfile.getActiveReviewsSRS();
-                    for(let i = 0; i < reviewsToAdd.length; i++) {
-                        let pos = Math.floor(Math.random() * queueElement.length);
-                        if(pos === 0) changedFirstItem = true;
-                        queueElement.splice(pos, 0, reviewsToAdd[i]);
-                        SRSElement.splice(pos, 0, reviewsSRSToAdd[i]);
-                    }
-                    break;
-                case "start":
-                    changedFirstItem = true;
-                    queueElement = activePackProfile.getActiveReviews().concat(queueElement);
-                    SRSElement = activePackProfile.getActiveReviewsSRS().concat(SRSElement);
-                    break;
+        // Check if there's a parameter "conjugations" in the URL
+        let urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has("conjugations")) {
+            // TODO
+        } else if(urlParams.has("grammar")) {
+            // TODO
+        } else {
+            // Remove captured WK review from queue
+            if(queueElement.length === 1 || (CustomSRSSettings.savedData.capturedWKReview && queueElement[1].id === CustomSRSSettings.savedData.capturedWKReview.id)) {
+                CustomSRSSettings.savedData.capturedWKReview = queueElement.shift();
+                SRSElement.shift();
+                changedFirstItem = true;
+                console.log("CustomSRS: Captured first item from queue.");
+            } else {
+                CustomSRSSettings.savedData.capturedWKReview = queueElement[1];
+                queueElement.splice(1, 1);
+                SRSElement.splice(1, 1);
+                console.log("CustomSRS: Captured second item from queue.");
+            }
+
+            // Add custom items to queue
+            if(activePackProfile.getNumActiveReviews() !== 0) {
+                switch(CustomSRSSettings.userSettings.itemQueueMode) {
+                    case "weighted-start":
+                        let reviewsToAddW = activePackProfile.getActiveReviews();
+                        let reviewsSRSToAddW = activePackProfile.getActiveReviewsSRS();
+                        for(let i = 0; i < reviewsToAddW.length; i++) {
+                            let pos = Math.floor(Math.random() * queueElement.length / 4);
+                            if(pos === 0) changedFirstItem = true;
+                            queueElement.splice(pos, 0, reviewsToAddW[i]);
+                            SRSElement.splice(pos, 0, reviewsSRSToAddW[i]);
+                        }
+                        break;
+                    case "random":
+                        let reviewsToAdd = activePackProfile.getActiveReviews();
+                        let reviewsSRSToAdd = activePackProfile.getActiveReviewsSRS();
+                        for(let i = 0; i < reviewsToAdd.length; i++) {
+                            let pos = Math.floor(Math.random() * queueElement.length);
+                            if(pos === 0) changedFirstItem = true;
+                            queueElement.splice(pos, 0, reviewsToAdd[i]);
+                            SRSElement.splice(pos, 0, reviewsSRSToAdd[i]);
+                        }
+                        break;
+                    case "start":
+                        changedFirstItem = true;
+                        queueElement = activePackProfile.getActiveReviews().concat(queueElement);
+                        SRSElement = activePackProfile.getActiveReviewsSRS().concat(SRSElement);
+                        break;
+                }
             }
         }
+
         cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(queueElement);
         cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = JSON.stringify(SRSElement);
 

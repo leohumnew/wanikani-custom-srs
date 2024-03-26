@@ -306,6 +306,46 @@ class CustomPackProfile {
     }
 }
 
+// ------------------- Conjugations -------------------
+class Conjugations {
+    static rootEnds = [
+        ["あ", "か", "さ", "た", "な", "は", "ま", "ら"],
+        ["い", "き", "し", "ち", "に", "ひ", "み", "り"],
+        ["う", "く", "す", "つ", "ぬ", "ふ", "む", "る", "ぐ"],
+        ["え", "け", "せ", "て", "ね", "へ", "め", "れ"],
+        ["お", "こ", "そ", "と", "の", "ほ", "も", "ろ"]
+        ["って", "いて", "して", "って", "んで", "んで", "んで", "って", "いで"],
+        ["った", "いた", "した", "った", "んだ", "んだ", "んだ", "った", "いた"]
+    ];
+    static conjugations = { // Conjugation name : [godan kana, general ending, explanation]
+        "te": [5, "て", "This is the te-form of the verb, used for connecting sentences."],
+        "ta": [6, "た", "This is the ta-form of the verb, used for past tense."],
+        "masu": [1, "ます", "This is the present/future keigo form of the verb, used in polite speech."],
+        "mashita": [1, "ました", "This is the past keigo form of the verb, used in polite speech."],
+        "masen": [1, "ません", "This is the negative keigo form of the verb, used in polite speech."],
+        "masendeshita": [1, "ませんでした", "This is the negative past keigo form of the verb, used in polite speech."],
+        "tai": [1, "たい", "This is the 'want to do' form of the verb."],
+        "nai": [0, "ない", "This is the negative form of the verb."]
+    };
+    static irregularVerbs = {
+    };
+
+    static conjugateVerb(verb, type, form) {
+        switch(type) {
+            case "godan":
+                verb = verb.slice(0, -1);
+            case "ichidan":
+                verb = verb.slice(0, -1);
+            case "irregular":
+                verb = this.irregularVerbs[verb];
+        }
+        verb += this.rootEnds[this.conjugations[form][0]];
+        verb += this.conjugations[form][1];
+    }
+    static getConjugationQueueItem(verb, type, form) {
+    }
+}
+
 // ------------------- Utility classes -------------------
 class Utils {
     static cantorNumber(a, b) {

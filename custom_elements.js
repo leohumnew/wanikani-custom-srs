@@ -252,14 +252,14 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 <div class="reviews-dashboard__title" style="color: var(--color-todays-lessons-text)">
                     <div class="reviews-dashboard__title-text">Conjugations</div>
                 </div>
-                <div class="reviews-dashboard__button reviews-dashboard__button--start">
+                <!--<div class="reviews-dashboard__button reviews-dashboard__button--start">
                     <a href="/subjects/review?conjugations" class="wk-button wk-button--modal-primary">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}
                         </span>
                     </a>
-                </div>
+                </div>-->
             </div>
         </div>
     </div>
@@ -272,14 +272,14 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         <span class="count-bubble">10</span>
                     </div>
                 </div>
-                <div class="reviews-dashboard__button reviews-dashboard__button--start">
+                <!--<div class="reviews-dashboard__button reviews-dashboard__button--start">
                     <a href="/subjects/review?custom" class="wk-button wk-button--modal-primary">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}
                         </span>
                     </a>
-                </div>
+                </div>-->
             </div>
         </div>
     </div>
@@ -653,6 +653,11 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         }
                         break;
                     case "wk":
+                        if(id == "NaN") {
+                            document.getElementById("component-add-btn").nextElementSibling.innerText = "Please enter the ID found on this item's details page."
+                            document.getElementById("component-add-btn").nextElementSibling.style.display = "block";
+                            return;
+                        } else document.getElementById("component-add-btn").nextElementSibling.innerText = "Failed to find component.";
                         // Fetch wk api item to check it's valid
                         Utils.wkAPIRequest("subjects/" + id).then((response) => {
                             if(response) {
@@ -770,6 +775,8 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                 infoStruct.ctx_en.push(ctxDiv.children[1].value);
                             }
                         }
+                        if(document.getElementById("item-reading-whitelist").value != "") infoStruct.reading_wl = document.getElementById("item-reading-whitelist").value.split(",").map(s => s.trim());
+                        if(document.getElementById("item-reading-blacklist").value != "") infoStruct.reading_bl = document.getElementById("item-reading-blacklist").value.split(",").map(s => s.trim());
                         if(tempVar.components.length > 0) infoStruct.kanji = tempVar.components;
                         break;
                     case "KanaVocabulary":

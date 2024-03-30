@@ -252,14 +252,14 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 <div class="reviews-dashboard__title" style="color: var(--color-todays-lessons-text)">
                     <div class="reviews-dashboard__title-text">Conjugations</div>
                 </div>
-                <!--<div class="reviews-dashboard__button reviews-dashboard__button--start">
+                <div class="reviews-dashboard__button reviews-dashboard__button--start">
                     <a href="/subjects/review?conjugations" class="wk-button wk-button--modal-primary">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}
                         </span>
                     </a>
-                </div>-->
+                </div>
             </div>
         </div>
     </div>
@@ -269,7 +269,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 <div class="reviews-dashboard__title" style="color: var(--color-todays-lessons-text)">
                     <div class="reviews-dashboard__title-text">Grammar</div>
                     <div class="reviews-dashboard__count-text">
-                        <span class="count-bubble">10</span>
+                        <!--<span class="count-bubble">10</span>-->
                     </div>
                 </div>
                 <!--<div class="reviews-dashboard__button reviews-dashboard__button--start">
@@ -479,7 +479,11 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <option value="random">Random</option>
                 </select><br>
                 <label for="settingsWKAPIKey">WaniKani API Key</label>
-                <input type="text" id="settingsWKAPIKey" placeholder="API key">
+                <input type="text" id="settingsWKAPIKey" placeholder="API key"><br>
+                <label for="settingsEnabledConjGrammar">Enable Conjugations and Grammar</label>
+                <input type="checkbox" id="settingsEnabledConjGrammar" checked><br>
+                <label for="settingsConjGrammarSessionLength">Conjugation and Grammar session length (item num.)</label>
+                <input type="number" id="settingsConjGrammarSessionLength" value="10">
             </div>
         </div>
     `;
@@ -509,7 +513,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
     // --------- Add custom elements to page ---------
     document.addEventListener("DOMContentLoaded", () => {
         document.head.appendChild(overviewPopupStyle);
-        document.querySelector(".lessons-and-reviews").innerHTML += extraButtons;
+        if(CustomSRSSettings.userSettings.enabledConjGrammar) document.querySelector(".lessons-and-reviews").innerHTML += extraButtons;
         document.body.appendChild(overviewPopup);
         // Add event listeners for buttons etc.
         for(let i = 1; i <= 5; i++) {
@@ -643,7 +647,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         let itemID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItemID(subjectType, document.getElementById("component-id").value);
                         if(itemID) {
                             let itemFromID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItem(itemID);
-                            tempVar.components.push({id: itemID, pack: parseInt(document.getElementById("pack-select").value), type: subjectType, characters: itemFromID.info.characters, meanings: itemFromID.info.meanings, readings: itemFromID.info.readings ? itemFromID.info.readings : itemFromID.info.onyomi ? itemFromID.info.onyomi.concat(itemFromID.info.kunyomi).concat(itemFromID.info.nanori) : null});
+                            tempVar.components.push({id: itemID, pack: parseInt(document.getElementById("pack-select").value), type: subjectType, characters: itemFromID.info.characters, meanings: itemFromID.info.meanings, readings: itemFromID.info.readings || itemFromID.info.onyomi?.concat(itemFromID.info.kunyomi).concat(itemFromID.info.nanori) || null});
                             document.getElementById("component-add-btn").nextElementSibling.style.display = "none";
                             document.getElementById("components-container").appendChild(buildComponentEditHTML(tempVar.components[tempVar.components.length - 1]));
                             document.getElementById("component-type").value = "";
@@ -653,7 +657,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         }
                         break;
                     case "wk":
-                        if(id == "NaN") {
+                        if(isNaN(id)) {
                             document.getElementById("component-add-btn").nextElementSibling.innerText = "Please enter the ID found on this item's details page."
                             document.getElementById("component-add-btn").nextElementSibling.style.display = "block";
                             return;
@@ -661,7 +665,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         // Fetch wk api item to check it's valid
                         Utils.wkAPIRequest("subjects/" + id).then((response) => {
                             if(response) {
-                                tempVar.components.push({id: id, pack: -1, type: subjectType, characters: response.data.characters, meanings: response.data.meanings.map(m => m.meaning), readings: response.data.readings ? response.data.readings.map(r => r.reading) : response.data.onyomi ? response.data.onyomi.concat(response.data.kunyomi).concat(response.data.nanori) : null});
+                                tempVar.components.push({id: id, pack: -1, type: subjectType, characters: response.data.characters, meanings: response.data.meanings.map(m => m.meaning), readings: response.data.readings?.map(r => r.reading) || response.data.onyomi?.concat(response.data.kunyomi).concat(response.data.nanori) || null});
                                 document.getElementById("component-add-btn").nextElementSibling.style.display = "none";
                                 document.getElementById("components-container").appendChild(buildComponentEditHTML(tempVar.components[tempVar.components.length - 1]));
                                 document.getElementById("component-type").value = "";
@@ -814,26 +818,24 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
     }
 
     function updateSettingsTab() {
-        document.getElementById("settingsShowDueTime").checked = CustomSRSSettings.userSettings.showItemDueTime;
-        document.getElementById("settingsShowDueTime").onchange = () => {
-            CustomSRSSettings.userSettings.showItemDueTime = document.getElementById("settingsShowDueTime").checked;
-            StorageManager.saveSettings();
+        const settings = CustomSRSSettings.userSettings;
+        const updateSetting = (elementId, property, isCheckbox = false, needsReload = false) => {
+            const element = document.getElementById(elementId);
+            if(isCheckbox) element.checked = settings[property];
+            else element.value = settings[property];
+            element.onchange = () => {
+                settings[property] = isCheckbox ? element.checked : element.value;
+                StorageManager.saveSettings();
+                if(needsReload) window.location.reload();
+            };
         };
-        document.getElementById("settingsItemQueueMode").value = CustomSRSSettings.userSettings.itemQueueMode ? CustomSRSSettings.userSettings.itemQueueMode : "start";
-        document.getElementById("settingsItemQueueMode").onchange = () => {
-            CustomSRSSettings.userSettings.itemQueueMode = document.getElementById("settingsItemQueueMode").value;
-            StorageManager.saveSettings();
-        };
-        document.getElementById("settingsExportSRSData").checked = CustomSRSSettings.userSettings.exportSRSData;
-        document.getElementById("settingsExportSRSData").onchange = () => {
-            CustomSRSSettings.userSettings.exportSRSData = document.getElementById("settingsExportSRSData").checked;
-            StorageManager.saveSettings();
-        };
-        document.getElementById("settingsWKAPIKey").value = CustomSRSSettings.userSettings.apiKey;
-        document.getElementById("settingsWKAPIKey").onchange = () => {
-            CustomSRSSettings.userSettings.apiKey = document.getElementById("settingsWKAPIKey").value;
-            StorageManager.saveSettings();
-        };
+    
+        updateSetting("settingsShowDueTime", "showItemDueTime", true);
+        updateSetting("settingsItemQueueMode", "itemQueueMode");
+        updateSetting("settingsExportSRSData", "exportSRSData", true);
+        updateSetting("settingsWKAPIKey", "apiKey", false, true);
+        updateSetting("settingsEnabledConjGrammar", "enabledConjGrammar", true, true);
+        updateSetting("settingsConjGrammarSessionLength", "conjGrammarSessionLength");
     }
 
     // ---------- Tabs details ----------
@@ -951,6 +953,24 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         return contextSentence;
     }
 } else {
+    // Add custom CSS
+    let customReviewCSS = document.createElement("style");
+    customReviewCSS.innerHTML = /* css */ `
+    .character-header__characters {
+        font-size: 25px !important;
+        text-align: center;
+    }
+    .character-header__characters::first-line {
+        font-size: 50px }
+
+    @container(min-width: 768px) {
+        .character-header__characters {
+            font-size: 50px !important }
+        .character-header__characters::first-line {
+            font-size: 100px }
+    }
+    `;
+    document.head.appendChild(customReviewCSS);
     // ---------- Item details HTML and formatting ----------
     function buildKanjiComponentHTML(item) {
         return /*html*/ `
@@ -974,6 +994,21 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 <div class="subject-character__content">
                     <span class="subject-character__characters" lang="ja">${item.characters}</span>
                     <div class="subject-character__info">
+                        <span class="subject-character__meaning">${item.meanings[0]}</span>
+                    </div>
+                </div>
+            </a>
+        </li>
+        `;
+    }
+    function buildVocabComponentHTML(item) {
+        return /*html*/ `
+        <li class="subject-character-grid__item">
+            <a class="subject-character subject-character--vocabulary subject-character--grid subject-character--unlocked" href="https://www.wanikani.com/vocabulary/${item.ogChar}" data-turbo-frame="_blank" target="_blank">
+                <div class="subject-character__content">
+                    <span class="subject-character__characters" lang="ja">${item.ogChar}</span>
+                    <div class="subject-character__info">
+                        <span class="subject-character__reading">${item.ogReading}</span>
                         <span class="subject-character__meaning">${item.meanings[0]}</span>
                     </div>
                 </div>
@@ -1028,7 +1063,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             </section>
                             <section class="subject-section__subsection">
                                 <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                                <p class="subject-section__text">${item.info.meaning_expl ? explFormat(item.info.meaning_expl) : "This item does not have a meaning explanation. Good luck!"}</p>
+                                <p class="subject-section__text">${explFormat(item.info.meaning_expl) || "This item does not have a meaning explanation. Good luck!"}</p>
                                 <!--<aside class="subject-hint">
                                     <h3 class="subject-hint__title">
                                         <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1055,7 +1090,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         <section id="section-amalgamations" class="subject-section__content" data-toggle-target="content" hidden="hidden">
                             <div class="subject-character-grid">
                                 <ol class="subject-character-grid__items">
-                                    ${item.info.kanji ? item.info.kanji.map(k => buildKanjiComponentHTML(k)).join('') : "No found in kanji set."}
+                                    ${item.info.kanji?.map(k => buildKanjiComponentHTML(k)).join('') || "No found in kanji set."}
                                 </ol>
                             </div>
                         </section>
@@ -1078,7 +1113,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         <section id="section-components" class="subject-section__content" data-toggle-target="content">
                             <div class="subject-list subject-list--with-separator">
                                 <ul class="subject-list__items">
-                                    ${item.info.radicals ? item.info.radicals.map(k => buildRadicalComponentHTML(k)).join('') : "No radical components set."}
+                                    ${item.info.radicals?.map(k => buildRadicalComponentHTML(k)).join('') || "No radical components set."}
                                 </ul>
                             </div>
                         </section>
@@ -1110,7 +1145,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             </section>
                             <section class="subject-section__subsection">
                                 <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                                <p class="subject-section__text">${item.info.meaning_expl ? explFormat(item.info.meaning_expl) : "This item does not have a reading explanation. Good luck!"}</p>
+                                <p class="subject-section__text">${explFormat(item.info.meaning_expl) || "This item does not have a reading explanation. Good luck!"}</p>
                                 <!--<aside class="subject-hint">
                                     <h3 class="subject-hint__title">
                                         <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1140,26 +1175,26 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                     <div class="subject-readings__reading ${item.info.primary_reading_type == "onyomi" ? "subject-readings__reading--primary" : ""}">
                                         <h3 class="subject-readings__reading-title">On’yomi</h3>
                                         <p class="subject-readings__reading-items" lang="ja">
-                                            ${item.info.onyomi && item.info.onyomi.length > 0 ? item.info.onyomi.join(', ') : "None"}
+                                            ${item.info?.onyomi.length > 0 ? item.info.onyomi.join(', ') : "None"}
                                         </p>
                                     </div>
                                     <div class="subject-readings__reading ${item.info.primary_reading_type == "kunyomi" ? "subject-readings__reading--primary" : ""}">
                                         <h3 class="subject-readings__reading-title">Kun’yomi</h3>
                                         <p class="subject-readings__reading-items" lang="ja">
-                                            ${item.info.kunyomi && item.info.kunyomi.length > 0 ? item.info.kunyomi.join(', ') : "None"}
+                                            ${item.info?.kunyomi.length > 0 ? item.info.kunyomi.join(', ') : "None"}
                                         </p>
                                     </div>
                                     <div class="subject-readings__reading ${item.info.primary_reading_type == "nanori" ? "subject-readings__reading--primary" : ""}">
                                         <h3 class="subject-readings__reading-title">Nanori</h3>
                                         <p class="subject-readings__reading-items" lang="ja">
-                                            ${item.info.nanori && item.info.nanori.length > 0 ? item.info.nanori.join(', ') : "None"}
+                                            ${item.info?.nanori.length > 0 ? item.info.nanori.join(', ') : "None"}
                                         </p>
                                     </div>
                                 </div>
                             </section>
                             <section class="subject-section__subsection">
                                 <h3 class='subject-section__subtitle'>Mnemonic</h3>
-                                <p class="subject-section__text">${item.info.reading_expl ? explFormat(item.info.reading_expl) : "This item does not have a reading explanation. Good luck!"}</p>
+                                <p class="subject-section__text">${explFormat(item.info.reading_expl) || "This item does not have a reading explanation. Good luck!"}</p>
                                 <!--<aside class="subject-hint">
                                     <h3 class="subject-hint__title">
                                         <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1239,7 +1274,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             </section>
                             <section class="subject-section__subsection">
                                 <h3 class='subject-section__subtitle'>Explanation</h3>
-                                <p class="subject-section__text">${item.info.meaning_expl ? explFormat(item.info.meaning_expl) : "This item does not have a meaning explanation. Good luck!"}</p>
+                                <p class="subject-section__text">${explFormat(item.info.meaning_expl) || "This item does not have a meaning explanation. Good luck!"}</p>
                                 <!--<aside class="subject-hint">
                                     <h3 class="subject-hint__title">
                                         <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1277,7 +1312,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             </section>
                             <section class="subject-section__subsection">
                                 <h3 class='subject-section__subtitle'>Explanation</h3>
-                                <p class="subject-section__text">${item.info.reading_expl ? explFormat(item.info.reading_expl) : "This item does not have a reading explanation. Good luck!"}</p>
+                                <p class="subject-section__text">${explFormat(item.info.reading_expl) || "This item does not have a reading explanation. Good luck!"}</p>
                                 <!--<aside class="subject-hint">
                                     <h3 class="subject-hint__title">
                                         <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1341,7 +1376,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         <section id="section-components" class="subject-section__content" data-toggle-target="content">
                             <div class="subject-character-grid">
                                 <ol class="subject-character-grid__items">
-                                    ${item.info.kanji ? item.info.kanji.map(k => buildKanjiComponentHTML(k)).join('') : "No kanji components set."}
+                                    ${item.info.kanji?.map(k => buildKanjiComponentHTML(k)).join('') || "No kanji components set."}
                                 </ol>
                             </div>
                         </section>
@@ -1384,7 +1419,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             </section>
                             <section class="subject-section__subsection">
                                 <h3 class='subject-section__subtitle'>Explanation</h3>
-                                <p class="subject-section__text">${item.info.meaning_expl ? explFormat(item.info.meaning_expl) : "This item does not have a meaning explanation. Good luck!"}</p>
+                                <p class="subject-section__text">${explFormat(item.info.meaning_expl) || "This item does not have a meaning explanation. Good luck!"}</p>
                                 <!--<aside class="subject-hint">
                                     <h3 class="subject-hint__title">
                                         <i class="subject-hint__title-icon" aria-hidden="true">${Icons.customIconTxt("circle-info")}</i>
@@ -1463,5 +1498,63 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             </turbo-frame>
             `;
         }
+    }
+    function makeDetailsHTMLConjugation(item, conjName, conjDesc) {
+        return /*html*/ `
+        <turbo-frame class="subject-info" id="subject-info">
+            <div class="container">
+                <section class="subject-section subject-section--reading subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
+                    <a class='wk-nav__anchor' id='information'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-meaning">
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
+                            <span class='subject-section__title-text'>Conjugation Info</span>
+                        </a>
+                    </h2>
+                    <section id="section-reading" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <section class="subject-section__subsection">
+                            <div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>Conjugated</h2>
+                                <div class="subject-section__meanings-items" lang='ja'>${item.readings[0].reading}</div>
+                            </div>
+                            <div class='subject-section__meanings'>
+                                <h2 class='subject-section__meanings-title'>Conjugation</h2>
+                                <p class='subject-section__meanings-items'>${conjName} form</p>
+                            </div>
+                            <div class="subject-section__meanings">
+                                <h2 class="subject-section__meanings-title">Verb Type</h2>
+                                <p class="subject-section__meanings-items">${item.verbType.charAt(0).toUpperCase() + item.verbType.slice(1)}</p>
+                            </div>
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Explanation</h3>
+                            <p class="subject-section__text">${conjDesc}</p>
+                        </section>
+                        <section class="subject-section__subsection">
+                            <h3 class='subject-section__subtitle'>Info</h3>
+                            <p class="subject-section__text"><i>This is one of many "conjugations" for this verb. Depending on the type of verb, we remove or modify the last kana and then append the ending corresponding to this conjugation.</i></p>
+                        </section>
+                    </section>
+                </section>
+
+                <section class="subject-section subject-section--amalgamations subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
+                    <a class='wk-nav__anchor' id='amalgamations'></a>
+                    <h2 class='subject-section__title'>
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-amalgamations">
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
+                            <span class='subject-section__title-text'>Verb Details</span>
+                        </a>
+                    </h2>
+                    <section id="section-amalgamations" class="subject-section__content" data-toggle-target="content" hidden="hidden">
+                        <div class="subject-character-grid subject-character-grid--single-column">
+                            <ol class="subject-character-grid__items">
+                                ${buildVocabComponentHTML(item)}
+                            </ol>
+                        </div>
+                    </section>
+                </section>
+            </div>
+        </turbo-frame>
+        `;
     }
 }

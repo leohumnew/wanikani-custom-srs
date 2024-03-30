@@ -4,37 +4,43 @@ let quizStatsController;
 
 // ----------- If on review page -----------
 if (window.location.pathname.includes("/review")) {
-    if(activePackProfile.getNumActiveReviews() !== 0) {
+    let urlParams = new URLSearchParams(window.location.search);
+
+    if(urlParams.has("conjugations") || activePackProfile.getNumActiveReviews() !== 0) {
         // Add style to root to prevent header flash
         let headerStyle = document.createElement("style");
         headerStyle.innerHTML = `
-        .character-header__characters {
-            transition: opacity 0.15s;
-        }
-        .character-header__loading .character-header__characters {
+        .character-header .character-header__characters {
             opacity: 0;
+        }
+        .character-header--loaded .character-header__characters {
+            opacity: 1;
+            transition: opacity 0.1s;
         }
         `;
         document.head.append(headerStyle);
     }
 
     // Add custom items to the quiz queue and update captured WK review
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
         let changedFirstItem = false;
         let queueEl = document.getElementById('quiz-queue');
         let parentEl = queueEl.parentElement;
         queueEl.remove();
         let cloneEl = queueEl.cloneNode(true);
-        let queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
-        let SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
+        let SRSElement, queueElement;
 
         // Check if there's a parameter "conjugations" in the URL
-        let urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has("conjugations")) {
-            // TODO
+            let verbs = await Conjugations.getConjugationSessionItems(CustomSRSSettings.userSettings.conjGrammarSessionLength);
+            console.log("CustomSRS: Conjugations loaded.");
+            queueElement = verbs[0];
+            SRSElement = verbs[1];
         } else if(urlParams.has("grammar")) {
             // TODO
         } else {
+            queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
+            SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
             // Remove captured WK review from queue
             if(queueElement.length === 1 || (CustomSRSSettings.savedData.capturedWKReview && queueElement[1].id === CustomSRSSettings.savedData.capturedWKReview.id)) {
                 CustomSRSSettings.savedData.capturedWKReview = queueElement.shift();
@@ -78,27 +84,33 @@ if (window.location.pathname.includes("/review")) {
                         break;
                 }
             }
+
+            StorageManager.saveSettings();
         }
 
         cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(queueElement);
         cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = JSON.stringify(SRSElement);
-
         parentEl.appendChild(cloneEl);
-        StorageManager.saveSettings();
 
         if(changedFirstItem) {
             let headerElement = document.querySelector(".character-header");
-            headerElement.classList.add("character-header__loading");
+            //headerElement.classList.add("character-header__loading");
             for(let className of headerElement.classList) { // Fix header colour issues
                 if(className.includes("character-header--")) {
-                    headerElement.classList.remove(className);
-                    headerElement.classList.add("character-header--" + activePackProfile.getActiveReviews()[0].subject_category.toLowerCase());
                     setTimeout(() => {
-                        headerElement.classList.remove("character-header__loading");
-                    }, 500);
+                        headerElement.classList.add("character-header--loaded");
+                    }, 400);
                     break;
                 }
             }
+        }
+
+        if(urlParams.has("conjugations")) {
+            await Conjugations.setUpControllers();
+            console.log("CustomSRS: Controller set up for conjugations.");
+            setTimeout(() => {
+                document.querySelector(".character-header").classList.add("character-header--loaded");
+            }, 200);
         }
 
         loadControllers();
@@ -112,9 +124,14 @@ if (window.location.pathname.includes("/review")) {
             let payload = JSON.parse(config.body);
             // Check if submitted item is a custom item
             if(payload.counts && payload.counts[0].id < 0) {
-                // Update custom item SRS
-                activePackProfile.submitReview(payload.counts[0].id, payload.counts[0].meaning, payload.counts[0].reading);
-                return new Response("{}", { status: 200 });
+                // Check if url includes ?conjugations
+                if(window.location.search.includes("conjugations")) {
+                    return new Response("{}", { status: 200 });
+                } else {
+                    // Update custom item SRS
+                    activePackProfile.submitReview(payload.counts[0].id, payload.counts[0].meaning, payload.counts[0].reading);
+                    return new Response("{}", { status: 200 });
+                }
             } else {
                 if(payload.counts[0].id == CustomSRSSettings.savedData.capturedWKReview.id) { // Check if somehow the captured WK review is being submitted
                     CustomSRSSettings.savedData.capturedWKReview = null;
@@ -128,7 +145,10 @@ if (window.location.pathname.includes("/review")) {
             args[0] = "https://www.wanikani.com/subject_info/1";
             let response = await originalFetch(...args);
             let subjectId = resource.split("/").pop();
-            let subjectInfo = activePackProfile.getSubjectInfo(subjectId);
+            let subjectInfo;
+            if(window.location.search.includes("conjugations")) subjectInfo = Conjugations.getSubjectInfo(subjectId);
+            else subjectInfo = activePackProfile.getSubjectInfo(subjectId);
+
             return new Response(subjectInfo, {
                 status: response.status,
                 headers: response.headers
@@ -251,5 +271,5 @@ function updateLessonReviewCountData(data) {
 
 async function loadControllers() {
     quizStatsController = await Utils.get_controller('quiz-statistics');
-    quizStatsController.remainingCountTarget.innerText = parseInt(quizStatsController.remainingCountTarget.innerText) + activePackProfile.getNumActiveReviews() + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
+    quizStatsController.remainingCountTarget.innerText = parseInt(quizStatsController.remainingCountTarget.innerText) + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0) + ((new URLSearchParams(window.location.search)).has("conjugations") ? CustomSRSSettings.userSettings.conjGrammarSessionLength : activePackProfile.getNumActiveReviews());
 }

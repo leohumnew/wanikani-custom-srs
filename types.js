@@ -335,7 +335,7 @@ class Conjugations {
     static async getRandomVerbInfo(quantity) {
         let verbInfo = [];
         for(let i = 0; i < quantity; i++) {
-            let verbID = this.verbIDs[Math.floor(Math.random() * this.levelVerbCount[CustomSRSSettings.userSettings.lastKnownLevel - 2])];
+            let verbID = this.verbIDs[Math.floor(Math.random() * this.levelVerbCount[CustomSRSSettings.userSettings.lastKnownLevel - 3])]; // TODO: Fix for max levels
             verbInfo.push(verbID);
         }
         // Make one request to get all verb info from WK API
@@ -349,26 +349,30 @@ class Conjugations {
 
     static conjugateVerb(verb, type, form, characters) {
         switch(type) {
-            case "godan":
+            case "godan": {
                 let lastKanaColumn = this.rootEnds[2].indexOf(verb.slice(-1));
                 verb = verb.slice(0, -1);
                 verb += this.rootEnds[this.conjugations[form][0]][lastKanaColumn];
                 if(form != "te" && form != "ta") verb += this.conjugations[form][1];
                 break;
-            case "ichidan":
+            } case "ichidan":
                 verb = verb.slice(0, -1);
                 verb += this.conjugations[form][1];
                 break;
             case "irregular":
-                if(characters.includes("する")) verb = characters.slice(0, -2) + (this.irregularVerbs["する"][form] || this.irregularVerbs["する"]["gen"]);
-                else verb = this.irregularVerbs[characters][form] || this.irregularVerbs[characters]["gen"];
+                if(characters.includes("する")) verb = verb.slice(0, -2) + (this.irregularVerbs["する"][form] || this.irregularVerbs["する"].gen);
+                else verb = this.irregularVerbs[characters][form] || this.irregularVerbs[characters].gen;
                 verb += this.conjugations[form][1];
                 break;
         }
         return verb;
     }
     static getConjugationQueueItem(item) {
-        const conjugationType = Object.keys(this.conjugations)[Math.floor(Math.random() * Object.keys(this.conjugations).length)];
+        if(CustomSRSSettings.userSettings.activeConjugations.length == 0) {
+            alert("No conjugations selected, please select some in the settings.");
+            window.location.href = "/dashboard";
+        }
+        const conjugationType = CustomSRSSettings.userSettings.activeConjugations[Math.floor(Math.random() * CustomSRSSettings.userSettings.activeConjugations.length)];
         const partsOfSpeech = item.data.parts_of_speech.join(" ");
         const verbType = partsOfSpeech.includes("ichidan") ? "ichidan" : partsOfSpeech.includes("godan") ? "godan" : (this.irregularVerbs[item.data.characters] || item.data.characters.includes("する")) ? "irregular" : "ichidan"; // Determine verb type
         return {
@@ -389,8 +393,8 @@ class Conjugations {
     }
 
     static async getConjugationSessionItems(quantity) {
-        if(CustomSRSSettings.userSettings.lastKnownLevel < 2) {
-            alert("WK level too low, conjugation practice requires at least level 2.");
+        if(CustomSRSSettings.userSettings.lastKnownLevel < 3) {
+            alert("WK level too low, conjugation practice requires at least level 3.");
             window.location.href = "/dashboard";
         }
 
@@ -433,6 +437,26 @@ class Conjugations {
         // Make sure first item is a reading question
         controller = await Utils.get_controller("quiz-input");
         controller.updateQuestion({detail: {subject: this.activeQueue[0], questionType: "reading"}})
+    }
+
+    static getSettingsHTML() {
+        let container = document.createElement("div");
+        container.classList.add("component-div");
+        container.style.gridColumn = "span 2";
+        for(let conjugation in this.conjugations) {
+            let label = document.createElement("label");
+            label.innerHTML = this.conjugations[conjugation][2] + " form";
+            let checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = CustomSRSSettings.userSettings.activeConjugations.includes(conjugation);
+            checkbox.onchange = function() {
+                if(checkbox.checked) CustomSRSSettings.userSettings.activeConjugations.push(conjugation);
+                else CustomSRSSettings.userSettings.activeConjugations = CustomSRSSettings.userSettings.activeConjugations.filter(c => c != conjugation);
+                StorageManager.saveSettings();
+            }
+            container.append(label, checkbox);
+        }
+        return container;
     }
 }
 
@@ -489,7 +513,8 @@ class CustomSRSSettings {
         lastKnownLevel: 0,
         apiKey: null,
         enabledConjGrammar: true,
-        conjGrammarSessionLength: 10
+        conjGrammarSessionLength: 10,
+        activeConjugations: ["te", "ta", "masu", "mashita", "masen", "masendeshita", "tai", "nai"]
     };
     static userSettings = this.defaultUserSettings;
     static savedData = {

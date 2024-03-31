@@ -57,7 +57,7 @@ if (window.location.pathname.includes("/review")) {
             // Add custom items to queue
             if(activePackProfile.getNumActiveReviews() !== 0) {
                 switch(CustomSRSSettings.userSettings.itemQueueMode) {
-                    case "weighted-start":
+                    case "weighted-start": {
                         let reviewsToAddW = activePackProfile.getActiveReviews();
                         let reviewsSRSToAddW = activePackProfile.getActiveReviewsSRS();
                         for(let i = 0; i < reviewsToAddW.length; i++) {
@@ -67,7 +67,7 @@ if (window.location.pathname.includes("/review")) {
                             SRSElement.splice(pos, 0, reviewsSRSToAddW[i]);
                         }
                         break;
-                    case "random":
+                    } case "random": {
                         let reviewsToAdd = activePackProfile.getActiveReviews();
                         let reviewsSRSToAdd = activePackProfile.getActiveReviewsSRS();
                         for(let i = 0; i < reviewsToAdd.length; i++) {
@@ -77,7 +77,7 @@ if (window.location.pathname.includes("/review")) {
                             SRSElement.splice(pos, 0, reviewsSRSToAdd[i]);
                         }
                         break;
-                    case "start":
+                    } case "start":
                         changedFirstItem = true;
                         queueElement = activePackProfile.getActiveReviews().concat(queueElement);
                         SRSElement = activePackProfile.getActiveReviewsSRS().concat(SRSElement);

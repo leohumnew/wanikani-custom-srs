@@ -156,7 +156,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             margin: 0.25rem;
             justify-content: space-between;
             display: flex;
-            
+
             & button {
                 margin-left: 10px }
         }
@@ -225,7 +225,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 display: block !important }
         }
     }
-    #tab-4__content .content-box, #tab-4__content .content-box > div, #tab-3__content > .content-box, #tab-3__content > .content-box > div {
+    #tab-4__content .content-box, #tab-4__content .content-box > div, #tab-3__content > .content-box, #tab-3__content > .content-box > div, #tab-5__content .content-box {
         display: grid;
         gap: 0.5rem;
         grid-template-columns: 1fr 1fr;
@@ -240,6 +240,13 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         label {
             margin-right: 1rem;
             float: left;
+        }
+        .component-div {
+            display: grid;
+            grid-template-columns: 1fr 0.2fr;
+            padding: 1rem;
+            border-radius: 3px;
+            background-color: var(--color-wk-panel-content-background, white);
         }
     }
     `;
@@ -468,29 +475,32 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             <input type="radio" name="custom-srs-tab" id="tab-5">
             <label for="tab-5">Settings</label>
             <div id="tab-5__content">
-                <label for="settingsShowDueTime">Show item due times</label>
-                <input type="checkbox" id="settingsShowDueTime" checked><br>
-                <label for="settingsExportSRSData">Include SRS data in exports</label>
-                <input type="checkbox" id="settingsExportSRSData"><br>
-                <label for="settingsItemQueueMode">Position to insert custom items in reviews</label>
-                <select id="settingsItemQueueMode">
-                    <option value="start">Start</option>
-                    <option value="weighted-start">Random, weighted towards start</option>
-                    <option value="random">Random</option>
-                </select><br>
-                <label for="settingsWKAPIKey">WaniKani API Key</label>
-                <input type="text" id="settingsWKAPIKey" placeholder="API key"><br>
-                <label for="settingsEnabledConjGrammar">Enable Conjugations and Grammar</label>
-                <input type="checkbox" id="settingsEnabledConjGrammar" checked><br>
-                <label for="settingsConjGrammarSessionLength">Conjugation and Grammar session length (item num.)</label>
-                <input type="number" id="settingsConjGrammarSessionLength" value="10">
+                <div class="content-box">
+                    <label for="settingsShowDueTime">Show item due times</label>
+                    <input type="checkbox" id="settingsShowDueTime" checked>
+                    <label for="settingsExportSRSData">Include SRS data in exports</label>
+                    <input type="checkbox" id="settingsExportSRSData">
+                    <label for="settingsItemQueueMode">Position to insert custom items in reviews</label>
+                    <select id="settingsItemQueueMode">
+                        <option value="start">Start</option>
+                        <option value="weighted-start">Random, weighted towards start</option>
+                        <option value="random">Random</option>
+                    </select>
+                    <label for="settingsWKAPIKey">WaniKani API Key</label>
+                    <input type="text" id="settingsWKAPIKey" placeholder="API key">
+                    <label for="settingsEnabledConjGrammar">Enable Conjugations and Grammar</label>
+                    <input type="checkbox" id="settingsEnabledConjGrammar" checked>
+                    <label for="settingsConjGrammarSessionLength">Conjugation and Grammar session length (item num.)</label>
+                    <input type="number" id="settingsConjGrammarSessionLength" value="10">
+                    <label style="grid-column: span 2">Active Conjugations:</label>
+                </div>
             </div>
         </div>
     `;
 
     // --------- Popup open button ---------
     let overviewPopupButton, buttonLI;
-    
+
     overviewPopupButton = document.createElement("button");
     overviewPopupButton.classList = "sitemap__section-header";
     overviewPopupButton.style = `
@@ -643,7 +653,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 if(type === "" || id === "") return;
                 // Check if component exists. When type is internal id is the item character to search for
                 switch(type) {
-                    case "internal":
+                    case "internal": {
                         let itemID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItemID(subjectType, document.getElementById("component-id").value);
                         if(itemID) {
                             let itemFromID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItem(itemID);
@@ -656,7 +666,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             document.getElementById("component-add-btn").nextElementSibling.style.display = "block";
                         }
                         break;
-                    case "wk":
+                    } case "wk": {
                         if(isNaN(id)) {
                             document.getElementById("component-add-btn").nextElementSibling.innerText = "Please enter the ID found on this item's details page."
                             document.getElementById("component-add-btn").nextElementSibling.style.display = "block";
@@ -675,6 +685,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             }
                         });
                         break;
+                    }
                 }
             };
             // Clear old data and set new data
@@ -829,13 +840,15 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 if(needsReload) window.location.reload();
             };
         };
-    
+
         updateSetting("settingsShowDueTime", "showItemDueTime", true);
         updateSetting("settingsItemQueueMode", "itemQueueMode");
         updateSetting("settingsExportSRSData", "exportSRSData", true);
         updateSetting("settingsWKAPIKey", "apiKey", false, true);
         updateSetting("settingsEnabledConjGrammar", "enabledConjGrammar", true, true);
         updateSetting("settingsConjGrammarSessionLength", "conjGrammarSessionLength");
+
+        document.querySelector("#tab-5__content > .content-box").appendChild(Conjugations.getSettingsHTML());
     }
 
     // ---------- Tabs details ----------

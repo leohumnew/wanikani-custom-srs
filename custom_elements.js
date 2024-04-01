@@ -1,8 +1,9 @@
+const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"];
+
 if(window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
     let tempVar = {}; // Temporary variable for multiple things
 
     // ------------------------ Define and create custom HTML structures ------------------------
-    const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"];
 
     // --------- Main popup ---------
     let overviewPopup = document.createElement("dialog");
@@ -108,6 +109,22 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         }
         > input:checked + label + div {
             display: initial }
+        .pack {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+    
+            span {
+                font-style: italic }
+            > div {
+                margin: auto 0 }
+            button {
+                margin-left: 10px }
+            > div > span, & > div > input {
+                margin: 0;
+                vertical-align: middle;
+            }
+        }
     }
 
     /* Styling for the overview tab */
@@ -118,24 +135,39 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         text-align: center;
 
         p {
-            font-size: xx-large }
-    }
-
-    /* Styling for packs in the packs tab */
-    #tabs .pack {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-
-        span {
-            font-style: italic }
-        > div {
-            margin: auto 0 }
-        button {
-            margin-left: 10px }
-        > div > span, & > div > input {
-            margin: 0;
-            vertical-align: middle;
+            text-align: left }
+        #custom-srs-progress .content-box {
+            background-color: var(--color-menu, white);
+            margin-bottom: 0.6rem;
+            h3 {
+                margin-top: 0 }
+            .progress-bar {
+                display: flex;
+                justify-content: start;
+                height: 0.5rem;
+                border-radius: 0.3rem;
+                margin-bottom: 0.6rem;
+                background-color: var(--color-wk-panel-background, lightgray);
+                div {
+                    border-radius: 0.3rem }
+                div:nth-child(1) {
+                    background-color: var(--color-guru, --color-vocabulary) }
+                div:nth-child(2) {
+                    background-color: var(--color-kanji-highlight);
+                    background-color: color-mix(in srgb, var(--color-apprentice) 80%, lightgray);
+                }
+                div:nth-child(3) {
+                    background-color: var(--color-apprentice, --color-kanji)
+                }
+                div:nth-child(4) {
+                    background-color: var(--color-kanji-dark);
+                    background-color: color-mix(in srgb, var(--color-apprentice) 80%, black);
+                }
+                div:nth-child(5) {
+                    background-color: var(--color-kanji-lowlight);
+                    background-color: color-mix(in srgb, var(--color-apprentice) 60%, black);
+                }
+            }
         }
     }
 
@@ -303,13 +335,17 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             <label for="tab-1">Overview</label>
             <div id="tab-1__content">
                 <div>
-                    <div class="content-box">
+                    <div class="content-box" id="overview-lessons">
                         <h2>Lessons</h2>
-                        <p>0</p>
+                        <h2>--</h2>
                     </div>
-                    <div class="content-box">
+                    <div class="content-box" id="overview-reviews">
                         <h2>Reviews</h2>
-                        <p></p>
+                        <h2>--</h2>
+                    </div>
+                    <div class="content-box" style="grid-column: span 2; margin-top: 1rem">
+                        <h2>Custom SRS Progress</h2>
+                        <div id="custom-srs-progress"></div>
                     </div>
                 </div>
             </div>
@@ -565,7 +601,21 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
 
     // ---------- Update popup content ----------
     function updateOverviewTab() {
-        document.querySelector("#tab-1__content .content-box:last-child p").innerText = activePackProfile.getNumActiveReviews();
+        document.querySelector("#overview-reviews h2:last-child").innerText = activePackProfile.getNumActiveReviews();
+        // Fill in the progress section with the current progress for each pack
+        let progressDiv = document.getElementById("custom-srs-progress");
+        progressDiv.innerHTML = "";
+        for(let pack of activePackProfile.customPacks) {
+            if(pack.active) progressDiv.innerHTML += packProgressHTML(pack);
+        }
+    }
+    function packProgressHTML(pack) {
+        return /*html*/ `
+        <div class="content-box">
+            <h3>${pack.name} - Author: ${pack.author}</h3>
+            ${pack.getProgressHTML()}
+        </div>
+        `;
     }
 
     function updatePacksTab() {
@@ -972,6 +1022,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
     .character-header__characters {
         font-size: 25px !important;
         text-align: center;
+        width: 100%;
     }
     .character-header__characters::first-line {
         font-size: 50px }

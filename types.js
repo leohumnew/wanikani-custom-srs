@@ -203,6 +203,38 @@ class CustomItemPack {
         return this.items[itemIndex].getTimeUntilReview(this.lvlType, this.lvl);
     }
 
+    getProgressHTML() {
+        if(!this.active) return;
+        let progressByLevel = {};
+        this.items.forEach(item => {
+            if(this.lvlType == "none" || !item.info.lvl) {
+                if(!progressByLevel["noLevel"]) progressByLevel["noLevel"] = [];
+                if(item.info.srs_lvl > 4) progressByLevel["noLevel"][5] = (progressByLevel["noLevel"][5] || 0) + 1;
+                else progressByLevel["noLevel"][item.info.srs_lvl] = (progressByLevel["noLevel"][item.info.srs_lvl] || 0) + 1;
+                progressByLevel["noLevel"][6] = (progressByLevel["noLevel"][6] || 0) + 1;
+            } else if(this.lvlType == "internal" && item.info.lvl > this.lvl) progressByLevel["locked"] = (progressByLevel["locked"] || 0) + 1;
+            else if(this.lvlType == "wk" && item.info.lvl > CustomSRSSettings.userSettings.lastKnownLevel) progressByLevel["locked"] = (progressByLevel["locked"] || 0) + 1;
+            else {
+                if(!progressByLevel[item.info.lvl]) progressByLevel[item.info.lvl] = [];
+                if(item.info.srs_lvl > 4) progressByLevel[item.info.lvl][5] = (progressByLevel[item.info.lvl][5] || 0) + 1;
+                else progressByLevel[item.info.lvl][item.info.srs_lvl] = (progressByLevel[item.info.lvl][item.info.srs_lvl] || 0) + 1;
+                progressByLevel[item.info.lvl][6] = (progressByLevel[item.info.lvl][6] || 0) + 1;
+            }
+        });
+        let progressHTML = "";
+        for(let level in progressByLevel) {
+            if(level != "locked") {
+                progressHTML += "<p>Level " + (level == "noLevel" ? "--" : level) + "</p><div class='progress-bar'>";
+                for(let i = 5; i > 0; i--) {
+                    progressHTML += "<div style='width: " + (progressByLevel[level][i] || 0) / progressByLevel[level][6]*100 + "%' title='" + (i == 5 ? "Guru+" : srsNames[i]) + " (" + progressByLevel[level][i] + "/" + progressByLevel[level][6] + ")'></div>";
+                }
+                progressHTML += "</div>";
+            }
+        }
+        return progressHTML;
+    }
+
+
     static fromObject(object) {
         let pack = new CustomItemPack(object.name, object.author, object.version, (object.lvlType || "none"), (object.lvl || 1)); // TODO: Remove lvlType and lvl checks after a few weeks
         pack.items = object.items.map(item => CustomItem.fromObject(item));
@@ -284,9 +316,10 @@ class CustomPackProfile {
             let pack = this.customPacks[packID];
             if(pack.lvlType == "internal") {
                 for(let item of pack.items) {
-                    if((!item.info.lvl || item.info.lvl <= pack.lvl) && item.info.srs_lvl < 5) break;
+                    if(item.info.lvl && item.info.lvl <= pack.lvl && item.info.srs_lvl < 5) return;
                 }
                 pack.lvl++;
+                StorageManager.savePackProfile(this, "main");
             }
         }
     }

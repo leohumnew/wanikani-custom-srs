@@ -151,21 +151,18 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 div {
                     border-radius: 0.3rem }
                 div:nth-child(1) {
-                    background-color: var(--color-guru, --color-vocabulary) }
+                    background-color: var(--color-guru, #2ecc71) }
                 div:nth-child(2) {
-                    background-color: var(--color-kanji-highlight);
-                    background-color: color-mix(in srgb, var(--color-apprentice) 80%, lightgray);
+                    background-color: color-mix(in srgb, var(--color-apprentice, #3daee9) 80%, lightgray);
                 }
                 div:nth-child(3) {
-                    background-color: var(--color-apprentice, --color-kanji)
+                    background-color: var(--color-apprentice, #3daee9)
                 }
                 div:nth-child(4) {
-                    background-color: var(--color-kanji-dark);
-                    background-color: color-mix(in srgb, var(--color-apprentice) 80%, black);
+                    background-color: color-mix(in srgb, var(--color-apprentice, #3daee9) 80%, black);
                 }
                 div:nth-child(5) {
-                    background-color: var(--color-kanji-lowlight);
-                    background-color: color-mix(in srgb, var(--color-apprentice) 60%, black);
+                    background-color: color-mix(in srgb, var(--color-apprentice, #3daee9) 60%, black);
                 }
             }
         }
@@ -292,7 +289,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <div class="reviews-dashboard__title-text">Conjugations</div>
                 </div>
                 <div class="reviews-dashboard__button reviews-dashboard__button--start">
-                    <a href="/subjects/review?conjugations" class="wk-button wk-button--modal-primary">
+                    <a href="/subjects/review?conjugations&question_order=reading_first" class="wk-button wk-button--modal-primary">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}

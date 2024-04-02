@@ -33,7 +33,6 @@ if (window.location.pathname.includes("/review")) {
         // Check if there's a parameter "conjugations" in the URL
         if(urlParams.has("conjugations")) {
             let verbs = await Conjugations.getConjugationSessionItems(CustomSRSSettings.userSettings.conjGrammarSessionLength);
-            console.log("CustomSRS: Conjugations loaded.");
             queueElement = verbs[0];
             SRSElement = verbs[1];
         } else if(urlParams.has("grammar")) {
@@ -94,10 +93,10 @@ if (window.location.pathname.includes("/review")) {
 
         if(changedFirstItem) {
             let headerElement = document.querySelector(".character-header");
-            //headerElement.classList.add("character-header__loading");
             for(let className of headerElement.classList) { // Fix header colour issues
                 if(className.includes("character-header--")) {
                     setTimeout(() => {
+                        document.querySelector(".quiz-input__input").setAttribute("placeholder", (document.querySelector(".quiz-input__question-type").innerText.includes("reading") ? "答え" : "Your Response"));
                         headerElement.classList.add("character-header--loaded");
                     }, 400);
                     break;

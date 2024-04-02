@@ -337,7 +337,7 @@ class Conjugations {
     static levelVerbCount;
     static activeQueue;
     static rootEnds = [
-        ["あ", "か", "さ", "た", "な", "ば", "ま", "ら", "が"],
+        ["わ", "か", "さ", "た", "な", "ば", "ま", "ら", "が"],
         ["い", "き", "し", "ち", "に", "び", "み", "り", "ぎ"],
         ["う", "く", "す", "つ", "ぬ", "ぶ", "む", "る", "ぐ"],
         ["え", "け", "せ", "て", "ね", "べ", "め", "れ", "げ"],
@@ -345,7 +345,7 @@ class Conjugations {
         ["って", "いて", "して", "って", "んで", "んで", "んで", "って", "いで"],
         ["った", "いた", "した", "った", "んだ", "んだ", "んだ", "った", "いだ"]
     ];
-    static conjugations = { // Name : [godan kana row, general ending, pretty name, explanation]
+    static conjugations = { // Name : [godan kana row, general ending, pretty name, explanation, ichidan ending {optional}]
         "te": [5, "て", "-te", "This is the te-form of the verb, used for connecting the verb to a word or clause that follows it."],
         "ta": [6, "た", "past", "This is the ta-form of the verb, used for past tense."],
         "masu": [1, "ます", "formal", "This is the present/future keigo form of the verb, used in polite speech."],
@@ -353,11 +353,15 @@ class Conjugations {
         "masen": [1, "ません", "negative formal", "This is the negative keigo form of the verb, used in polite speech."],
         "masendeshita": [1, "ませんでした", "past negative formal", "This is the negative past keigo form of the verb, used in polite speech."],
         "tai": [1, "たい", "'want'", "This is the 'want to do' form of the verb."],
-        "nai": [0, "ない", "negative", "This is the standard negative form of the verb."]
+        "nai": [0, "ない", "negative", "This is the standard negative form of the verb."],
+        "reru": [0, "れる", "receptive", "This is the receptive (similar to passive) form of the verb, used when something is done to the subject.", "られる"],
+        "seru": [0, "せる", "causative", "This is the causative form of the verb, used when allowing, making, or causing something to happen.", "させる"]
     };
     static irregularVerbs = {
-        "する": {"gen": "し"},
-        "来る": {"gen": "き", "nai": "こ"}
+        "する": {"gen": "し", "reru": "さ", "seru": "さ"},
+        "来る": {"gen": "き", "nai": "こ", "reru": "こら", "seru": "こさ"},
+        "有る": {"nai": ""},
+        "行く": {"te": "いって", "ta": "いった"}
     };
 
     static init() {
@@ -368,7 +372,7 @@ class Conjugations {
     static async getRandomVerbInfo(quantity) {
         let verbInfo = [];
         for(let i = 0; i < quantity; i++) {
-            let verbID = this.verbIDs[Math.floor(Math.random() * this.levelVerbCount[CustomSRSSettings.userSettings.lastKnownLevel - 3])]; // TODO: Fix for max levels
+            let verbID = this.verbIDs[Math.floor(Math.random() * this.levelVerbCount[(CustomSRSSettings.userSettings.lastKnownLevel == 60) ? 59 : CustomSRSSettings.userSettings.lastKnownLevel - 3])];
             verbInfo.push(verbID);
         }
         // Make one request to get all verb info from WK API
@@ -383,14 +387,17 @@ class Conjugations {
     static conjugateVerb(verb, type, form, characters) {
         switch(type) {
             case "godan": {
-                let lastKanaColumn = this.rootEnds[2].indexOf(verb.slice(-1));
-                verb = verb.slice(0, -1);
-                verb += this.rootEnds[this.conjugations[form][0]][lastKanaColumn];
+                if(this.irregularVerbs[characters]?.[form]) verb = this.irregularVerbs[characters][form]; // Check for single verb irregularities
+                else {
+                    let lastKanaColumn = this.rootEnds[2].indexOf(verb.slice(-1));
+                    verb = verb.slice(0, -1);
+                    verb += this.rootEnds[this.conjugations[form][0]][lastKanaColumn];
+                }
                 if(form != "te" && form != "ta") verb += this.conjugations[form][1];
                 break;
             } case "ichidan":
                 verb = verb.slice(0, -1);
-                verb += this.conjugations[form][1];
+                verb += this.conjugations[form][4] || this.conjugations[form][1];
                 break;
             case "irregular":
                 if(characters.includes("する")) verb = verb.slice(0, -2) + (this.irregularVerbs["する"][form] || this.irregularVerbs["する"].gen);
@@ -401,11 +408,12 @@ class Conjugations {
         return verb;
     }
     static getConjugationQueueItem(item) {
-        if(CustomSRSSettings.userSettings.activeConjugations.length == 0) {
+        let conjugationKeys = Object.keys(this.conjugations).filter(c => !CustomSRSSettings.userSettings.inactiveConjugations.includes(c));
+        if(conjugationKeys.length == 0) {
             alert("No conjugations selected, please select some in the settings.");
             window.location.href = "/dashboard";
         }
-        const conjugationType = CustomSRSSettings.userSettings.activeConjugations[Math.floor(Math.random() * CustomSRSSettings.userSettings.activeConjugations.length)];
+        const conjugationType = conjugationKeys[Math.floor(Math.random() * conjugationKeys.length)];
         const partsOfSpeech = item.data.parts_of_speech.join(" ");
         const verbType = partsOfSpeech.includes("ichidan") ? "ichidan" : partsOfSpeech.includes("godan") ? "godan" : (this.irregularVerbs[item.data.characters] || item.data.characters.includes("する")) ? "irregular" : "ichidan"; // Determine verb type
         return {
@@ -466,10 +474,6 @@ class Conjugations {
             stat.meaning.complete = true;
             return stat;
         };
-
-        // Make sure first item is a reading question
-        controller = await Utils.get_controller("quiz-input");
-        controller.updateQuestion({detail: {subject: this.activeQueue[0], questionType: "reading"}})
     }
 
     static getSettingsHTML() {
@@ -481,12 +485,12 @@ class Conjugations {
             label.innerHTML = this.conjugations[conjugation][2] + " form";
             let checkbox = document.createElement("input");
             checkbox.type = "checkbox";
-            checkbox.checked = CustomSRSSettings.userSettings.activeConjugations.includes(conjugation);
+            checkbox.checked = !CustomSRSSettings.userSettings.inactiveConjugations.includes(conjugation);
             checkbox.onchange = function() {
-                if(checkbox.checked) CustomSRSSettings.userSettings.activeConjugations.push(conjugation);
-                else CustomSRSSettings.userSettings.activeConjugations = CustomSRSSettings.userSettings.activeConjugations.filter(c => c != conjugation);
+                if(checkbox.checked) CustomSRSSettings.userSettings.inactiveConjugations = CustomSRSSettings.userSettings.inactiveConjugations.filter(c => c != conjugation);
+                else CustomSRSSettings.userSettings.inactiveConjugations.push(conjugation);
                 StorageManager.saveSettings();
-            }
+            };
             container.append(label, checkbox);
         }
         return container;
@@ -547,7 +551,7 @@ class CustomSRSSettings {
         apiKey: null,
         enabledConjGrammar: true,
         conjGrammarSessionLength: 10,
-        activeConjugations: ["te", "ta", "masu", "mashita", "masen", "masendeshita", "tai", "nai"]
+        inactiveConjugations: []
     };
     static userSettings = this.defaultUserSettings;
     static savedData = {

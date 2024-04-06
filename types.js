@@ -463,19 +463,6 @@ class Conjugations {
         return makeDetailsHTMLConjugation(item, this.conjugations[item.conjugationType][2], this.conjugations[item.conjugationType][3]);
     }
 
-    static async setUpControllers() {
-        // Modify newStat in the cached_stats controller
-        let controller = await Utils.get_controller("quiz-queue");
-        controller = controller.quizQueue.stats;
-
-        const originalGet = controller.get.bind(controller);
-        controller.get = function(t) {
-            let stat = originalGet(t);
-            stat.meaning.complete = true;
-            return stat;
-        };
-    }
-
     static getSettingsHTML() {
         let container = document.createElement("div");
         container.classList.add("component-div");
@@ -494,6 +481,42 @@ class Conjugations {
             container.append(label, checkbox);
         }
         return container;
+    }
+}
+
+// ------------------- Audio Quiz -------------------
+class AudioQuiz {
+    static activeItemLink;
+
+    static addAudioQuizItem(id, audioURL) {
+        this.activeQueueLinks[id] = audioURL;
+    }
+
+    static async playActiveQuizItemAudio() {
+        if(!this.activeItemLink) return;
+        let audio = new Audio(this.activeItemLink);
+        audio.play();
+    }
+
+    static setUpAudioQuizHTML() {
+        let soundIcon = Icons.customIcon("sound-on");
+        soundIcon.classList.add("sound-icon");
+        soundIcon.style.width = "100%";
+        soundIcon.style.height = "7.5rem";
+        soundIcon.onclick = () => this.playActiveQuizItemAudio();
+
+        document.getElementById("custom-srs-header-style").innerHTML += ".character-header .character-header__characters { height: 0 } .character-header__content { cursor: pointer }";
+
+        let audioButton = document.querySelector("a.additional-content__item.additional-content__item--audio");
+        audioButton.onclick = () => this.playActiveQuizItemAudio();
+        audioButton.style.cursor = "pointer";
+
+        window.addEventListener("willShowNextQuestion", (e) => {
+            this.activeItemLink = e.detail.subject?.readings[0].pronunciation.sources[0]?.url;
+            this.playActiveQuizItemAudio();
+        });
+
+        return soundIcon;
     }
 }
 
@@ -522,6 +545,29 @@ class Utils {
         }
         return controller;
     }
+    static async setMeaningsOnly() {
+        let controller = await Utils.get_controller("quiz-queue");
+        controller = controller.quizQueue.stats;
+
+        const originalGet = controller.get.bind(controller);
+        controller.get = function(t) {
+            let stat = originalGet(t);
+            stat.reading.complete = true;
+            return stat;
+        };
+    }
+    static async setReadingsOnly() {
+        let controller = await Utils.get_controller("quiz-queue");
+        controller = controller.quizQueue.stats;
+
+        const originalGet = controller.get.bind(controller);
+        controller.get = function(t) {
+            let stat = originalGet(t);
+            stat.meaning.complete = true;
+            return stat;
+        };
+    }
+
     static async wkAPIRequest(endpoint, method = "GET", data = null) {
         if(!CustomSRSSettings.userSettings.apiKey) {
             console.error("CustomSRS: No API key set");
@@ -545,7 +591,7 @@ class Utils {
 class CustomSRSSettings {
     static defaultUserSettings = {
         showItemDueTime: true,
-        itemQueueMode: "start",
+        itemQueueMode: "weighted-start",
         exportSRSData: false,
         lastKnownLevel: 0,
         apiKey: null,

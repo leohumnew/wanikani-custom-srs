@@ -3,16 +3,16 @@ await StorageManager.loadSettings();
 let quizStatsController;
 
 // ----------- If on review page -----------
-if (window.location.pathname.includes("/review")) {
+if (window.location.pathname.includes("/review") || (window.location.pathname.includes("/extra_study") && window.location.search.includes("audio"))) {
     let urlParams = new URLSearchParams(window.location.search);
 
-    if(urlParams.has("conjugations") || activePackProfile.getNumActiveReviews() !== 0) {
+    if(urlParams.has("conjugations") || urlParams.has("audio") || activePackProfile.getNumActiveReviews() !== 0) {
         // Add style to root to prevent header flash
         let headerStyle = document.createElement("style");
+        headerStyle.id = "custom-srs-header-style";
         headerStyle.innerHTML = `
         .character-header .character-header__characters {
-            opacity: 0;
-        }
+            opacity: 0 }
         .character-header--loaded .character-header__characters {
             opacity: 1;
             transition: opacity 0.1s;
@@ -30,13 +30,27 @@ if (window.location.pathname.includes("/review")) {
         let cloneEl = queueEl.cloneNode(true);
         let SRSElement, queueElement;
 
-        // Check if there's a parameter "conjugations" in the URL
+        // Switch based on review session type
         if(urlParams.has("conjugations")) {
             let verbs = await Conjugations.getConjugationSessionItems(CustomSRSSettings.userSettings.conjGrammarSessionLength);
             queueElement = verbs[0];
             SRSElement = verbs[1];
-        } else if(urlParams.has("grammar")) {
-            // TODO
+        } else if(urlParams.has("audio")) {
+            queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
+            SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIds']").innerHTML);
+            for(let i = queueElement.length - 1; i >= 0; i--) {
+                if(queueElement[i].subject_category !== "Vocabulary" && queueElement[i].subject_category !== "KanaVocabulary") {
+                    queueElement.splice(i, 1);
+                    SRSElement.splice(i, 1);
+                }
+            }
+            if(queueElement.length === 0) {
+                alert("No vocabulary items found in burned items. Please try again after burning some vocabulary items.");
+                window.location.href = "https://www.wanikani.com/dashboard";
+                return;
+            }
+
+            document.querySelector(".character-header__content").appendChild(AudioQuiz.setUpAudioQuizHTML());
         } else {
             queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
             SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
@@ -88,7 +102,8 @@ if (window.location.pathname.includes("/review")) {
         }
 
         cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(queueElement);
-        cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = JSON.stringify(SRSElement);
+        if(!urlParams.has("audio")) cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = JSON.stringify(SRSElement);
+        else cloneEl.querySelector("script[data-quiz-queue-target='subjectIds']").innerHTML = JSON.stringify(SRSElement);
         parentEl.appendChild(cloneEl);
 
         if(changedFirstItem) {
@@ -105,14 +120,15 @@ if (window.location.pathname.includes("/review")) {
         }
 
         if(urlParams.has("conjugations")) {
-            await Conjugations.setUpControllers();
+            await Utils.setReadingsOnly();
             console.log("CustomSRS: Controller set up for conjugations.");
             setTimeout(() => {
                 document.querySelector(".character-header").classList.add("character-header--loaded");
             }, 200);
+        } else {
+            if(urlParams.has("audio")) Utils.setMeaningsOnly();
+            loadControllers();
         }
-
-        loadControllers();
     });
 
     // Catch submission fetch and stop it if submitted item is a custom item

@@ -303,19 +303,16 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         <div class="reviews-dashboard">
             <div class="reviews-dashboard__content">
                 <div class="reviews-dashboard__title" style="color: var(--color-todays-lessons-text)">
-                    <div class="reviews-dashboard__title-text">Grammar</div>
-                    <div class="reviews-dashboard__count-text">
-                        <!--<span class="count-bubble">10</span>-->
-                    </div>
+                    <div class="reviews-dashboard__title-text">Audio Quiz</div>
                 </div>
-                <!--<div class="reviews-dashboard__button reviews-dashboard__button--start">
-                    <a href="/subjects/review?custom" class="wk-button wk-button--modal-primary">
+                <div class="reviews-dashboard__button reviews-dashboard__button--start">
+                    <a href="/subjects/extra_study?queue_type=burned_items&question_order=meaning_first&audio" class="wk-button wk-button--modal-primary">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}
                         </span>
                     </a>
-                </div>-->
+                </div>
             </div>
         </div>
     </div>
@@ -521,9 +518,9 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     </select>
                     <label for="settingsWKAPIKey">WaniKani API Key</label>
                     <input type="text" id="settingsWKAPIKey" placeholder="API key">
-                    <label for="settingsEnabledConjGrammar">Enable Conjugations and Grammar</label>
+                    <label for="settingsEnabledConjGrammar">Enable Conjugations and Audio Quiz</label>
                     <input type="checkbox" id="settingsEnabledConjGrammar" checked>
-                    <label for="settingsConjGrammarSessionLength">Conjugation and Grammar session length (item num.)</label>
+                    <label for="settingsConjGrammarSessionLength">Conjugation session length (item num.)</label>
                     <input type="number" id="settingsConjGrammarSessionLength" value="10">
                     <label style="grid-column: span 2">Active Conjugations:</label>
                 </div>

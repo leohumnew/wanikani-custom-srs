@@ -506,6 +506,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             <label for="tab-5">Settings</label>
             <div id="tab-5__content">
                 <div class="content-box">
+                    <h2 style="grid-column: span 2">General</h2>
                     <label for="settingsShowDueTime">Show item due times</label>
                     <input type="checkbox" id="settingsShowDueTime" checked>
                     <label for="settingsExportSRSData">Include SRS data in exports</label>
@@ -516,13 +517,18 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         <option value="weighted-start">Random, weighted towards start</option>
                         <option value="random">Random</option>
                     </select>
-                    <label for="settingsWKAPIKey">WaniKani API Key</label>
-                    <input type="text" id="settingsWKAPIKey" placeholder="API key">
                     <label for="settingsEnabledConjGrammar">Enable Conjugations and Audio Quiz</label>
                     <input type="checkbox" id="settingsEnabledConjGrammar" checked>
                     <label for="settingsConjGrammarSessionLength">Conjugation session length (item num.)</label>
                     <input type="number" id="settingsConjGrammarSessionLength" value="10">
                     <label style="grid-column: span 2">Active Conjugations:</label>
+                    <div id="settingsActiveConj"></div>
+                    <h2 style="grid-column: span 2">Network Settings</h2>
+                    <label for="settingsWKAPIKey">WaniKani API Key</label>
+                    <input type="text" id="settingsWKAPIKey" placeholder="API key">
+                    <label for="settingsSyncEnabled">Enable Cross-Device Sync</label>
+                    <input type="checkbox" id="settingsSyncEnabled">
+                    <p style="grid-column: span 2" id="lastSync">Last sync: <span>Never</span></p>
                 </div>
             </div>
         </div>
@@ -891,8 +897,10 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         updateSetting("settingsWKAPIKey", "apiKey", false, true);
         updateSetting("settingsEnabledConjGrammar", "enabledConjGrammar", true, true);
         updateSetting("settingsConjGrammarSessionLength", "conjGrammarSessionLength");
+        updateSetting("settingsSyncEnabled", "syncEnabled", true);
 
-        document.querySelector("#tab-5__content > .content-box").appendChild(Conjugations.getSettingsHTML());
+        document.getElementById("settingsActiveConj").outerHTML = Conjugations.getSettingsHTML();
+        document.querySelector("#lastSync span").innerText = CustomSRSSettings.savedData.lastSynced;
     }
 
     // ---------- Tabs details ----------

@@ -480,7 +480,7 @@ class Conjugations {
             };
             container.append(label, checkbox);
         }
-        return container;
+        return container.outerHTML;
     }
 }
 
@@ -597,12 +597,15 @@ class CustomSRSSettings {
         apiKey: null,
         enabledConjGrammar: true,
         conjGrammarSessionLength: 10,
-        inactiveConjugations: []
+        inactiveConjugations: [],
+        syncEnabled: false
     };
     static userSettings = this.defaultUserSettings;
-    static savedData = {
-        capturedWKReview: null
+    static defaultSavedData = {
+        capturedWKReview: null,
+        lastSynced: 0
     };
+    static savedData = this.defaultSavedData;
     static validateSettings() {
         for(let setting in this.defaultUserSettings) {
             if(this.userSettings[setting] === undefined) this.userSettings[setting] = this.defaultUserSettings[setting];
@@ -623,12 +626,19 @@ class CustomSRSSettings {
                 console.error("Custom SRS: No API key set");
             }
         }
+        for(let setting in this.defaultSavedData) {
+            if(this.savedData[setting] === undefined) this.savedData[setting] = this.defaultSavedData[setting];
+        }
     }
 }
 
 class StorageManager {
     // Get custom packs saved in GM storage
     static async loadPackProfile(profileName) {
+        if(CustomSRSSettings.userSettings.syncEnabled && new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 120000) {
+            let json = await SyncManager.loadDataFromDrive(profileName);
+            if(json) return CustomPackProfile.fromObject(json);
+        }
         let savedPackProfile = CustomPackProfile.fromObject(await GM.getValue("customPackProfile_" + profileName, new CustomPackProfile()));
         return savedPackProfile;
     }
@@ -636,6 +646,7 @@ class StorageManager {
     // Save custom packs to GM storage
     static async savePackProfile(packProfile, profileName) {
         GM.setValue("customPackProfile_" + profileName, packProfile);
+        if(CustomSRSSettings.userSettings.syncEnabled && new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 40000) SyncManager.saveDataToDrive(packProfile, profileName);
     }
     static async deletePackProfile(profileName) {
         GM.deleteValue("customPackProfile_" + profileName);
@@ -646,10 +657,14 @@ class StorageManager {
         GM.setValue("custom_srs_user_data", CustomSRSSettings.userSettings);
         GM.setValue("custom_srs_saved_data", CustomSRSSettings.savedData);
     }
+    static async updateLastSynced() {
+        CustomSRSSettings.savedData.lastSynced = Date.now();
+        GM.setValue("custom_srs_saved_data", CustomSRSSettings.savedData);
+    }
     static async loadSettings() {
         CustomSRSSettings.userSettings = await GM.getValue("custom_srs_user_data", CustomSRSSettings.userSettings);
-        CustomSRSSettings.validateSettings();
         CustomSRSSettings.savedData = await GM.getValue("custom_srs_saved_data", CustomSRSSettings.savedData);
+        CustomSRSSettings.validateSettings();
     }
 
     static packFromJSON(json) {

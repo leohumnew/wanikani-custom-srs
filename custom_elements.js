@@ -924,8 +924,8 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         document.getElementById("settingsActiveConj").appendChild(Conjugations.getSettingsHTML());
 
         document.querySelector("#lastSync span").innerText = new Date(CustomSRSSettings.savedData.lastSynced).toLocaleString();
-        document.getElementById("syncNowPull").onclick = () => {
-            StorageManager.loadPackProfile("main");
+        document.getElementById("syncNowPull").onclick = async () => {
+            activePackProfile = await StorageManager.loadPackProfile("main", true);
         };
         document.getElementById("syncNowPush").onclick = () => {
             StorageManager.savePackProfile(activePackProfile, "main", true, true);

@@ -63,7 +63,7 @@ class SyncManager {
                 if(response.status != 200) {
                     Utils.log("Error getting access token");
                     Utils.log(response);
-                    getLoadingScreenText().innerText = "Error getting access token";
+                    CustomSRS_getLoadingScreenText().innerText = "Error getting access token";
                     return;
                 }
                 let responseJSON = JSON.parse(response.responseText);
@@ -76,7 +76,7 @@ class SyncManager {
             onerror: function(response) {
                 Utils.log("Error getting access token");
                 Utils.log(response);
-                getLoadingScreenText().innerText = "Error getting access token";
+                CustomSRS_getLoadingScreenText().innerText = "Error getting access token";
             }
         });
     }
@@ -91,9 +91,9 @@ class SyncManager {
             },
             onload: function(response) {
                 let files = JSON.parse(response.responseText).files;
-                if(!files || files.length == 0) getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani to begin syncing.";
+                if(!files || files.length == 0) CustomSRS_getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani to begin syncing.";
                 else {
-                    getLoadingScreenText().innerHTML = `
+                    CustomSRS_getLoadingScreenText().innerHTML = `
                     <h2>Select Source</h2>
                     <p style="font-size: 40%">Choose which version of your data to keep - whichever you choose will overwrite the other. Whicever you do not choose will be permanently deleted.</p>
                     <button style="width: 100%" id="driveButton">Google Drive<br><small>Last modified: ${new Date(files[0].modifiedTime).toLocaleString()}</small></button>
@@ -101,18 +101,18 @@ class SyncManager {
                     document.getElementById("driveButton").addEventListener("click", () => {
                         GM.setValue("customSrsDriveFileId", files[0].id);
                         SyncManager.loadDataFromDrive("main");
-                        getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani to begin syncing."
+                        CustomSRS_getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani to begin syncing."
                     });
                     document.getElementById("localButton").addEventListener("click", () => {
                         SyncManager.saveDataToDrive(packProfile, "main");
-                        getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani";
+                        CustomSRS_getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani";
                     });
                 }
             },
             onerror: function(response) {
                 Utils.log("Error getting file metadata from Google Drive");
                 Utils.log(response);
-                getLoadingScreenText().innerText = "Error getting file metadata from Google Drive";
+                CustomSRS_getLoadingScreenText().innerText = "Error getting file metadata from Google Drive";
             }
         });
     }
@@ -279,3 +279,4 @@ class SyncManager {
 }
 
 window.CustomSRS_selectMasterSource = SyncManager.selectMasterSource;
+window.CustomSRS_getLoadingScreenText = SyncManager.getLoadingScreenText;

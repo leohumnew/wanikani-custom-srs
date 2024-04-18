@@ -1,4 +1,5 @@
 const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"];
+const time = 106;
 
 if(window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
     let tempVar = {}; // Temporary variable for multiple things
@@ -522,13 +523,21 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <label for="settingsConjGrammarSessionLength">Conjugation session length (item num.)</label>
                     <input type="number" id="settingsConjGrammarSessionLength" value="10">
                     <label style="grid-column: span 2">Active Conjugations:</label>
-                    <div id="settingsActiveConj"></div>
+                    <div id="settingsActiveConj" style="grid-column: span 2"></div>
                     <h2 style="grid-column: span 2">Network Settings</h2>
                     <label for="settingsWKAPIKey">WaniKani API Key</label>
                     <input type="text" id="settingsWKAPIKey" placeholder="API key">
-                    <label for="settingsSyncEnabled">Enable Cross-Device Sync</label>
-                    <input type="checkbox" id="settingsSyncEnabled">
-                    <p style="grid-column: span 2" id="lastSync">Last sync: <span>Never</span></p>
+                    <h2 style="grid-column: span 2">Experimental Settings</h2>
+                    <p style="grid-column: span 2"><i>These settings are experimental and may not work as intended. I would recommend backing up any item packs you care about (download and save the pack JSON from the packs tab - enable the "Include SRS data in exports"!) just in case.</i></p>
+                    <div class="component-div" style="grid-column: span 2; grid-template-columns: 1fr 0.8fr">
+                        <label for="settingsSyncEnabled">Enable Cross-Device Sync</label>
+                        <input type="checkbox" id="settingsSyncEnabled">
+                        <p id="lastSync">&nbsp;&nbsp;Last sync: <span>Never</span></p>
+                        <span style="margin-left: auto">
+                            <button id="syncNowPull">Force Pull</button>
+                            <button id="syncNowPush">Force Push</button>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -646,7 +655,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             };
             packElement.querySelector(".delete-pack").onclick = () => { // Pack delete button
                 activePackProfile.removePack(i);
-                StorageManager.savePackProfile(activePackProfile, "main");
+                StorageManager.savePackProfile(activePackProfile, "main", true);
                 changeTab(2);
             };
             packElement.querySelector(`#pack-${i}-active`).onchange = () => { // Pack active checkbox
@@ -887,6 +896,18 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             element.onchange = () => {
                 settings[property] = isCheckbox ? element.checked : element.value;
                 StorageManager.saveSettings();
+                if(elementId == "settingsSyncEnabled") {
+                    if(element.checked) SyncManager.checkIfAuthed();
+                    else {
+                        if(confirm("Are you sure you want to disable sync?")) SyncManager.disableSync();
+                        else {
+                            element.checked = true;
+                            settings[property] = true;
+                            StorageManager.saveSettings();
+                            return;
+                        }
+                    }
+                }
                 if(needsReload) window.location.reload();
             };
         };
@@ -899,8 +920,16 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         updateSetting("settingsConjGrammarSessionLength", "conjGrammarSessionLength");
         updateSetting("settingsSyncEnabled", "syncEnabled", true);
 
-        document.getElementById("settingsActiveConj").outerHTML = Conjugations.getSettingsHTML();
-        document.querySelector("#lastSync span").innerText = CustomSRSSettings.savedData.lastSynced;
+        document.getElementById("settingsActiveConj").innerHTML = "";
+        document.getElementById("settingsActiveConj").appendChild(Conjugations.getSettingsHTML());
+
+        document.querySelector("#lastSync span").innerText = new Date(CustomSRSSettings.savedData.lastSynced).toLocaleString();
+        document.getElementById("syncNowPull").onclick = () => {
+            StorageManager.loadPackProfile("main");
+        };
+        document.getElementById("syncNowPush").onclick = () => {
+            StorageManager.savePackProfile(activePackProfile, "main", true, true);
+        };
     }
 
     // ---------- Tabs details ----------
@@ -964,12 +993,12 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 alert("Import failed: A pack with the same name, author, and version already exists.");
             } else if(packExistingStatus == "no") {
                 activePackProfile.addPack(StorageManager.packFromJSON(pack));
-                StorageManager.savePackProfile(activePackProfile, "main");
+                StorageManager.savePackProfile(activePackProfile, "main", true);
                 changeTab(2);
             } else {
                 if(confirm("A pack with the same name and author but different version already exists. Do you want to update it?")) {
                     activePackProfile.updatePack(packExistingStatus, pack);
-                    StorageManager.savePackProfile(activePackProfile, "main");
+                    StorageManager.savePackProfile(activePackProfile, "main", true);
                     changeTab(2);
                 }
             }
@@ -987,7 +1016,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 activePackProfile.customPacks[i].lvlType = packLvlTypeInput.value;
                 activePackProfile.customPacks[i].lvl = packLvlInput.value;
             }
-            StorageManager.savePackProfile(activePackProfile, "main");
+            StorageManager.savePackProfile(activePackProfile, "main", true);
         }
     }
 
@@ -1624,3 +1653,4 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         `;
     }
 }
+const a = "UFRYcVJzRWlKMnQyUkIyRXphMk53YXAxcjlOUw==";

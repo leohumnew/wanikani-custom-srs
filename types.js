@@ -331,6 +331,8 @@ class CustomPackProfile {
     }
 }
 
+const b = "Z3F0ZWZlZzZnc" + String.fromCharCode(time) + "I2NHNwaGxhdDJxaWFvNDdrdmxtaTY=";
+
 // ------------------- Conjugations -------------------
 class Conjugations {
     static verbIDs;
@@ -480,7 +482,7 @@ class Conjugations {
             };
             container.append(label, checkbox);
         }
-        return container.outerHTML;
+        return container;
     }
 }
 
@@ -538,9 +540,9 @@ class Utils {
             try {
                 controller = Stimulus.getControllerForElementAndIdentifier(document.querySelector(`[data-controller~="${name}"]`),name);
             } catch(e) {
-                console.log("Error getting controller " + name);
+                Utils.log("Error getting controller " + name);
             }
-            console.log("Waiting for controller " + name);
+            Utils.log("Waiting for controller " + name);
             await new Promise(r => setTimeout(r, 50));
         }
         return controller;
@@ -585,6 +587,11 @@ class Utils {
 
         let response = await fetch(apiRequest);
         return response.json();
+    }
+
+    static log(message) {
+        if(typeof message === "object") console.log(message);
+        else console.log("Custom SRS: " + message);
     }
 }
 
@@ -635,7 +642,7 @@ class CustomSRSSettings {
 class StorageManager {
     // Get custom packs saved in GM storage
     static async loadPackProfile(profileName) {
-        if(CustomSRSSettings.userSettings.syncEnabled && new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 120000) {
+        if(CustomSRSSettings.userSettings.syncEnabled && window.location.pathname.includes("dashboard") && new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 120000) {
             let json = await SyncManager.loadDataFromDrive(profileName);
             if(json) return CustomPackProfile.fromObject(json);
         }
@@ -644,9 +651,11 @@ class StorageManager {
     }
 
     // Save custom packs to GM storage
-    static async savePackProfile(packProfile, profileName) {
+    static async savePackProfile(packProfile, profileName, shouldSync = false, forceSync = false) {
+        if(!packProfile) packProfile = CustomPackProfile.fromObject(await GM.getValue("customPackProfile_" + profileName, new CustomPackProfile()));
+        if(!packProfile) return;
         GM.setValue("customPackProfile_" + profileName, packProfile);
-        if(CustomSRSSettings.userSettings.syncEnabled && new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 40000) SyncManager.saveDataToDrive(packProfile, profileName);
+        if(CustomSRSSettings.userSettings.syncEnabled && shouldSync && (new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 40000 || forceSync)) SyncManager.saveDataToDrive(packProfile, profileName);
     }
     static async deletePackProfile(profileName) {
         GM.deleteValue("customPackProfile_" + profileName);
@@ -682,3 +691,5 @@ class StorageManager {
         return JSON.stringify(packJSON);
     }
 }
+
+await StorageManager.loadSettings();

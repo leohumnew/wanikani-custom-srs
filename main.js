@@ -1,5 +1,6 @@
+if(stopRemainingScriptLoad) return;
+
 let activePackProfile = await StorageManager.loadPackProfile("main");
-await StorageManager.loadSettings();
 let quizStatsController;
 
 // ----------- If on review page -----------
@@ -59,12 +60,12 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                 CustomSRSSettings.savedData.capturedWKReview = queueElement.shift();
                 SRSElement.shift();
                 changedFirstItem = true;
-                console.log("CustomSRS: Captured first item from queue.");
+                Utils.log("Captured first item from queue.");
             } else {
                 CustomSRSSettings.savedData.capturedWKReview = queueElement[1];
                 queueElement.splice(1, 1);
                 SRSElement.splice(1, 1);
-                console.log("CustomSRS: Captured second item from queue.");
+                Utils.log("Captured second item from queue.");
             }
 
             // Add custom items to queue
@@ -121,7 +122,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
 
         if(urlParams.has("conjugations")) {
             await Utils.setReadingsOnly();
-            console.log("CustomSRS: Controller set up for conjugations.");
+            Utils.log("Controller set up for conjugations.");
             setTimeout(() => {
                 document.querySelector(".character-header").classList.add("character-header--loaded");
             }, 200);
@@ -145,6 +146,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                 } else {
                     // Update custom item SRS
                     activePackProfile.submitReview(payload.counts[0].id, payload.counts[0].meaning, payload.counts[0].reading);
+                    SyncManager.setDidReview();
                     return new Response("{}", { status: 200 });
                 }
             } else {
@@ -179,6 +181,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
 
 // ----------- If on dashboard page -----------
 } else if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
+    await SyncManager.checkIfAuthed();
     // Catch lesson / review count fetch and update it with custom item count
     const { fetch: originalFetch } = unsafeWindow;
     unsafeWindow.fetch = async (...args) => {
@@ -199,7 +202,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
     document.addEventListener("DOMContentLoaded", () => {
         let reviewNumberElement = document.querySelector(".reviews-dashboard .reviews-dashboard__count-text span");
         reviewNumberElement.innerHTML = parseInt(reviewNumberElement.innerHTML) + activePackProfile.getNumActiveReviews() + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
-        console.log("Captured review item: " + (CustomSRSSettings.savedData.capturedWKReview ? CustomSRSSettings.savedData.capturedWKReview.id : "none"));
+        Utils.log("Captured review item: " + (CustomSRSSettings.savedData.capturedWKReview ? CustomSRSSettings.savedData.capturedWKReview.id : "none"));
 
         let reviewTile = document.querySelector("div.reviews-dashboard");
         if(reviewTile.querySelector(".reviews-dashboard__buttons") === null && activePackProfile.getNumActiveReviews() > 0) { // If failed to catch WK review and custom items are due, display error message

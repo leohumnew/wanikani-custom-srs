@@ -8,7 +8,7 @@ class SyncManager {
     
     static beginAuth() {
         Utils.log("beginAuth");
-        let builtAuthURL = `https://accounts.google.com/o/oauth2/auth?client_id=${this.#c}&redirect_uri=${this.#r}&response_type=code&scope=https://www.googleapis.com/auth/drive.appdata&access_type=offline`;
+        let builtAuthURL = `https://accounts.google.com/o/oauth2/auth?client_id=${this.#c}&redirect_uri=${this.#r}&response_type=code&scope=https://www.googleapis.com/auth/drive.appdata&access_type=offline&prompt=consent`;
         window.open(builtAuthURL, "Log in", "resizeable, scrollbars, status, toolbar, dependent, width=480,height=660");
     }
 
@@ -50,7 +50,8 @@ class SyncManager {
         `=${encodeURIComponent(this.#s)}&` +
         `code=${encodeURIComponent(authCode)}&` +
         `grant_type=authorization_code&` +
-        `redirect_uri=${encodeURIComponent(this.#r)}`;
+        `redirect_uri=${encodeURIComponent(this.#r)}&` +
+        `access_type=offline`;
 
         GM_xmlhttpRequest({
             method: "POST",
@@ -70,7 +71,7 @@ class SyncManager {
                 GM.setValue("customSrsAccessToken", responseJSON.access_token);
                 GM.setValue("customSrsRefreshToken", responseJSON.refresh_token);
                 GM.setValue("customSrsTokenExpires", Date.now() + responseJSON.expires_in * 1000);
-                Utils.log("Google Drive Access Token received");
+                Utils.log("Google Drive Access Token received: " + responseJSON.access_token + ", expires in " + responseJSON.expires_in + " seconds, refresh token: " + responseJSON.refresh_token);
                 CustomSRS_selectMasterSource(responseJSON.access_token);
             },
             onerror: function(response) {

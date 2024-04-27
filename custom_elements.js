@@ -1124,6 +1124,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         return out;
     }
     function explFormat(expl) {
+        if(!expl) return null;
         return expl.replace(/<r>(.*?)<\/r>/g, "<mark title='Radical' class='radical-highlight'>$1</mark>").replace(/<k>(.*?)<\/k>/g, "<mark title='Kanji' class='kanji-highlight'>$1</mark>").replace(/<v>(.*?)<\/v>/g, "<mark title='Vocabulary' class='vocabulary-highlight'>$1</mark>").replace(/<me>(.*?)<\/me>/g, "<mark title='Meaning' class='meaning-highlight'>$1</mark>").replace(/<re>(.*?)<\/re>/g, "<mark title='Reading' class='reading-highlight'>$1</mark>");
     }
     function makeDetailsHTML(item) {

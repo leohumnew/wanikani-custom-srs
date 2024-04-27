@@ -654,7 +654,7 @@ class StorageManager {
         }
         if(CustomSRSSettings.userSettings.syncEnabled && (window.location.pathname.includes("dashboard") || window.location.pathname === "/") && (forceSync || new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 120000)) {
             await SyncManager.loadDataFromDrive(profileName, forceSync);
-            let maxWaitCount = 100;
+            let maxWaitCount = 150;
             while(!this.downloadedPackProfile && maxWaitCount > 0) {
                 await new Promise(r => setTimeout(r, 100));
                 Utils.log("Waiting for pack profile to download");

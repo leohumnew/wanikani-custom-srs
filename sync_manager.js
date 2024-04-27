@@ -24,9 +24,9 @@ class SyncManager {
             // If authenticating, cover the page with a loading screen
             let loadingScreen = "<div style='position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--color-wk-panel-background, white); z-index: 1000;'><h1 id='loadingScreenText' style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%'>Loading...</h1></div>";
             Utils.log("Auth code found. Getting access token.");
-            this.getAccessToken(authCode);
             document.addEventListener("DOMContentLoaded", () => {
                 document.body.innerHTML += loadingScreen;
+                this.getAccessToken(authCode);
             });
         } else if(await GM.getValue("customSrsAccessToken")) {
             Utils.log("Google Drive Access Token found");
@@ -42,7 +42,7 @@ class SyncManager {
     }
 
     static getLoadingScreenText() {
-        return unsafeWindow.document.getElementById("loadingScreenText").innerText;
+        return unsafeWindow.document.getElementById("loadingScreenText");
     }
 
     static getAccessToken(authCode) {
@@ -100,12 +100,23 @@ class SyncManager {
                     <button style="width: 100%" id="localButton">Local</button>`;
                     document.getElementById("driveButton").addEventListener("click", () => {
                         GM.setValue("customSrsDriveFileId", files[0].id);
-                        SyncManager.loadDataFromDrive("main");
-                        CustomSRS_getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani to begin syncing."
+                        SyncManager.loadDataFromDrive("main", true);
+                        // Wait for the data to be downloaded
+                        let interval = setInterval(() => {
+                            if(StorageManager.downloadedPackProfile != null) {
+                                clearInterval(interval);
+                                if(StorageManager.downloadedPackProfile == -1) {
+                                    CustomSRS_getLoadingScreenText().innerText = "Error downloading file from Google Drive, please close this window and then refresh WaniKani, then go to settings and click 'force pull' to try again.";
+                                    return;
+                                }
+                                CustomSRS_getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani to begin syncing.";
+                            }
+                        }, 100);
                     });
                     document.getElementById("localButton").addEventListener("click", () => {
-                        SyncManager.saveDataToDrive(packProfile, "main");
-                        CustomSRS_getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani";
+                        SyncManager.saveDataToDrive(packProfile, "main").then(() => {
+                            CustomSRS_getLoadingScreenText().innerText = "Please close this window and then refresh WaniKani";
+                        });
                     });
                 }
             },
@@ -117,12 +128,18 @@ class SyncManager {
         });
     }
 
-    static refreshToken() {
-        let refreshToken = GM.getValue("customSrsRefreshToken");
+    static async refreshToken() {
+        let refreshToken = await GM.getValue("customSrsRefreshToken")
+        Utils.log(refreshToken);
+        if(!refreshToken) {
+            Utils.log("No refresh token found, please re-authenticate");
+            return;
+        }
         let bodyTxt = `client_id=${encodeURIComponent(this.#c)}&` + atob("Y2xpZW50X3NlY3JldA==") +
         `=${encodeURIComponent(this.#s)}&` +
         `refresh_token=${encodeURIComponent(refreshToken)}&` +
         `grant_type=refresh_token`;
+
         GM_xmlhttpRequest({
             method: "POST",
             url: "https://oauth2.googleapis.com/token",
@@ -131,10 +148,11 @@ class SyncManager {
             },
             data: bodyTxt,
             onload: function(response) {
+                console.log(response);
                 let responseJSON = JSON.parse(response.responseText);
                 GM.setValue("customSrsAccessToken", responseJSON.access_token);
                 GM.setValue("customSrsTokenExpires", Date.now() + responseJSON.expires_in * 1000);
-                Utils.log("Google Drive Access Token refreshed");
+                Utils.log("Google Drive Access Token refreshed to " + responseJSON.access_token);
             },
             onerror: function(response) {
                 Utils.log("Error refreshing access token");
@@ -152,7 +170,7 @@ class SyncManager {
         // Check if access token is expired
         let tokenExpires = await GM.getValue("customSrsTokenExpires");
         if (Date.now() > tokenExpires) {
-            this.refreshToken();
+            await this.refreshToken();
         }
         let accessToken = await GM.getValue("customSrsAccessToken");
         
@@ -205,15 +223,19 @@ class SyncManager {
     }
 
     static async loadDataFromDrive(fileSuffix, forceSync = false) {
+        StorageManager.downloadedPackProfile = null;
         let accessToken = await GM.getValue("customSrsAccessToken");
-        if(!accessToken) return;
+        if(!accessToken) {
+            StorageManager.downloadedPackProfile = -1;
+            return;
+        }
+
         // Check if access token is expired
         let tokenExpires = await GM.getValue("customSrsTokenExpires");
-        if (Date.now() > tokenExpires) {
-            await this.refreshToken();
-        }
+        if (Date.now() > tokenExpires) await this.refreshToken();
         let lastSync = CustomSRSSettings.savedData.lastSynced;
         Utils.log(fileSuffix);
+
         // Get file metadata
         GM_xmlhttpRequest({
             method: "GET",
@@ -227,7 +249,6 @@ class SyncManager {
                     Utils.log("Error getting file metadata from Google Drive");
                     Utils.log(response);
                 } else if (files.length > 0) {
-                    Utils.log("Number of files found: " + files.length);
                     let fileId = files[0].id;
                     let fileModifiedTime = new Date(files[0].modifiedTime).getTime();
                     Utils.log("File modified time: " + new Date(files[0].modifiedTime));

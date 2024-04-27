@@ -320,6 +320,7 @@ class CustomPackProfile {
                 }
                 pack.lvl++;
                 StorageManager.savePackProfile(this, "main");
+                StorageManager.needsPushSync = true;
             }
         }
     }
@@ -641,24 +642,38 @@ class CustomSRSSettings {
 
 class StorageManager {
     static downloadedPackProfile = null;
+    static needsPushSync = false;
+
     // Get custom packs saved in GM storage
     static async loadPackProfile(profileName, forceSync = false) {
-        if(CustomSRSSettings.userSettings.syncEnabled && window.location.pathname.includes("dashboard") && (forceSync || new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 120000)) {
+        if(this.needsPushSync) {
+            this.needsPushSync = false;
+            await this.savePackProfile(null, profileName, true, true);
+            Utils.log("Synced data to drive after review session");
+            return;
+        }
+        if(CustomSRSSettings.userSettings.syncEnabled && (window.location.pathname.includes("dashboard") || window.location.pathname === "/") && (forceSync || new Date().getTime() > CustomSRSSettings.savedData.lastSynced + 120000)) {
             await SyncManager.loadDataFromDrive(profileName, forceSync);
-            let maxWaitCount = 200;
+            let maxWaitCount = 100;
             while(!this.downloadedPackProfile && maxWaitCount > 0) {
                 await new Promise(r => setTimeout(r, 100));
                 Utils.log("Waiting for pack profile to download");
                 maxWaitCount--;
             }
             console.log(this.downloadedPackProfile);
-            if(this.downloadedPackProfile != -1) {
+            if(this.downloadedPackProfile != null && this.downloadedPackProfile != -1) {
                 GM.setValue("customPackProfile_" + profileName, this.downloadedPackProfile);
                 this.downloadedPackProfile = CustomPackProfile.fromObject(this.downloadedPackProfile);
                 return this.downloadedPackProfile;
             }
         }
-        let savedPackProfile = CustomPackProfile.fromObject(await GM.getValue("customPackProfile_" + profileName, new CustomPackProfile()));
+        let savedPackProfile;
+        try {
+            savedPackProfile = CustomPackProfile.fromObject(await GM.getValue("customPackProfile_" + profileName, new CustomPackProfile()));
+        } catch(e) {
+            Utils.log("Error loading pack profile: " + e);
+            savedPackProfile = new CustomPackProfile();
+        }
         this.downloadedPackProfile = null;
         return savedPackProfile;
     }

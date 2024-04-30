@@ -53,7 +53,7 @@ class SyncManager {
         `redirect_uri=${encodeURIComponent(this.#r)}&` +
         `access_type=offline`;
 
-        GM_xmlhttpRequest({
+        GM.xmlHttpRequest({
             method: "POST",
             url: "https://oauth2.googleapis.com/token",
             headers: {
@@ -84,7 +84,7 @@ class SyncManager {
 
     static async selectMasterSource(accessToken) {
         let packProfile = await StorageManager.loadPackProfile("main");
-        GM_xmlhttpRequest({
+        GM.xmlHttpRequest({
             method: "GET",
             url: "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='packProfiles__main.json'&fields=files(id,modifiedTime)",
             headers: {
@@ -131,17 +131,18 @@ class SyncManager {
 
     static async refreshToken() {
         let refreshToken = await GM.getValue("customSrsRefreshToken")
-        Utils.log(refreshToken);
         if(!refreshToken) {
             Utils.log("No refresh token found, please re-authenticate");
             return;
         }
+        Utils.log("Refreshing token - " + refreshToken);
+
         let bodyTxt = `client_id=${encodeURIComponent(this.#c)}&` + atob("Y2xpZW50X3NlY3JldA==") +
         `=${encodeURIComponent(this.#s)}&` +
         `refresh_token=${encodeURIComponent(refreshToken)}&` +
         `grant_type=refresh_token`;
 
-        GM_xmlhttpRequest({
+        await GM.xmlHttpRequest({
             method: "POST",
             url: "https://oauth2.googleapis.com/token",
             headers: {
@@ -160,6 +161,7 @@ class SyncManager {
                 Utils.log(response);
             }
         });
+        Utils.log("Token refresh sent");
     }
 
     static async saveDataToDrive(data, fileSuffix) {
@@ -191,7 +193,7 @@ class SyncManager {
         };
 
         // Save file to Google Drive
-        GM_xmlhttpRequest({
+        GM.xmlHttpRequest({
             method: fileId ? "PATCH" : "POST",
             url: "https://www.googleapis.com/upload/drive/v3/files" + (fileId ? "/" + fileId : "") + "?uploadType=multipart",
             headers: {
@@ -233,12 +235,15 @@ class SyncManager {
 
         // Check if access token is expired
         let tokenExpires = await GM.getValue("customSrsTokenExpires");
-        if (Date.now() > tokenExpires) await this.refreshToken();
+        if (Date.now() > tokenExpires) {
+            await this.refreshToken();
+            accessToken = await GM.getValue("customSrsAccessToken");
+        }
+
         let lastSync = CustomSRSSettings.savedData.lastSynced;
-        Utils.log(fileSuffix);
 
         // Get file metadata
-        GM_xmlhttpRequest({
+        GM.xmlHttpRequest({
             method: "GET",
             url: "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='packProfiles__" + fileSuffix + ".json'&fields=files(id,modifiedTime)",
             headers: {
@@ -255,7 +260,7 @@ class SyncManager {
                     Utils.log("File modified time: " + new Date(files[0].modifiedTime));
                     if (forceSync || fileModifiedTime > lastSync) {
                         // File has been modified, download the updated data
-                        response = GM_xmlhttpRequest({
+                        GM.xmlHttpRequest({
                             method: "GET",
                             url: "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media",
                             headers: {

@@ -32,7 +32,7 @@ class SyncManager {
             Utils.log("Google Drive Access Token found");
             if(await GM.getValue("customSrsDidReview")) {
                 Utils.log("Review was done, saving data to Google Drive");
-                this.saveDataToDrive(activePackProfile, "main");
+                this.saveDataToDrive(activePackProfile, "main", true);
                 GM.deleteValue("customSrsDidReview");
             }
         } else {
@@ -164,9 +164,9 @@ class SyncManager {
         Utils.log("Token refresh sent");
     }
 
-    static async saveDataToDrive(data, fileSuffix) {
+    static async saveDataToDrive(data, fileSuffix, forceSync = false) {
         // Check if review was done less than 3 seconds ago
-        if(CustomSRSSettings.savedData.lastSynced > Date.now() - 3000) {
+        if(!forceSync && CustomSRSSettings.savedData.lastSynced > Date.now() - 3000) {
             Utils.log("Review was done less than 3 seconds ago, preventing API spam");
             return;
         }

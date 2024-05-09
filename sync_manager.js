@@ -14,7 +14,6 @@ class SyncManager {
 
     static async checkIfAuthed() {
         if(!CustomSRSSettings.userSettings.syncEnabled) return;
-        Utils.log("checkIfAuthed");
 
         let url = new URL(window.location.href);
         let authCode = url.searchParams.get("code");
@@ -150,7 +149,6 @@ class SyncManager {
             },
             data: bodyTxt,
             onload: function(response) {
-                console.log(response);
                 let responseJSON = JSON.parse(response.responseText);
                 GM.setValue("customSrsAccessToken", responseJSON.access_token);
                 GM.setValue("customSrsTokenExpires", Date.now() + responseJSON.expires_in * 1000);
@@ -161,7 +159,6 @@ class SyncManager {
                 Utils.log(response);
             }
         });
-        Utils.log("Token refresh sent");
     }
 
     static async saveDataToDrive(data, fileSuffix, forceSync = false) {

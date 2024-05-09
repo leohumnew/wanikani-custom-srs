@@ -6,18 +6,19 @@ class CustomItem {
     last_reviewed_at = 0;
 
     // Item main info. Should always contain at least: 
-    // type (KanaVocabulary, Vocabulary, Kanji, Radical), category (Vocabulary, Kanji, Radical), srs_lvl, characters, meanings, aux_meanings
-    // Optional: meaning_expl, lvl
+    // type (KanaVocabulary, Vocabulary, Kanji, Radical), category (Vocabulary, Kanji, Radical), characters, meanings
+    // Optional: meaning_expl, lvl, meaning_wl, meaning_bl, srs_lvl
     // Radicals: --
     // Kanji: primary_reading_type, onyomi, kunyomi, nanori || reading_expl
-    // Vocabulary: readings, aux_readings || ctx_jp, ctx_en, reading_expl, kanji
-    // KanaVocabulary: || crx_jp, ctx_en
+    // Vocabulary: readings || ctx_jp, ctx_en, reading_expl, kanji, reading_wl, reading_bl, func
+    // KanaVocabulary: || readings, crx_jp, ctx_en, func
     info;
 
     constructor(id, info) {
         this.id = id;
         this.info = info;
-        this.last_reviewed_at = Date.now();
+        this.last_reviewed_at = 0;
+        if(!this.info.srs_lvl) this.info.srs_lvl = 0;
     }
 
     isReadyForReview(levelingType, level) { // levelingType: none, internal, wk
@@ -109,28 +110,15 @@ class CustomItem {
                     characters: this.info.characters,
                     meanings: this.info.meanings,
                     auxiliary_meanings: aux_meanings,
-                    readings: this.info.readings.map(reading => ({"reading": reading, "pronunciations": []}))
+                    readings: (this.info.readings ? this.info.readings.map(reading => ({"reading": reading, "pronunciations": []})) : [{"reading": this.info.characters, "pronunciations": []}])
                 };
         }
     }
 
     static fromObject(object) {
         try {
-            if(object.info.kanji && object.info.kanji[0] && !object.info.kanji[0].characters) delete object.info.kanji; // Remove old component format TODO: remove after a few weeks
-
             let item = new CustomItem(object.id, object.info);
-
-            if(item.info.context_sentences) { // Convert context_sentences to ctx_jp and ctx_en TODO: remove after a few weeks
-                for(let i = 0; i < item.info.context_sentences.length; i++) {
-                    item.info.ctx_jp = [];
-                    item.info.ctx_en = [];
-                    if(i % 2 == 0) item.info.ctx_jp.push(item.info.context_sentences[i]);
-                    else item.info.ctx_en.push(item.info.context_sentences[i]);
-                }
-                delete item.info.context_sentences;
-            }
-
-            item.last_reviewed_at = object.last_reviewed_at;
+            if(object.last_reviewed_at) item.last_reviewed_at = object.last_reviewed_at;
             return item;
         } catch(e) {
             alert("Error loading item, please let me know what error you're getting (unless you haven't used this script since it was first released): " + e);
@@ -139,6 +127,22 @@ class CustomItem {
             }
             return null;
         }
+    }
+
+    runFixer() {
+        // Backwards compatibility fixes
+        if(this.info.context_sentences) { // Convert context_sentences to ctx_jp and ctx_en TODO: remove after a few weeks
+            for(let i = 0; i < this.info.context_sentences.length; i++) {
+                this.info.ctx_jp = [];
+                this.info.ctx_en = [];
+                if(i % 2 == 0) this.info.ctx_jp.push(this.info.context_sentences[i]);
+                else this.info.ctx_en.push(this.info.context_sentences[i]);
+            }
+            delete this.info.context_sentences;
+        }
+
+        // Optimizations
+        if(this.info.type == "KanaVocabulary" && this.info.readings?.length == 1 && this.info.readings[0] == this.info.characters) delete this.info.readings;
     }
 }
 
@@ -712,8 +716,8 @@ class StorageManager {
         let packJSON = JSON.parse(JSON.stringify(pack));
         if(!CustomSRSSettings.userSettings.exportSRSData) {
             packJSON.items.forEach(item => {
-                item.last_reviewed_at = 0;
-                item.info.srs_lvl = 0;
+                delete item.last_reviewed_at;
+                delete item.info.srs_lvl;
             });
         }
         return JSON.stringify(packJSON);

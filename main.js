@@ -181,7 +181,6 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
 
 // ----------- If on dashboard page -----------
 } else if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
-    await SyncManager.checkIfAuthed();
     // Catch lesson / review count fetch and update it with custom item count
     const { fetch: originalFetch } = unsafeWindow;
     unsafeWindow.fetch = async (...args) => {
@@ -189,15 +188,27 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
         if (resource.includes("lesson-and-review-count") && config != null && config.method === "get") {
             let response = await originalFetch(...args);
             let data = await response.text();
-            let res = new Response(updateLessonReviewCountData(data), {
+            return new Response(updateLessonReviewCountData(data), {
                 status: response.status,
                 headers: response.headers
             });
-            return res;
+        } else if(resource.includes("review-forecast") && config != null && config.method === "get" && CustomSRSSettings.savedData.capturedWKReview) {
+            let response = await originalFetch(...args);
+            let dataText = await response.text();
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(dataText, 'text/html');
+            for(counter of doc.querySelectorAll("#review-forecast .review-forecast__total")) {
+                counter.innerHTML = parseInt(counter.innerHTML) - 1;
+            }
+            return new Response(doc.documentElement.outerHTML, {
+                status: response.status,
+                headers: response.headers
+            });
         } else {
             return originalFetch(...args);
         }
     };
+
     // Catch document load to edit review count on dashboard
     document.addEventListener("DOMContentLoaded", () => {
         let reviewNumberElement = document.querySelector(".reviews-dashboard .reviews-dashboard__count-text span");
@@ -213,6 +224,8 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             reviewTile.querySelector(".reviews-dashboard__text .wk-text").innerHTML = "There are no more reviews to do right now.";
         }
     });
+
+    await SyncManager.checkIfAuthed();
 
     // Update the stored user level
     let response = await Utils.wkAPIRequest("user");
@@ -257,6 +270,7 @@ function parseHTML(html) {
 }
 
 function updateLessonReviewCountData(data) {
+    if(data === null) Utils.log("Error: updateLessonReviewCountData data is null.");
     data = parseHTML(data);
 
     let reviewCountElement = data.querySelector("a[href='/subjects/review'] .lesson-and-review-count__count");

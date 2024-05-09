@@ -854,8 +854,9 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         if(tempVar.components.length > 0) infoStruct.kanji = tempVar.components;
                         break;
                     case "KanaVocabulary":
+                        let readingsEl = document.getElementById("item-readings");
                         infoStruct.category = "Vocabulary";
-                        infoStruct.readings = document.getElementById("item-readings").value.split(",").map(s => s.trim());
+                        if(readingsEl.value != "" && !(readingsEl.value.split(",").length == 1 && infoStruct.characters == readingsEl.value.split(",")[0])) infoStruct.readings = readingsEl.value.split(",").map(s => s.trim());
                         if(document.getElementById("item-word-function").value != "") infoStruct.func = document.getElementById("item-word-function").value;
                         if(document.getElementById("item-context-sentences-container").children.length > 0) {
                             infoStruct.ctx_jp = [];
@@ -1147,7 +1148,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                     <h2 class='subject-section__meanings-title'>Primary</h2>
                                     <p class='subject-section__meanings-items'>${item.info.meanings[0]}</p>
                                 </div>
-                                ${item.info.meanings.length > 1 ? `
+                                ${item.info.meanings?.length > 1 ? `
                                 <div class="subject-section__meanings">
                                     <h2 class="subject-section__meanings-title">Alternatives</h2>
                                     <p class="subject-section__meanings-items">${item.info.meanings.slice(1).join(', ')}</p>
@@ -1229,7 +1230,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                     <h2 class='subject-section__meanings-title'>Primary</h2>
                                     <p class='subject-section__meanings-items'>${item.info.meanings[0]}</p>
                                 </div>
-                                ${item.info.meanings.length > 1 ? `
+                                ${item.info.meanings?.length > 1 ? `
                                 <div class="subject-section__meanings">
                                     <h2 class="subject-section__meanings-title">Alternative</h2>
                                     <p class="subject-section__meanings-items">${item.info.meanings.slice(1).join(', ')}</p>
@@ -1271,19 +1272,19 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                     <div class="subject-readings__reading ${item.info.primary_reading_type == "onyomi" ? "subject-readings__reading--primary" : ""}">
                                         <h3 class="subject-readings__reading-title">On’yomi</h3>
                                         <p class="subject-readings__reading-items" lang="ja">
-                                            ${item.info?.onyomi.length > 0 ? item.info.onyomi.join(', ') : "None"}
+                                            ${item.info?.onyomi?.length > 0 ? item.info.onyomi.join(', ') : "None"}
                                         </p>
                                     </div>
                                     <div class="subject-readings__reading ${item.info.primary_reading_type == "kunyomi" ? "subject-readings__reading--primary" : ""}">
                                         <h3 class="subject-readings__reading-title">Kun’yomi</h3>
                                         <p class="subject-readings__reading-items" lang="ja">
-                                            ${item.info?.kunyomi.length > 0 ? item.info.kunyomi.join(', ') : "None"}
+                                            ${item.info?.kunyomi?.length > 0 ? item.info.kunyomi.join(', ') : "None"}
                                         </p>
                                     </div>
                                     <div class="subject-readings__reading ${item.info.primary_reading_type == "nanori" ? "subject-readings__reading--primary" : ""}">
                                         <h3 class="subject-readings__reading-title">Nanori</h3>
                                         <p class="subject-readings__reading-items" lang="ja">
-                                            ${item.info?.nanori.length > 0 ? item.info.nanori.join(', ') : "None"}
+                                            ${item.info?.nanori?.length > 0 ? item.info.nanori.join(', ') : "None"}
                                         </p>
                                     </div>
                                 </div>
@@ -1354,7 +1355,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                     <h2 class='subject-section__meanings-title'>Primary</h2>
                                     <p class='subject-section__meanings-items'>${item.info.meanings[0]}</p>
                                 </div>
-                                ${item.info.meanings.length > 1 ? `
+                                ${item.info.meanings?.length > 1 ? `
                                 <div class="subject-section__meanings">
                                     <h2 class="subject-section__meanings-title">Alternatives</h2>
                                     <p class="subject-section__meanings-items">${item.info.meanings.slice(1).join(', ')}</p>
@@ -1499,7 +1500,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                     <h2 class='subject-section__meanings-title'>Primary</h2>
                                     <p class='subject-section__meanings-items'>${item.info.meanings[0]}</p>
                                 </div>
-                                ${item.info.meanings.length > 1 ? `
+                                ${item.info.meanings?.length > 1 ? `
                                 <div class="subject-section__meanings">
                                     <h2 class="subject-section__meanings-title">Alternatives</h2>
                                     <p class="subject-section__meanings-items">${item.info.meanings.slice(1).join(', ')}</p>
@@ -1544,7 +1545,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                 <div class="subject-readings-with-audio">
                                     <div class="subject-readings-with-audio__item">
                                         <div class="reading-with-audio">
-                                            <div class="reading-with-audio__reading" lang='ja'>${item.info.readings[0]}</div>
+                                            <div class="reading-with-audio__reading" lang='ja'>${item.info.readings ? item.info.readings[0] : item.info.characters}</div>
                                             <ul class="reading-with-audio__audio-items">
                                             </ul>
                                         </div>

@@ -7,7 +7,7 @@ let quizStatsController;
 if (window.location.pathname.includes("/review") || (window.location.pathname.includes("/extra_study") && window.location.search.includes("audio"))) {
     let urlParams = new URLSearchParams(window.location.search);
 
-    if(urlParams.has("conjugations") || urlParams.has("audio") || activePackProfile.getNumActiveReviews() !== 0) {
+    if(activePackProfile.getNumActiveReviews() !== 0 || urlParams.has("conjugations") || urlParams.has("audio")) {
         // Add style to root to prevent header flash
         let headerStyle = document.createElement("style");
         headerStyle.id = "custom-srs-header-style";
@@ -113,13 +113,16 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                 if(className.includes("character-header--")) {
                     headerElement.classList.remove(className);
                     document.querySelector(".quiz-input__input").setAttribute("placeholder", (document.querySelector(".quiz-input__question-type").innerText.includes("reading") ? "答え" : "Your Response"));
-                    setTimeout(() => {
+                    /* setTimeout(() => {
                         headerElement.classList.add("character-header--loaded");
-                    }, 400);
+                    }, 500); */
                     break;
                 }
             }
         }
+        setTimeout(() => {
+            document.querySelector(".character-header").classList.add("character-header--loaded");
+        }, 500);
 
         if(urlParams.has("conjugations")) {
             await Utils.setReadingsOnly();

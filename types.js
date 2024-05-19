@@ -119,6 +119,7 @@ class CustomItem {
         try {
             let item = new CustomItem(object.id, object.info);
             if(object.last_reviewed_at) item.last_reviewed_at = object.last_reviewed_at;
+            item.runFixer();
             return item;
         } catch(e) {
             alert("Error loading item, please let me know what error you're getting (unless you haven't used this script since it was first released): " + e);
@@ -131,7 +132,7 @@ class CustomItem {
 
     runFixer() {
         // Backwards compatibility fixes
-        if(this.info.context_sentences) { // Convert context_sentences to ctx_jp and ctx_en TODO: remove after a few weeks
+        if(this.info.context_sentences) { // Convert context_sentences to ctx_jp and ctx_en
             for(let i = 0; i < this.info.context_sentences.length; i++) {
                 this.info.ctx_jp = [];
                 this.info.ctx_en = [];

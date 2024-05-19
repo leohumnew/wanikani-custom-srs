@@ -111,8 +111,9 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             let headerElement = document.querySelector(".character-header");
             for(let className of headerElement.classList) { // Fix header colour issues
                 if(className.includes("character-header--")) {
+                    headerElement.classList.remove(className);
+                    document.querySelector(".quiz-input__input").setAttribute("placeholder", (document.querySelector(".quiz-input__question-type").innerText.includes("reading") ? "答え" : "Your Response"));
                     setTimeout(() => {
-                        document.querySelector(".quiz-input__input").setAttribute("placeholder", (document.querySelector(".quiz-input__question-type").innerText.includes("reading") ? "答え" : "Your Response"));
                         headerElement.classList.add("character-header--loaded");
                     }, 400);
                     break;

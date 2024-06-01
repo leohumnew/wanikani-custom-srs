@@ -8,10 +8,11 @@ class CustomItem {
     // Item main info. Should always contain at least: 
     // type (KanaVocabulary, Vocabulary, Kanji, Radical), category (Vocabulary, Kanji, Radical), characters, meanings
     // Optional: meaning_expl, lvl, meaning_wl, meaning_bl, srs_lvl
+    //
     // Radicals: --
-    // Kanji: primary_reading_type, onyomi, kunyomi, nanori || reading_expl
-    // Vocabulary: readings || ctx_jp, ctx_en, reading_expl, kanji, reading_wl, reading_bl, func
-    // KanaVocabulary: || readings, crx_jp, ctx_en, func
+    // Kanji: primary_reading_type, minimum one of (onyomi, kunyomi, nanori) || Optional: reading_expl, radicals
+    // Vocabulary: readings || Optional: ctx_jp, ctx_en, reading_expl, kanji, reading_wl, reading_bl, func
+    // KanaVocabulary: || Optional: readings, crx_jp, ctx_en, func
     info;
 
     constructor(id, info) {
@@ -354,16 +355,17 @@ class Conjugations {
         ["った", "いた", "した", "った", "んだ", "んだ", "んだ", "った", "いだ"]
     ];
     static conjugations = { // Name : [godan kana row, general ending, pretty name, explanation, ichidan ending {optional}]
-        "te": [5, "て", "-te", "This is the te-form of the verb, used for connecting the verb to a word or clause that follows it."],
-        "ta": [6, "た", "past", "This is the ta-form of the verb, used for past tense."],
-        "masu": [1, "ます", "formal", "This is the present/future keigo form of the verb, used in polite speech."],
-        "mashita": [1, "ました", "past formal", "This is the past keigo form of the verb, used in polite speech."],
-        "masen": [1, "ません", "negative formal", "This is the negative keigo form of the verb, used in polite speech."],
-        "masendeshita": [1, "ませんでした", "past negative formal", "This is the negative past keigo form of the verb, used in polite speech."],
-        "tai": [1, "たい", "'want'", "This is the 'want to do' form of the verb."],
-        "nai": [0, "ない", "negative", "This is the standard negative form of the verb."],
-        "reru": [0, "れる", "receptive", "This is the receptive (similar to passive) form of the verb, used when something is done to the subject.", "られる"],
-        "seru": [0, "せる", "causative", "This is the causative form of the verb, used when allowing, making, or causing something to happen.", "させる"]
+        "te": [5, "て", "-te", "This is the te-form of the verb, used for connecting the verb to a word or clause that follows it. See more info <a href='https://www.tofugu.com/japanese-grammar/te-form/'>here</a>.", [["走ってシャワーをする", "寝不足でフラフラだ。"], ["I run and shower.", "I didn't sleep well, so I'm dizzy."]]],
+        "ta": [6, "た", "past", "This is the ta-form of the verb, used for past tense. See more info <a href='https://www.tofugu.com/japanese-grammar/verb-past-ta-form/'>here</a>.", [["本を買った。", "昨日は雨だった。"], ["I bought a book.", "Yesterday was rainy."]]],
+        "masu": [1, "ます", "formal", "This is the present/future keigo form of the verb, used in polite speech. See more info <a href='https://www.tofugu.com/japanese-grammar/masu/'>here</a>.", [["飲みます"], ["I drink."]]],
+        "mashita": [1, "ました", "past formal", "This is the past keigo form of the verb, used in polite speech. See more info <a href='https://www.tofugu.com/japanese-grammar/masu/'>here</a>.", [["飲みました"], ["I drank."]]],
+        "masen": [1, "ません", "negative formal", "This is the negative keigo form of the verb, used in polite speech. See more info <a href='https://www.tofugu.com/japanese-grammar/masu/'>here</a>.", [["飲みません"], ["I don't drink."]]],
+        "masendeshita": [1, "ませんでした", "past negative formal", "This is the negative past keigo form of the verb, used in polite speech. See more info <a href='https://www.tofugu.com/japanese-grammar/masu/'>here</a>.", [["飲みませんでした"], ["I didn't drink."]]],
+        "tai": [1, "たい", "'want'", "This is the 'want to do' form of the verb. See more info <a href='https://www.tofugu.com/japanese-grammar/tai-form/'>here</a>.", [["飲みたい"], ["I want to drink."]]],
+        "nai": [0, "ない", "negative", "This is the standard negative form of the verb. See more info <a href='https://www.tofugu.com/japanese-grammar/verb-negative-nai-form/'>here</a>.", [["飲まない"], ["I don't drink."]]],
+        "reru": [0, "れる", "receptive", "This is the receptive (similar to passive) form of the verb, used when something is done to the subject. See more info <a href='https://www.tofugu.com/japanese-grammar/verb-passive-form-rareru/'>here</a>.", [["蜂に刺された。"], ["I was stung by a bee."]], "られる"],
+        "seru": [0, "せる", "causative", "This is the causative form of the verb, used when allowing, making, or causing something to happen. See more info <a href='https://www.tofugu.com/japanese-grammar/verb-causative-form-saseru/'>here</a>.", [["お母さんは弟を学校に行かせた。", "コウイチはマミにベーコンを好きなだけ食べさせた。"], ["My mom made my little brother go to school.", "Koichi let Mami eat as much bacon as she liked."]], "させる"],
+        /*"mnotcas": [5, "てはだめ", "must not (casual)", "This is a casual way to say 'must not do' something, usually only used in casual speech. The 'te' form of the verb is used, followed by the 'は' particle and 'だめ'.", [[["こんなことで泣いていてはだめだ！"]], [["You shouldn't cry over something like this."]]]*/
     };
     static irregularVerbs = {
         "する": {"gen": "し", "reru": "さ", "seru": "さ"},
@@ -405,7 +407,7 @@ class Conjugations {
                 break;
             } case "ichidan":
                 verb = verb.slice(0, -1);
-                verb += this.conjugations[form][4] || this.conjugations[form][1];
+                verb += this.conjugations[form][5] || this.conjugations[form][1];
                 break;
             case "irregular":
                 if(characters.includes("する")) verb = verb.slice(0, -2) + (this.irregularVerbs["する"][form] || this.irregularVerbs["する"].gen);
@@ -468,7 +470,7 @@ class Conjugations {
 
     static getSubjectInfo(subjectID) { // Get details of item for review page details display
         let item = this.activeQueue.find(item => item.id === parseInt(subjectID));
-        return makeDetailsHTMLConjugation(item, this.conjugations[item.conjugationType][2], this.conjugations[item.conjugationType][3]);
+        return makeDetailsHTMLConjugation(item, this.conjugations[item.conjugationType]);
     }
 
     static getSettingsHTML() {
@@ -611,7 +613,10 @@ class CustomSRSSettings {
         enabledConjGrammar: true,
         conjGrammarSessionLength: 10,
         inactiveConjugations: [],
-        syncEnabled: false
+        syncEnabled: false,
+        enableRadicalCapture: true,
+        enableKanjiCapture: true,
+        enableVocabCapture: true
     };
     static userSettings = this.defaultUserSettings;
     static defaultSavedData = {

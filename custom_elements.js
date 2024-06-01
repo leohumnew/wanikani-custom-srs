@@ -527,6 +527,16 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <h2 style="grid-column: span 2">Network Settings</h2>
                     <label for="settingsWKAPIKey">WaniKani API Key</label>
                     <input type="text" id="settingsWKAPIKey" placeholder="API key">
+                    <h2 style="grid-column: span 2">General</h2>
+                    <label style="grid-column: span 2">Item Types to Capture (minimum 1):</label>
+                    <div class="component-div" style="grid-column: span 2">
+                        <label for="settingsEnableRadicalCapture">Radicals</label>
+                        <input type="checkbox" id="settingsEnableRadicalCapture">
+                        <label for="settingsEnableKanjiCapture">Kanji</label>
+                        <input type="checkbox" id="settingsEnableKanjiCapture">
+                        <label for="settingsEnableVocabCapture">Vocabulary</label>
+                        <input type="checkbox" id="settingsEnableVocabCapture">
+                    </div>
                     <h2 style="grid-column: span 2">Experimental Settings</h2>
                     <p style="grid-column: span 2"><i>These settings are experimental and may not work as intended. I would recommend backing up any item packs you care about (download and save the pack JSON from the packs tab - enable the "Include SRS data in exports"!) just in case.</i></p>
                     <div class="component-div" style="grid-column: span 2; grid-template-columns: 1fr 0.8fr">
@@ -727,7 +737,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         break;
                     } case "wk": {
                         if(isNaN(id)) {
-                            document.getElementById("component-add-btn").nextElementSibling.innerText = "Please enter the ID found on this item's details page."
+                            document.getElementById("component-add-btn").nextElementSibling.innerText = "Please enter the ID found on this item's details page.";
                             document.getElementById("component-add-btn").nextElementSibling.style.display = "block";
                             return;
                         } else document.getElementById("component-add-btn").nextElementSibling.innerText = "Failed to find component.";
@@ -920,6 +930,9 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         updateSetting("settingsEnabledConjGrammar", "enabledConjGrammar", true, true);
         updateSetting("settingsConjGrammarSessionLength", "conjGrammarSessionLength");
         updateSetting("settingsSyncEnabled", "syncEnabled", true);
+        updateSetting("settingsEnableRadicalCapture", "enableRadicalCapture", true);
+        updateSetting("settingsEnableKanjiCapture", "enableKanjiCapture", true);
+        updateSetting("settingsEnableVocabCapture", "enableVocabCapture", true);
 
         document.getElementById("settingsActiveConj").innerHTML = "";
         document.getElementById("settingsActiveConj").appendChild(Conjugations.getSettingsHTML());
@@ -1596,7 +1609,8 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             `;
         }
     }
-    function makeDetailsHTMLConjugation(item, conjName, conjDesc) {
+    function makeDetailsHTMLConjugation(item, extraDetails) {
+        let [ , , conjName, conjDesc, conjCtx] = extraDetails;
         return /*html*/ `
         <turbo-frame class="subject-info" id="subject-info">
             <div class="container">
@@ -1648,6 +1662,22 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                 ${buildVocabComponentHTML(item)}
                             </ol>
                         </div>
+                    </section>
+                </section>
+
+                <section class="subject-section subject-section--context subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
+                    <a class="wk-nav__anchor" id="context"></a>
+                    <h2 class="subject-section__title">
+                        <a class="subject-section__toggle" data-toggle-target="toggle" data-action="toggle#toggle" aria-expanded="false" aria-controls="section-context">
+                            <span class="subject-section__toggle-icon">${Icons.customIconTxt("chevron-right")}</span>
+                            <span class="subject-section__title-text">Context Sentences</span>
+                        </a>
+                    </h2>
+                    <section id="section-context" class="subject-section__content" data-toggle-target="content">
+                        <section class="subject-section__subsection">
+                            <h3 class="subject-section__subtitle">Context Sentences</h3>
+                            ${conjCtx ? buildContextSentencesHTML(conjCtx[0], conjCtx[1]) : "No context sentences set."}
+                        </section>
                     </section>
                 </section>
             </div>

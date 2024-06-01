@@ -7,7 +7,7 @@
             "// ==UserScript==",
             "// @name         WK Custom SRS",
             "// @namespace    leohumnew.wk",
-            "// @version      0.6.0",
+            "// @version      0.6.1",
             "// @description  Add custom word packs to WaniKani!",
             "// @author       leohumnew",
             "// @match        https://www.wanikani.com/*",
@@ -17,7 +17,7 @@
             "// @grant        GM.xmlHttpRequest",
             "// @grant        GM_xmlhttpRequest",
             "// @run-at       document-start",
-            "// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1367265",            
+            "// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1386034",            
             "// ==/UserScript==",
             "",
             "(async() => {"

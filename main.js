@@ -12,11 +12,11 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
         let headerStyle = document.createElement("style");
         headerStyle.id = "custom-srs-header-style";
         headerStyle.innerHTML = `
-        .character-header .character-header__characters {
-            opacity: 0 }
-        .character-header--loaded .character-header__characters {
-            opacity: 1;
-            transition: opacity 0.1s;
+        .character-header__loading {
+            .character-header__characters {
+                opacity: 0;
+                transition: opacity 0.05s;
+            }
         }
         `;
         document.head.append(headerStyle);
@@ -36,6 +36,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             let verbs = await Conjugations.getConjugationSessionItems(CustomSRSSettings.userSettings.conjGrammarSessionLength);
             queueElement = verbs[0];
             SRSElement = verbs[1];
+            changedFirstItem = true;
         } else if(urlParams.has("audio")) {
             queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
             SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIds']").innerHTML);
@@ -43,6 +44,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                 if(queueElement[i].subject_category !== "Vocabulary" && queueElement[i].subject_category !== "KanaVocabulary") {
                     queueElement.splice(i, 1);
                     SRSElement.splice(i, 1);
+                    if(i === 0) changedFirstItem = true;
                 }
             }
             if(queueElement.length === 0) {
@@ -55,18 +57,20 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
         } else {
             queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
             SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
+
             // Remove captured WK review from queue
-            if(queueElement.length === 1 || (CustomSRSSettings.savedData.capturedWKReview && queueElement[1].id === CustomSRSSettings.savedData.capturedWKReview.id)) {
-                CustomSRSSettings.savedData.capturedWKReview = queueElement.shift();
-                SRSElement.shift();
-                changedFirstItem = true;
-                Utils.log("Captured first item from queue.");
-            } else {
-                CustomSRSSettings.savedData.capturedWKReview = queueElement[1];
-                queueElement.splice(1, 1);
-                SRSElement.splice(1, 1);
-                Utils.log("Captured second item from queue.");
-            }
+            let settings = {"Radical": CustomSRSSettings.userSettings.enableRadicalCapture, "Kanji": CustomSRSSettings.userSettings.enableKanjiCapture, "Vocabulary": CustomSRSSettings.userSettings.enableVocabCapture};
+            if(!settings.Radical && !settings.Kanji && !settings.Vocabulary) settings = {"Radical": true, "Kanji": true, "Vocabulary": true};
+            queueElement.findLast((item, index) => {
+                if((!CustomSRSSettings.savedData.capturedWKReview || item.id !== CustomSRSSettings.savedData.capturedWKReview.id) && settings[item.subject_category]) {
+                    CustomSRSSettings.savedData.capturedWKReview = item;
+                    queueElement.splice(index, 1);
+                    SRSElement.splice(index, 1);
+                    if(index === 0) changedFirstItem = true;
+                    Utils.log("Captured item " + index + " from queue.");
+                    return true;
+                }
+            });
 
             // Add custom items to queue
             if(activePackProfile.getNumActiveReviews() !== 0) {
@@ -102,6 +106,8 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             StorageManager.saveSettings();
         }
 
+        if(changedFirstItem) document.querySelector(".character-header").classList.add("character-header__loading");
+
         cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(queueElement);
         if(!urlParams.has("audio")) cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = JSON.stringify(SRSElement);
         else cloneEl.querySelector("script[data-quiz-queue-target='subjectIds']").innerHTML = JSON.stringify(SRSElement);
@@ -113,16 +119,13 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                 if(className.includes("character-header--")) {
                     headerElement.classList.remove(className);
                     document.querySelector(".quiz-input__input").setAttribute("placeholder", (document.querySelector(".quiz-input__question-type").innerText.includes("reading") ? "答え" : "Your Response"));
-                    /* setTimeout(() => {
-                        headerElement.classList.add("character-header--loaded");
-                    }, 500); */
+                    setTimeout(() => {
+                        headerElement.classList.remove("character-header__loading");
+                    }, 400);
                     break;
                 }
             }
         }
-        setTimeout(() => {
-            document.querySelector(".character-header").classList.add("character-header--loaded");
-        }, 500);
 
         if(urlParams.has("conjugations")) {
             await Utils.setReadingsOnly();

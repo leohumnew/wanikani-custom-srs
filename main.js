@@ -74,32 +74,39 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
 
             // Add custom items to queue
             if(activePackProfile.getNumActiveReviews() !== 0) {
-                switch(CustomSRSSettings.userSettings.itemQueueMode) {
-                    case "weighted-start": {
-                        let reviewsToAddW = activePackProfile.getActiveReviews();
-                        let reviewsSRSToAddW = activePackProfile.getActiveReviewsSRS();
-                        for(let i = 0; i < reviewsToAddW.length; i++) {
-                            let pos = Math.floor(Math.random() * queueElement.length / 4);
-                            if(pos === 0) changedFirstItem = true;
-                            queueElement.splice(pos, 0, reviewsToAddW[i]);
-                            SRSElement.splice(pos, 0, reviewsSRSToAddW[i]);
-                        }
-                        break;
-                    } case "random": {
-                        let reviewsToAdd = activePackProfile.getActiveReviews();
-                        let reviewsSRSToAdd = activePackProfile.getActiveReviewsSRS();
-                        for(let i = 0; i < reviewsToAdd.length; i++) {
-                            let pos = Math.floor(Math.random() * queueElement.length);
-                            if(pos === 0) changedFirstItem = true;
-                            queueElement.splice(pos, 0, reviewsToAdd[i]);
-                            SRSElement.splice(pos, 0, reviewsSRSToAdd[i]);
-                        }
-                        break;
-                    } case "start":
-                        changedFirstItem = true;
-                        queueElement = activePackProfile.getActiveReviews().concat(queueElement);
-                        SRSElement = activePackProfile.getActiveReviewsSRS().concat(SRSElement);
-                        break;
+                // if url param is set to "custom" then set queue to only custom items
+                if(urlParams.has("custom")) {
+                    queueElement = activePackProfile.getActiveReviews();
+                    SRSElement = activePackProfile.getActiveReviewsSRS();
+                    changedFirstItem = true;
+                } else {
+                    switch(CustomSRSSettings.userSettings.itemQueueMode) {
+                        case "weighted-start": {
+                            let reviewsToAddW = activePackProfile.getActiveReviews();
+                            let reviewsSRSToAddW = activePackProfile.getActiveReviewsSRS();
+                            for(let i = 0; i < reviewsToAddW.length; i++) {
+                                let pos = Math.floor(Math.random() * queueElement.length / 4);
+                                if(pos === 0) changedFirstItem = true;
+                                queueElement.splice(pos, 0, reviewsToAddW[i]);
+                                SRSElement.splice(pos, 0, reviewsSRSToAddW[i]);
+                            }
+                            break;
+                        } case "random": {
+                            let reviewsToAdd = activePackProfile.getActiveReviews();
+                            let reviewsSRSToAdd = activePackProfile.getActiveReviewsSRS();
+                            for(let i = 0; i < reviewsToAdd.length; i++) {
+                                let pos = Math.floor(Math.random() * queueElement.length);
+                                if(pos === 0) changedFirstItem = true;
+                                queueElement.splice(pos, 0, reviewsToAdd[i]);
+                                SRSElement.splice(pos, 0, reviewsSRSToAdd[i]);
+                            }
+                            break;
+                        } case "start":
+                            changedFirstItem = true;
+                            queueElement = activePackProfile.getActiveReviews().concat(queueElement);
+                            SRSElement = activePackProfile.getActiveReviewsSRS().concat(SRSElement);
+                            break;
+                    }
                 }
             }
 
@@ -181,10 +188,6 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             return originalFetch(...args);
         }
     };
-
-// ----------- If on lessons page -----------
-} else if (window.location.pathname.includes("/lessons")) {
-    // TODO
 
 // ----------- If on dashboard page -----------
 } else if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {

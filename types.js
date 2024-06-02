@@ -1,4 +1,5 @@
 const srsGaps = [0, 4*60*60*1000, 8*60*60*1000, 23*60*60*1000, 47*60*60*1000, 167*60*60*1000, 335*60*60*1000, 730*60*60*1000, 2920*60*60*1000];
+srsGaps["0.5"] = 0; // 0.5 stage for immediate review after lesson
 
 class CustomItem {
     // Root variables
@@ -22,19 +23,23 @@ class CustomItem {
         if(!this.info.srs_lvl) this.info.srs_lvl = 0;
     }
 
-    isReadyForReview(levelingType, level) { // levelingType: none, internal, wk
-        if(this.last_reviewed_at < Date.now() - srsGaps[this.info.srs_lvl] && this.info.srs_lvl > -1) { // TODO: Change SRS stage check to > 0 once lessons are implemented
-            if(this.info.srs_lvl > 0) return true; // If item is already in SRS, ignore levels
-            else if(levelingType == "none") return true;
+    isReadyForReview() {
+        if(this.info.srs_lvl > 0 && this.last_reviewed_at < Date.now() - srsGaps[this.info.srs_lvl]) return true;
+        return false;
+    }
+    isReadyForLesson(levelingType, level) { // levelingType: none, internal, wk
+        if(this.info.srs_lvl == 0) {
+            console.log(CustomSRSSettings.userSettings.lastKnownLevel, this.info.lvl, levelingType);
+            if(levelingType == "none") return true;
             else if(levelingType == "internal" && (!this.info.lvl || level >= this.info.lvl)) return true;
             else if(levelingType == "wk" && (!this.info.lvl || CustomSRSSettings.userSettings.lastKnownLevel >= this.info.lvl)) return true;
         }
         return false;
     }
     getTimeUntilReview(levelingType, level) { // In hours, rounded to integer
-        if(this.isReadyForReview(levelingType, level)) {
-            return "Now";
-        } else {
+        if(this.isReadyForLesson(levelingType, level)) return "Lesson";
+        else if(this.isReadyForReview()) return "Now";
+        else {
             if((levelingType == "internal" && this.info.lvl && level < this.info.lvl) || (levelingType == "wk" && this.info.lvl && CustomSRSSettings.userSettings.lastKnownLevel < this.info.lvl)) {
                 return "Locked";
             } else return Math.round((srsGaps[this.info.srs_lvl] - (Date.now() - this.last_reviewed_at)) / (60*60*1000)) + "h";
@@ -42,7 +47,9 @@ class CustomItem {
     }
 
     incrementSRS() {
-        if(this.info.srs_lvl < 9) this.info.srs_lvl++;
+        if(this.info.srs_lvl == 0) this.info.srs_lvl = 0.5;
+        else if(this.info.srs_lvl == 0.5) this.info.srs_lvl = 1;
+        else if(this.info.srs_lvl < 9) this.info.srs_lvl++;
         this.last_reviewed_at = Date.now();
         StorageManager.savePackProfile(activePackProfile, "main");
     }
@@ -191,17 +198,29 @@ class CustomItemPack {
 
     getActiveReviews(packID) { // Get all items that were last reviewed more than 24 hours ago
         if(!this.active) return [];
-        return this.items.filter(item => item.isReadyForReview(this.lvlType, this.lvl)).map(item => item.getQueueItem(packID));
+        return this.items.filter(item => item.isReadyForReview()).map(item => item.getQueueItem(packID));
+    }
+    getActiveLessons(packID) {
+        if(!this.active) return [];
+        return this.items.filter(item => item.isReadyForLesson(this.lvlType, this.lvl)).map(item => item.getQueueItem(packID));
     }
     getActiveReviewsSRS(packID) {
         if(!this.active) return [];
-        return this.items.filter(item => item.isReadyForReview(this.lvlType, this.lvl)).map(item => item.getSRS(packID));
+        return this.items.filter(item => item.isReadyForReview()).map(item => item.getSRS(packID));
     }
     getNumActiveReviews() {
         if(!this.active) return 0;
         let num = 0;
         for(let item of this.items) {
-            if(item.isReadyForReview(this.lvlType, this.lvl)) num++;
+            if(item.isReadyForReview()) num++;
+        }
+        return num;
+    }
+    getNumActiveLessons() {
+        if(!this.active) return 0;
+        let num = 0;
+        for(let item of this.items) {
+            if(item.isReadyForLesson(this.lvlType, this.lvl)) num++;
         }
         return num;
     }
@@ -294,8 +313,18 @@ class CustomPackProfile {
         }
         return activeReviews;
     }
+    getActiveLessons() {
+        let activeLessons = [];
+        for(let i = 0; i < this.customPacks.length; i++) {
+            activeLessons.push(...this.customPacks[i].getActiveLessons(i));
+        }
+        return activeLessons;
+    }
     getNumActiveReviews() {
         return this.customPacks.reduce((acc, pack) => acc + pack.getNumActiveReviews(), 0);
+    }
+    getNumActiveLessons() {
+        return this.customPacks.reduce((acc, pack) => acc + pack.getNumActiveLessons(), 0);
     }
     getActiveReviewsSRS() {
         let activeReviewsSRS = [];
@@ -314,7 +343,7 @@ class CustomPackProfile {
     submitReview(cantorNum, meaningIncorrectNum, readingIncorrectNum) {
         let [packID, itemID] = Utils.reverseCantorNumber(cantorNum);
         let item = this.customPacks[packID].getItem(itemID);
-        if(meaningIncorrectNum > 0 || readingIncorrectNum > 0) {
+        if((meaningIncorrectNum > 0 || readingIncorrectNum > 0) && item.info.srs_lvl >= 1) {
             item.decrementSRS();
         } else {
             item.incrementSRS();

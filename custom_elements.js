@@ -333,10 +333,12 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <div class="content-box" id="overview-lessons">
                         <h2>Lessons</h2>
                         <h2>--</h2>
+                        <a class="wk-button wk-button--modal-primary" id="custom-lessons-button" style="width: 80%">Start Lessons</a>
                     </div>
                     <div class="content-box" id="overview-reviews">
                         <h2>Reviews</h2>
                         <h2>--</h2>
+                        <a class="wk-button wk-button--modal-primary" id="custom-reviews-button" style="width: 80%">Start Custom Reviews</a>
                     </div>
                     <div class="content-box" style="grid-column: span 2; margin-top: 1rem">
                         <h2>Custom SRS Progress</h2>
@@ -403,6 +405,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <label for="item-srs-stage">SRS Stage:</label>
                     <select id="item-srs-stage">
                         <option value="0">Lesson</option>
+                        <option value="0.5">First Review</option>
                         <option value="1">Apprentice 1</option>
                         <option value="2">Apprentice 2</option>
                         <option value="3">Apprentice 3</option>
@@ -553,6 +556,173 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         </div>
     `;
 
+    // --------- Custom Lessons ----------
+    let lessonsHTML = /*html*/ `
+        <button class="close-button" onclick="document.getElementById('custom-lessons').remove();">${Icons.customIconTxt("cross")}</button>
+        <div class="character-header">
+            <h1 lang="ja" class="character-header__characters"></h1>
+            <h2></h2>
+        </div>
+    `;
+
+    let lessonsCSS = /*css*/ `
+    #custom-lessons {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: var(--color-wk-panel-content-background);
+        z-index: 100;
+        text-align: center;
+        overflow: auto;
+
+        h1 {
+            font-weight: 350;
+            line-height: normal;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 1.5rem;
+            color: var(--color-tertiary, --color-text);
+            cursor: pointer;
+            background-color: transparent;
+            border: none;
+            z-index: 1;
+
+            &:hover {
+                color: var(--color-text) }
+        }
+
+        .character-header {
+            container-type: inline-size;
+            padding: 1rem;
+            box-shadow: 0px 2px 0.2rem 0px rgb(0 0 0 / .5);
+            color: var(--color-character-text);
+
+            .character-header__characters { color: var(--color-character-text) }
+            &.character-header--radical { background-color: var(--color-radical) }
+            &.character-header--kanji { background-color: var(--color-kanji) }
+            &.character-header--vocabulary { background-color: var(--color-vocabulary) }
+        }
+
+        .container {
+            background-color: var(--color-wk-panel-background);
+            border-radius: 3px;
+            padding: 3rem;
+            text-align: left;
+            box-shadow: 2px 2px 3px #0000003b;
+            margin: 1rem 0 1rem auto;
+
+            .subject-readings {
+                display: flex;
+                gap: 1rem;
+            }
+        }
+
+        #subject-info {
+            display: flex;
+        
+            & > button {
+                margin-right: auto;
+                background: none;
+                border: none;
+                transform: translateX(-100%);
+                border-radius: 3px;
+                margin-top: 1rem;
+
+                &:hover {
+                    background-color: var(--color-menu, white) }
+            }
+
+            a { 
+                color: var(--color-text) }
+
+            .subject-section__toggle-icon {
+                display: none }
+
+            .subject-section__content {
+                background-color: var(--color-wk-panel-content-background);
+                padding: 1rem;
+                border-radius: 3px;
+            }
+
+            #section-meaning .subject-section__subsection:first-child {
+                display: flex;
+                gap: 2rem;
+
+                .subject-section__meanings-items {
+                    width: fit-content;
+                    padding: 4px;
+                }
+            }
+        }
+    }
+    `;
+
+    // ------------------- Lesson Manager -------------------
+    class LessonManager {
+        lessonQueue;
+        constructor() {
+            document.getElementById("overview-popup").close();
+            if(!document.getElementById("custom-lessons-css")) {
+                let lessonsCSSElem = document.createElement("style");
+                lessonsCSSElem.id = "custom-lessons-css";
+                lessonsCSSElem.innerHTML = lessonsCSS;
+                document.head.appendChild(lessonsCSSElem);
+            }
+            let lessonsPopup = document.createElement("div");
+            lessonsPopup.id = "custom-lessons";
+            lessonsPopup.innerHTML = lessonsHTML;
+            document.body.appendChild(lessonsPopup);
+
+            this.lessonQueue = activePackProfile.getActiveLessons();
+
+            this.nextLesson();
+        }
+
+        nextLesson() {
+            let nextItem = this.lessonQueue[0];
+            let lessonContainer = document.getElementById("custom-lessons");
+            lessonContainer.querySelector("h1").innerText = nextItem.characters;
+            lessonContainer.querySelector("h2").innerText = nextItem.meanings[0];
+
+            lessonContainer.querySelector(".character-header").classList.remove("character-header--kanji", "character-header--radical", "character-header--vocabulary");
+            if(nextItem.subject_category === "Kanji") lessonContainer.querySelector(".character-header").classList.add("character-header--kanji");
+            else if(nextItem.subject_category === "Radical") lessonContainer.querySelector(".character-header").classList.add("character-header--radical");
+            else if(nextItem.subject_category === "Vocabulary") lessonContainer.querySelector(".character-header").classList.add("character-header--vocabulary");
+
+            document.getElementById("subject-info")?.remove();
+            document.getElementById("custom-lessons").innerHTML += activePackProfile.getSubjectInfo(nextItem.id);
+            lessonContainer.querySelectorAll(".subject-section").forEach(section => {
+                const toggleLinkElem = section.querySelector(".subject-section__toggle");
+                const contentElem = section.querySelector(".subject-section__content");
+
+                if (toggleLinkElem && contentElem) {
+                    toggleLinkElem.setAttribute("aria-expanded", "true");
+                    contentElem.removeAttribute("hidden");
+                }
+            });
+
+            let nextButton = document.createElement("button");
+            nextButton.innerHTML = Icons.customIconTxt("chevron-right");
+            nextButton.onclick = () => this.submitLesson();
+            document.getElementById("subject-info").appendChild(nextButton);
+        }
+
+        submitLesson() {
+            let item = this.lessonQueue.shift();
+            activePackProfile.submitReview(item.id, 0, 0);
+            if(this.lessonQueue.length === 0) {
+                document.getElementById("custom-lessons").remove();
+                return;
+            } else this.nextLesson();
+        }
+    }
+
     // --------- Popup open button ---------
     let overviewPopupButton, buttonLI;
 
@@ -620,7 +790,18 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
 
     // ---------- Update popup content ----------
     function updateOverviewTab() {
-        document.querySelector("#overview-reviews h2:last-child").innerText = activePackProfile.getNumActiveReviews();
+        let numLessons = activePackProfile.getNumActiveLessons();
+        document.querySelector("#overview-lessons h2:not(:first-child)").innerText = numLessons;
+        if(numLessons > 0) {
+            document.getElementById("custom-lessons-button").onclick = () => new LessonManager();
+            document.getElementById("custom-lessons-button").style.cursor = "pointer";
+        } else document.getElementById("custom-lessons-button").style.cursor = "not-allowed";
+        let numReviews = activePackProfile.getNumActiveReviews();
+        document.querySelector("#overview-reviews h2:not(:first-child)").innerText = numReviews;
+        if(numReviews > 0) {
+            document.getElementById("custom-reviews-button").onclick = () => window.location.href = "/subjects/review?custom";
+            document.getElementById("custom-reviews-button").style.cursor = "pointer";
+        } else document.getElementById("custom-reviews-button").style.cursor = "not-allowed";
         // Fill in the progress section with the current progress for each pack
         let progressDiv = document.getElementById("custom-srs-progress");
         progressDiv.innerHTML = "";
@@ -664,6 +845,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 });
             };
             packElement.querySelector(".delete-pack").onclick = () => { // Pack delete button
+                if(!confirm(`Are you sure you want to delete the ${pack.name} pack?`)) return;
                 activePackProfile.removePack(i);
                 StorageManager.savePackProfile(activePackProfile, "main", true);
                 changeTab(2);
@@ -1060,7 +1242,8 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         `;
         return contextSentence;
     }
-} else {
+}
+if(window.location.pathname.includes("/review") || window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
     // Add custom CSS
     let customReviewCSS = document.createElement("style");
     customReviewCSS.innerHTML = /* css */ `
@@ -1188,7 +1371,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             </section>
                         </section>
                     </section>
-
+    
                     <section class="subject-section subject-section--amalgamations subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[]}">
                         <a class='wk-nav__anchor' id='amalgamations'></a>
                         <h2 class='subject-section__title'>
@@ -1609,6 +1792,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             `;
         }
     }
+
     function makeDetailsHTMLConjugation(item, extraDetails) {
         let [ , , conjName, conjDesc, conjCtx] = extraDetails;
         return /*html*/ `

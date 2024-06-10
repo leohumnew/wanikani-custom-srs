@@ -18,6 +18,10 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                 transition: opacity 0.05s;
             }
         }
+        wk-character-image {
+            margin-left: auto;
+            margin-right: auto;
+        }
         `;
         document.head.append(headerStyle);
     }
@@ -60,17 +64,18 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
 
             // Remove captured WK review from queue
             let settings = {"Radical": CustomSRSSettings.userSettings.enableRadicalCapture, "Kanji": CustomSRSSettings.userSettings.enableKanjiCapture, "Vocabulary": CustomSRSSettings.userSettings.enableVocabCapture};
-            if(!settings.Radical && !settings.Kanji && !settings.Vocabulary) settings = {"Radical": true, "Kanji": true, "Vocabulary": true};
-            queueElement.findLast((item, index) => {
-                if((!CustomSRSSettings.savedData.capturedWKReview || item.id !== CustomSRSSettings.savedData.capturedWKReview.id) && settings[item.subject_category]) {
-                    CustomSRSSettings.savedData.capturedWKReview = item;
-                    queueElement.splice(index, 1);
-                    SRSElement.splice(index, 1);
-                    if(index === 0) changedFirstItem = true;
-                    Utils.log("Captured item " + index + " from queue.");
-                    return true;
-                }
-            });
+            if(settings.Radical || settings.Kanji || settings.Vocabulary) {
+                queueElement.findLast((item, index) => {
+                    if((!CustomSRSSettings.savedData.capturedWKReview || item.id !== CustomSRSSettings.savedData.capturedWKReview.id) && settings[item.subject_category]) {
+                        CustomSRSSettings.savedData.capturedWKReview = item;
+                        queueElement.splice(index, 1);
+                        SRSElement.splice(index, 1);
+                        if(index === 0) changedFirstItem = true;
+                        Utils.log("Captured item " + index + " from queue.");
+                        return true;
+                    }
+                });
+            }
 
             // Add custom items to queue
             if(activePackProfile.getNumActiveReviews() !== 0) {

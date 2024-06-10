@@ -531,7 +531,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <label for="settingsWKAPIKey">WaniKani API Key</label>
                     <input type="text" id="settingsWKAPIKey" placeholder="API key">
                     <h2 style="grid-column: span 2">General</h2>
-                    <label style="grid-column: span 2">Item Types to Capture (minimum 1):</label>
+                    <label style="grid-column: span 2">Item Types that can be Captured:</label>
                     <div class="component-div" style="grid-column: span 2">
                         <label for="settingsEnableRadicalCapture">Radicals</label>
                         <input type="checkbox" id="settingsEnableRadicalCapture">
@@ -706,6 +706,27 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     contentElem.removeAttribute("hidden");
                 }
             });
+            let actionsSection = document.createElement("section");
+            actionsSection.innerHTML = `
+            <section class="subject-section">
+                <h2 class="subject-section__title">Actions</h2>
+                <section class="subject-section__content">
+                    <button id="burn-button" class="wk-button wk-button--modal-primary" style="width: auto">Burn</button>
+                    <button id="delete-button" class="wk-button wk-button--modal-primary" style="width: auto">Delete</button>
+                    <button id="skip-button" class="wk-button wk-button--modal-primary" style="width: auto">Skip for Now</button>
+                </section>
+            </section>
+            `;
+            lessonContainer.querySelector("#subject-info .container").appendChild(actionsSection);
+            lessonContainer.querySelector("#burn-button").onclick = () => {
+                activePackProfile.burnItem(nextItem.id);
+                this.submitLesson();
+            }
+            lessonContainer.querySelector("#delete-button").onclick = () => {
+                activePackProfile.deleteItem(nextItem.id);
+                this.submitLesson(false);
+            }
+            lessonContainer.querySelector("#skip-button").onclick = () => this.submitLesson(false);
 
             let nextButton = document.createElement("button");
             nextButton.innerHTML = Icons.customIconTxt("chevron-right");
@@ -713,9 +734,9 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             document.getElementById("subject-info").appendChild(nextButton);
         }
 
-        submitLesson() {
+        submitLesson(submit = true) {
             let item = this.lessonQueue.shift();
-            activePackProfile.submitReview(item.id, 0, 0);
+            if(submit) activePackProfile.submitReview(item.id, 0, 0);
             if(this.lessonQueue.length === 0) {
                 document.getElementById("custom-lessons").remove();
                 return;
@@ -1099,6 +1120,11 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             StorageManager.saveSettings();
                             return;
                         }
+                    }
+                } else if(elementId == "settingsEnableRadicalCapture" || elementId == "settingsEnableKanjiCapture" || elementId == "settingsEnableVocabCapture") {
+                    if(!settings.enableRadicalCapture && !settings.enableKanjiCapture && !settings.enableVocabCapture) {
+                        CustomSRSSettings.savedData.capturedWKReview = null;
+                        StorageManager.saveSettings();
                     }
                 }
                 if(needsReload) window.location.reload();

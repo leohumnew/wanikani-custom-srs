@@ -29,7 +29,6 @@ class CustomItem {
     }
     isReadyForLesson(levelingType, level) { // levelingType: none, internal, wk
         if(this.info.srs_lvl == 0) {
-            console.log(CustomSRSSettings.userSettings.lastKnownLevel, this.info.lvl, levelingType);
             if(levelingType == "none") return true;
             else if(levelingType == "internal" && (!this.info.lvl || level >= this.info.lvl)) return true;
             else if(levelingType == "wk" && (!this.info.lvl || CustomSRSSettings.userSettings.lastKnownLevel >= this.info.lvl)) return true;
@@ -40,9 +39,9 @@ class CustomItem {
         if(this.isReadyForLesson(levelingType, level)) return "Lesson";
         else if(this.isReadyForReview()) return "Now";
         else {
-            if((levelingType == "internal" && this.info.lvl && level < this.info.lvl) || (levelingType == "wk" && this.info.lvl && CustomSRSSettings.userSettings.lastKnownLevel < this.info.lvl)) {
-                return "Locked";
-            } else return Math.round((srsGaps[this.info.srs_lvl] - (Date.now() - this.last_reviewed_at)) / (60*60*1000)) + "h";
+            if(this.info.srs_lvl == 9) return "Burned";
+            else if((levelingType == "internal" && this.info.lvl && level < this.info.lvl) || (levelingType == "wk" && this.info.lvl && CustomSRSSettings.userSettings.lastKnownLevel < this.info.lvl)) return "Locked";
+            else return Math.round((srsGaps[this.info.srs_lvl] - (Date.now() - this.last_reviewed_at)) / (60*60*1000)) + "h";
         }
     }
 
@@ -63,6 +62,11 @@ class CustomItem {
     }
     getSRS(packID) {
         return [Utils.cantorNumber(packID, this.id), parseInt(this.info.srs_lvl)];
+    }
+    burnItem() {
+        this.info.srs_lvl = 9;
+        this.last_reviewed_at = Date.now();
+        StorageManager.savePackProfile(activePackProfile, "main");
     }
 
     getQueueItem(packID) {
@@ -347,16 +351,30 @@ class CustomPackProfile {
             item.decrementSRS();
         } else {
             item.incrementSRS();
-            // Check if pack should level up
-            let pack = this.customPacks[packID];
-            if(pack.lvlType == "internal") {
-                for(let item of pack.items) {
-                    if(item.info.lvl && item.info.lvl <= pack.lvl && item.info.srs_lvl < 5) return;
-                }
-                pack.lvl++;
-                StorageManager.savePackProfile(this, "main");
-                StorageManager.needsPushSync = true;
+            this.checkPackLevelUp(packID);
+        }
+    }
+    burnItem(cantorNum) {
+        let [packID, itemID] = Utils.reverseCantorNumber(cantorNum);
+        let item = this.customPacks[packID].getItem(itemID);
+        item.burnItem();
+    }
+    deleteItem(cantorNum) {
+        let [packID, itemID] = Utils.reverseCantorNumber(cantorNum);
+        this.customPacks[packID].removeItem(itemID);
+        this.checkPackLevelUp(packID);
+        StorageManager.savePackProfile(this, "main");
+    }
+
+    checkPackLevelUp(packID) {
+        let pack = this.customPacks[packID];
+        if(pack.lvlType == "internal") {
+            for(let item of pack.items) {
+                if(item.info.lvl && item.info.lvl <= pack.lvl && item.info.srs_lvl < 5) return;
             }
+            pack.lvl++;
+            StorageManager.savePackProfile(this, "main");
+            StorageManager.needsPushSync = true;
         }
     }
 
@@ -544,7 +562,24 @@ class AudioQuiz {
         soundIcon.style.height = "7.5rem";
         soundIcon.onclick = () => this.playActiveQuizItemAudio();
 
-        document.getElementById("custom-srs-header-style").innerHTML += ".character-header .character-header__characters { height: 0 } .character-header__content { cursor: pointer }";
+        document.getElementById("custom-srs-header-style").innerHTML += /*css*/ `
+        .character-header .character-header__characters {
+            height: 0;
+            overflow: hidden;
+        }
+        .character-header__content {
+            cursor: pointer
+        }
+        .quiz__content:has(.quiz-input .quiz-input__input-container[correct="true"]), .quiz__content:has(.quiz-input .quiz-input__input-container[correct="false"]) {
+            .character-header .character-header__characters {
+                height: auto;
+                overflow: visible;
+            }
+            .sound-icon {
+                display: none
+            }
+        }
+        `;
 
         let audioButton = document.querySelector("a.additional-content__item.additional-content__item--audio");
         audioButton.onclick = () => this.playActiveQuizItemAudio();

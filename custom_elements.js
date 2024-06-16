@@ -659,6 +659,23 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     padding: 4px;
                 }
             }
+
+            .subject-character-grid__items {
+                margin: 0 }
+            .subject-character-grid__item {
+                &::marker {
+                    content: none }
+                .subject-character__content {
+                    border-radius: 3px;
+                    margin-bottom: 0.5rem;
+                }
+                .subject-character--kanji .subject-character__content {
+                    background-color: var(--color-kanji) }
+                .subject-character--radical .subject-character__content {
+                    background-color: var(--color-radical) }
+                .subject-character--vocabulary .subject-character__content {
+                    background-color: var(--color-vocabulary) }
+            }
         }
     }
     `;
@@ -877,22 +894,61 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             };
             packsTab.appendChild(packElement);
         }
-        // New pack button
-        let newPackButton = document.createElement("button");
-        newPackButton.classList = "outline-button";
-        newPackButton.style = "width: 48%";
-        newPackButton.innerHTML = "New Pack";
-        newPackButton.onclick = () => {
-            changeTab(3, "new");
+        // Pack action buttons
+        let onlinePacksButton = document.createElement("button");
+        onlinePacksButton.classList = "outline-button";
+        onlinePacksButton.style = "width: 49%";
+        onlinePacksButton.innerHTML = "Online Packs";
+        onlinePacksButton.onclick = () => {
+            onlinePacks();
         };
         let importPackButton = document.createElement("button");
         importPackButton.classList = "outline-button";
-        importPackButton.style = "width: 48%; float: right;";
+        importPackButton.style = "width: 49%; float: right;";
         importPackButton.innerHTML = "Import Pack";
         importPackButton.onclick = () => {
             changeTab(3, "import");
         };
-        packsTab.append(newPackButton, importPackButton);
+        let newPackButton = document.createElement("button");
+        newPackButton.classList = "outline-button";
+        newPackButton.style = "width: 100%; margin-top: 0.5rem;";
+        newPackButton.innerHTML = "New Pack";
+        newPackButton.onclick = () => {
+            changeTab(3, "new");
+        };
+        packsTab.append(onlinePacksButton, importPackButton, newPackButton);
+    }
+
+    function onlinePacks() {
+        let packsTab = document.getElementById("tab-2__content");
+        packsTab.innerHTML = "";
+        let onlinePacks = document.createElement("div");
+        onlinePacks.innerHTML = "<h2>Online Packs</h2>";
+        packsTab.appendChild(onlinePacks);
+        // Fetch index of packs from GitHub
+        fetch("https://raw.githubusercontent.com/leohumnew/wanikani-custom-srs-packs/main/index.json").then(response => response.json()).then(data => {
+            for(let pack of data) {
+                let packElement = document.createElement("div");
+                packElement.classList = "content-box";
+                packElement.style = "margin-bottom: 1rem";
+                packElement.innerHTML = /*html*/ `
+                    <button class="import-pack" title="Import Pack" style="float: right">${Icons.customIconTxt("download")}</button>
+                    <h3 style="margin-top: 0">${pack.name}<br><span style="opacity: 0.6; font-size: 0.8em;">${pack.author}</span></h3>
+                    <p>${pack.description}</p>
+                `;
+                packElement.querySelector(".import-pack").onclick = () => {
+                    const url = pack.filename.startsWith("http") ? pack.filename : "https://raw.githubusercontent.com/leohumnew/wanikani-custom-srs-packs/main/packs/" + pack.filename;
+                    fetch(url).then(response => response.json()).then(data => {
+                        importPack(data);
+                    }).catch(() => {
+                        alert("Failed to fetch pack data");
+                    });
+                };
+                onlinePacks.appendChild(packElement);
+            }
+        }).catch(() => {
+            onlinePacks.innerHTML = "<h2>Failed to fetch online packs</h2>";
+        });
     }
 
     function updateEditPackTab(editPack) {
@@ -1209,21 +1265,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         document.querySelector("#tab-3__content form.import-box").onsubmit = (e) => { // Pack import button
             e.preventDefault();
             let pack = JSON.parse(importBox.value);
-
-            let packExistingStatus = activePackProfile.doesPackExist(pack.name, pack.author, pack.version); // Check if pack already exists
-            if(packExistingStatus == "exists") {
-                alert("Import failed: A pack with the same name, author, and version already exists.");
-            } else if(packExistingStatus == "no") {
-                activePackProfile.addPack(StorageManager.packFromJSON(pack));
-                StorageManager.savePackProfile(activePackProfile, "main", true);
-                changeTab(2);
-            } else {
-                if(confirm("A pack with the same name and author but different version already exists. Do you want to update it?")) {
-                    activePackProfile.updatePack(packExistingStatus, pack);
-                    StorageManager.savePackProfile(activePackProfile, "main", true);
-                    changeTab(2);
-                }
-            }
+            importPack(pack);
         };
 
         function savePack() {
@@ -1239,6 +1281,23 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 activePackProfile.customPacks[i].lvl = packLvlInput.value;
             }
             StorageManager.savePackProfile(activePackProfile, "main", true);
+        }
+    }
+
+    function importPack(pack) {
+        let packExistingStatus = activePackProfile.doesPackExist(pack.name, pack.author, pack.version); // Check if pack already exists
+        if(packExistingStatus == "exists") {
+            alert("Import failed: A pack with the same name, author, and version already exists.");
+        } else if(packExistingStatus == "no") {
+            activePackProfile.addPack(StorageManager.packFromJSON(pack));
+            StorageManager.savePackProfile(activePackProfile, "main", true);
+            changeTab(2);
+        } else {
+            if(confirm("A pack with the same name and author but different version already exists. Do you want to update it?")) {
+                activePackProfile.updatePack(packExistingStatus, pack);
+                StorageManager.savePackProfile(activePackProfile, "main", true);
+                changeTab(2);
+            }
         }
     }
 
@@ -1277,6 +1336,10 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
         font-size: 25px !important;
         text-align: center;
         width: 100%;
+    }
+    wk-character-image {
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
     .character-header__characters::first-line {
         font-size: 50px }

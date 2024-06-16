@@ -18,10 +18,6 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                 transition: opacity 0.05s;
             }
         }
-        wk-character-image {
-            margin-left: auto;
-            margin-right: auto;
-        }
         `;
         document.head.append(headerStyle);
     }

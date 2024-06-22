@@ -58,19 +58,21 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
             SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
 
-            // Remove captured WK review from queue
-            let settings = {"Radical": CustomSRSSettings.userSettings.enableRadicalCapture, "Kanji": CustomSRSSettings.userSettings.enableKanjiCapture, "Vocabulary": CustomSRSSettings.userSettings.enableVocabCapture};
-            if(settings.Radical || settings.Kanji || settings.Vocabulary) {
-                queueElement.findLast((item, index) => {
-                    if((!CustomSRSSettings.savedData.capturedWKReview || item.id !== CustomSRSSettings.savedData.capturedWKReview.id) && settings[item.subject_category]) {
-                        CustomSRSSettings.savedData.capturedWKReview = item;
-                        queueElement.splice(index, 1);
-                        SRSElement.splice(index, 1);
-                        if(index === 0) changedFirstItem = true;
-                        Utils.log("Captured item " + index + " from queue.");
-                        return true;
-                    }
-                });
+            if(!urlParams.has("custom")) {
+                // Capture WK review from queue
+                let settings = {"Radical": CustomSRSSettings.userSettings.enableRadicalCapture, "Kanji": CustomSRSSettings.userSettings.enableKanjiCapture, "Vocabulary": CustomSRSSettings.userSettings.enableVocabCapture};
+                if(settings.Radical || settings.Kanji || settings.Vocabulary) {
+                    queueElement.findLast((item, index) => {
+                        if((!CustomSRSSettings.savedData.capturedWKReview || item.id !== CustomSRSSettings.savedData.capturedWKReview.id) && settings[item.subject_category]) {
+                            CustomSRSSettings.savedData.capturedWKReview = item;
+                            queueElement.splice(index, 1);
+                            SRSElement.splice(index, 1);
+                            if(index === 0) changedFirstItem = true;
+                            Utils.log("Captured item " + index + " from queue.");
+                            return true;
+                        }
+                    });
+                }
             }
 
             // Add custom items to queue
@@ -165,7 +167,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                     return new Response("{}", { status: 200 });
                 }
             } else {
-                if(payload.counts[0].id == CustomSRSSettings.savedData.capturedWKReview.id) { // Check if somehow the captured WK review is being submitted
+                if(payload.counts[0].id == CustomSRSSettings.savedData.capturedWKReview?.id) { // Check if somehow the captured WK review is being submitted
                     CustomSRSSettings.savedData.capturedWKReview = null;
                     StorageManager.saveSettings();
                 }
@@ -272,6 +274,20 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
         }
     });
 }
+
+// ----------- WKOF HANDLER -----------
+/*if(wkof) {
+    const wkofHandler = (config, options) => {
+        console.log(config, options);
+        return new Promise((resolve, reject) => {
+            reject("Not implemented yet.");
+        });
+    }
+    wkof.ItemData.registry.sources["wk_custom_srs"] = {
+       description: "WK Custom SRS",
+       fetcher: wkofHandler
+    }
+}*/
 
 // ----------- UTILITIES -----------
 function parseHTML(html) {

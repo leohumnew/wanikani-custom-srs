@@ -450,10 +450,10 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <div class="item-info-edit-container" style="grid-column: 1 / span 2">
                         <p style="grid-column: 1 / span 2"><i>In explanations you can use tags to highlight &lt;r&gt;radicals&lt;/r&gt;, &lt;k&gt;kanji&lt;/k&gt;, &lt;v&gt;vocabulary&lt;/v&gt;, &lt;me&gt;meanings&lt;/me&gt;, and &lt;re&gt;readings&lt;/re&gt;.</i></p>
                         <label for="item-meaning-explanation">Meaning Explanation:</label>
-                        <input id="item-meaning-explanation" type="text">
+                        <textarea id="item-meaning-explanation" type="text"></textarea>
                         <div class="item-kanji-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2; grid-template-columns: 1fr 1fr">
                             <label for="item-reading-explanation">Reading Explanation:</label>
-                            <input id="item-reading-explanation" type="text">
+                            <textarea id="item-reading-explanation" type="text"></textarea>
                         </div>
                     </div>
                     <div class="item-info-edit-container item-kanavocab-specific item-vocab-specific" style="display: none; grid-column: 1 / span 2">
@@ -518,7 +518,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <label for="settingsItemQueueMode">Position to insert custom items in reviews</label>
                     <select id="settingsItemQueueMode">
                         <option value="start">Start</option>
-                        <option value="weighted-start">Random, weighted towards start</option>
+                        <option value="weighted-start">Random, weighted to start</option>
                         <option value="random">Random</option>
                     </select>
                     <label for="settingsEnabledConjGrammar">Enable Conjugations and Audio Quiz</label>
@@ -738,11 +738,11 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             lessonContainer.querySelector("#burn-button").onclick = () => {
                 activePackProfile.burnItem(nextItem.id);
                 this.submitLesson();
-            }
+            };
             lessonContainer.querySelector("#delete-button").onclick = () => {
                 activePackProfile.deleteItem(nextItem.id);
                 this.submitLesson(false);
-            }
+            };
             lessonContainer.querySelector("#skip-button").onclick = () => this.submitLesson(false);
 
             let nextButton = document.createElement("button");
@@ -983,7 +983,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 switch(type) {
                     case "internal": {
                         let itemID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItemID(subjectType, document.getElementById("component-id").value);
-                        if(itemID) {
+                        if(itemID !== null && itemID !== undefined) {
                             let itemFromID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItem(itemID);
                             tempVar.components.push({id: itemID, pack: parseInt(document.getElementById("pack-select").value), type: subjectType, characters: itemFromID.info.characters, meanings: itemFromID.info.meanings, readings: itemFromID.info.readings || itemFromID.info.onyomi?.concat(itemFromID.info.kunyomi).concat(itemFromID.info.nanori) || null});
                             document.getElementById("component-add-btn").nextElementSibling.style.display = "none";

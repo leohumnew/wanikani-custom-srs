@@ -27,20 +27,27 @@ class CustomItem {
         if(this.info.srs_lvl > 0 && this.last_reviewed_at < Date.now() - srsGaps[this.info.srs_lvl]) return true;
         return false;
     }
-    isReadyForLesson(levelingType, level) { // levelingType: none, internal, wk
+    isReadyForLesson(levelingType, level, packID, details = false) { // levelingType: none, internal, wk
         if(this.info.srs_lvl == 0) {
+            if(CustomSRSSettings.userSettings.lockByDependency && ((this.info.type == "Vocabulary" && this.info.kanji) || (this.info.type == "Kanji" && this.info.radicals))) {
+                for(let component of (this.info.type == "Vocabulary" ? this.info.kanji : this.info.radicals)) {
+                    if(component.pack != -1 && activePackProfile.customPacks[packID].getItem(component.id).info.srs_lvl < 4) return (details ? -2 : false);
+                    else if(component.pack == -1 && component.lvl && component.lvl > CustomSRSSettings.userSettings.lastKnownLevel) return (details ? -2 : false);
+                }
+            }
             if(levelingType == "none") return true;
             else if(levelingType == "internal" && (!this.info.lvl || level >= this.info.lvl)) return true;
             else if(levelingType == "wk" && (!this.info.lvl || CustomSRSSettings.userSettings.lastKnownLevel >= this.info.lvl)) return true;
-        }
-        return false;
+        } else return (details ? -1 : false);
     }
-    getTimeUntilReview(levelingType, level) { // In hours, rounded to integer
-        if(this.isReadyForLesson(levelingType, level)) return "Lesson";
+    getTimeUntilReview(levelingType, level, packID) { // In hours, rounded to integer
+        const lessonStatus = this.isReadyForLesson(levelingType, level, packID, true);
+        if(lessonStatus == true) return "Lesson";
+        else if(lessonStatus == -2) return "Locked";
         else if(this.isReadyForReview()) return "Now";
         else {
             if(this.info.srs_lvl == 9) return "Burned";
-            else if((levelingType == "internal" && this.info.lvl && level < this.info.lvl) || (levelingType == "wk" && this.info.lvl && CustomSRSSettings.userSettings.lastKnownLevel < this.info.lvl)) return "Locked";
+            else if((levelingType == "internal" && this.info.lvl && level < this.info.lvl) || (levelingType == "wk" && this.info.lvl && this.info.srs_lvl == 0 && CustomSRSSettings.userSettings.lastKnownLevel < this.info.lvl)) return "Locked";
             else return Math.round((srsGaps[this.info.srs_lvl] - (Date.now() - this.last_reviewed_at)) / (60*60*1000)) + "h";
         }
     }
@@ -206,7 +213,7 @@ class CustomItemPack {
     }
     getActiveLessons(packID) {
         if(!this.active) return [];
-        return this.items.filter(item => item.isReadyForLesson(this.lvlType, this.lvl)).map(item => item.getQueueItem(packID));
+        return this.items.filter(item => item.isReadyForLesson(this.lvlType, this.lvl, packID)).map(item => item.getQueueItem(packID));
     }
     getActiveReviewsSRS(packID) {
         if(!this.active) return [];
@@ -220,16 +227,16 @@ class CustomItemPack {
         }
         return num;
     }
-    getNumActiveLessons() {
+    getNumActiveLessons(packID) {
         if(!this.active) return 0;
         let num = 0;
         for(let item of this.items) {
-            if(item.isReadyForLesson(this.lvlType, this.lvl)) num++;
+            if(item.isReadyForLesson(this.lvlType, this.lvl, packID)) num++;
         }
         return num;
     }
-    getItemTimeUntilReview(itemIndex) {
-        return this.items[itemIndex].getTimeUntilReview(this.lvlType, this.lvl);
+    getItemTimeUntilReview(itemIndex, packID) {
+        return this.items[itemIndex].getTimeUntilReview(this.lvlType, this.lvl, packID);
     }
 
     getProgressHTML() {
@@ -328,7 +335,7 @@ class CustomPackProfile {
         return this.customPacks.reduce((acc, pack) => acc + pack.getNumActiveReviews(), 0);
     }
     getNumActiveLessons() {
-        return this.customPacks.reduce((acc, pack) => acc + pack.getNumActiveLessons(), 0);
+        return this.customPacks.reduce((acc, pack, index) => acc + pack.getNumActiveLessons(index), 0);
     }
     getActiveReviewsSRS() {
         let activeReviewsSRS = [];
@@ -680,7 +687,8 @@ class CustomSRSSettings {
         syncEnabled: false,
         enableRadicalCapture: true,
         enableKanjiCapture: true,
-        enableVocabCapture: true
+        enableVocabCapture: true,
+        lockByDependency: true
     };
     static userSettings = this.defaultUserSettings;
     static defaultSavedData = {

@@ -425,7 +425,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         <input id="item-readings" type="text">
                     </div>
                     <div class="item-info-edit-container item-kanji-specific" style="display: none; grid-column: 1 / span 2">
-                        <label for="knaji-primary-reading">Primary Reading:</label>
+                        <label for="kanji-primary-reading">Primary Reading:</label>
                         <select id="kanji-primary-reading">
                             <option value="onyomi">On'yomi</option>
                             <option value="kunyomi">Kun'yomi</option>
@@ -511,8 +511,6 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             <div id="tab-5__content">
                 <div class="content-box">
                     <h2 style="grid-column: span 2">General</h2>
-                    <label for="settingsShowDueTime">Show item due times</label>
-                    <input type="checkbox" id="settingsShowDueTime" checked>
                     <label for="settingsExportSRSData">Include SRS data in exports</label>
                     <input type="checkbox" id="settingsExportSRSData">
                     <label for="settingsItemQueueMode">Position to insert custom items in reviews</label>
@@ -530,7 +528,11 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <h2 style="grid-column: span 2">Network Settings</h2>
                     <label for="settingsWKAPIKey">WaniKani API Key</label>
                     <input type="text" id="settingsWKAPIKey" placeholder="API key">
-                    <h2 style="grid-column: span 2">General</h2>
+                    <h2 style="grid-column: span 2">Advanced</h2>
+                    <label for="settingsLockByDependency">Lock items by dependencies</label>
+                    <input type="checkbox" id="settingsLockByDependency" checked>
+                    <label for="settingsShowDueTime">Show item due times when editing</label>
+                    <input type="checkbox" id="settingsShowDueTime" checked>
                     <label style="grid-column: span 2">Item Types that can be Captured:</label>
                     <div class="component-div" style="grid-column: span 2">
                         <label for="settingsEnableRadicalCapture">Radicals</label>
@@ -683,6 +685,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
     // ------------------- Lesson Manager -------------------
     class LessonManager {
         lessonQueue;
+
         constructor() {
             document.getElementById("overview-popup").close();
             if(!document.getElementById("custom-lessons-css")) {
@@ -697,6 +700,10 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             document.body.appendChild(lessonsPopup);
 
             this.lessonQueue = activePackProfile.getActiveLessons();
+
+            document.addEventListener("keydown", (e) => {
+                if(e.key === "ArrowRight" && document.getElementById("custom-lessons")) this.submitLesson();
+            });
 
             this.nextLesson();
         }
@@ -976,13 +983,13 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             document.getElementById("component-add-btn").onclick = (e) => { // Handle adding kanji components
                 e.preventDefault();
                 let type = document.getElementById("component-type").value;
-                let id = parseInt(document.getElementById("component-id").value);
+                let id = document.getElementById("component-id").value;
                 let subjectType = document.getElementById("item-type").value == "Kanji" ? "Radical" : "Kanji";
                 if(type === "" || id === "") return;
                 // Check if component exists. When type is internal id is the item character to search for
                 switch(type) {
                     case "internal": {
-                        let itemID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItemID(subjectType, document.getElementById("component-id").value);
+                        let itemID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItemID(subjectType, id);
                         if(itemID !== null && itemID !== undefined) {
                             let itemFromID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItem(itemID);
                             tempVar.components.push({id: itemID, pack: parseInt(document.getElementById("pack-select").value), type: subjectType, characters: itemFromID.info.characters, meanings: itemFromID.info.meanings, readings: itemFromID.info.readings || itemFromID.info.onyomi?.concat(itemFromID.info.kunyomi).concat(itemFromID.info.nanori) || null});
@@ -995,6 +1002,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         }
                         break;
                     } case "wk": {
+                        id = parseInt(id);
                         if(isNaN(id)) {
                             document.getElementById("component-add-btn").nextElementSibling.innerText = "Please enter the ID found on this item's details page.";
                             document.getElementById("component-add-btn").nextElementSibling.style.display = "block";
@@ -1003,7 +1011,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         // Fetch wk api item to check it's valid
                         Utils.wkAPIRequest("subjects/" + id).then((response) => {
                             if(response) {
-                                tempVar.components.push({id: id, pack: -1, type: subjectType, characters: response.data.characters, meanings: response.data.meanings.map(m => m.meaning), readings: response.data.readings?.map(r => r.reading) || response.data.onyomi?.concat(response.data.kunyomi).concat(response.data.nanori) || null});
+                                tempVar.components.push({id: id, pack: -1, type: subjectType, characters: response.data.characters, meanings: response.data.meanings.map(m => m.meaning), readings: response.data.readings?.map(r => r.reading) || response.data.onyomi?.concat(response.data.kunyomi).concat(response.data.nanori) || null, lvl: response.data.level});
                                 document.getElementById("component-add-btn").nextElementSibling.style.display = "none";
                                 document.getElementById("components-container").appendChild(buildComponentEditHTML(tempVar.components[tempVar.components.length - 1]));
                                 document.getElementById("component-type").value = "";
@@ -1096,9 +1104,9 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             alert("Primary reading must be set");
                             return;
                         }
-                        if(document.getElementById("kanji-onyomi").value != "") infoStruct.onyomi = document.getElementById("kanji-onyomi").value.split(",").map(s => s.trim());
-                        if(document.getElementById("kanji-kunyomi").value != "") infoStruct.kunyomi = document.getElementById("kanji-kunyomi").value.split(",").map(s => s.trim());
-                        if(document.getElementById("kanji-nanori").value != "") infoStruct.nanori = document.getElementById("kanji-nanori").value.split(",").map(s => s.trim());
+                        if(document.getElementById("kanji-onyomi").value != "") infoStruct.onyomi = document.getElementById("kanji-onyomi").value.split("/,|、/").map(s => s.trim());
+                        if(document.getElementById("kanji-kunyomi").value != "") infoStruct.kunyomi = document.getElementById("kanji-kunyomi").value.split("/,|、/").map(s => s.trim());
+                        if(document.getElementById("kanji-nanori").value != "") infoStruct.nanori = document.getElementById("kanji-nanori").value.split("/,|、/").map(s => s.trim());
                         if(document.getElementById("item-reading-explanation").value != "") infoStruct.reading_expl = document.getElementById("item-reading-explanation").value;
                         if(document.getElementById("item-reading-whitelist").value != "") infoStruct.reading_wl = document.getElementById("item-reading-whitelist").value.split(",").map(s => s.trim());
                         if(document.getElementById("item-reading-blacklist").value != "") infoStruct.reading_bl = document.getElementById("item-reading-blacklist").value.split(",").map(s => s.trim());
@@ -1106,7 +1114,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         break;
                     case "Vocabulary":
                         infoStruct.category = infoStruct.type;
-                        infoStruct.readings = document.getElementById("item-readings").value.split(",").map(s => s.trim());
+                        infoStruct.readings = document.getElementById("item-readings").value.split("/,|、/").map(s => s.trim());
                         if(document.getElementById("item-reading-explanation").value != "") infoStruct.reading_expl = document.getElementById("item-reading-explanation").value;
                         if(document.getElementById("item-word-function").value != "") infoStruct.func = document.getElementById("item-word-function").value;
                         if(document.getElementById("item-context-sentences-container").children.length > 0) {
@@ -1125,7 +1133,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     case "KanaVocabulary":
                         let readingsEl = document.getElementById("item-readings");
                         infoStruct.category = "Vocabulary";
-                        if(readingsEl.value != "" && !(readingsEl.value.split(",").length == 1 && infoStruct.characters == readingsEl.value.split(",")[0])) infoStruct.readings = readingsEl.value.split(",").map(s => s.trim());
+                        if(readingsEl.value != "" && !(readingsEl.value.split("/,|、/").length == 1 && infoStruct.characters == readingsEl.value.split("/,|、/")[0])) infoStruct.readings = readingsEl.value.split("/,|、/").map(s => s.trim());
                         if(document.getElementById("item-word-function").value != "") infoStruct.func = document.getElementById("item-word-function").value;
                         if(document.getElementById("item-context-sentences-container").children.length > 0) {
                             infoStruct.ctx_jp = [];
@@ -1197,6 +1205,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         updateSetting("settingsEnableRadicalCapture", "enableRadicalCapture", true);
         updateSetting("settingsEnableKanjiCapture", "enableKanjiCapture", true);
         updateSetting("settingsEnableVocabCapture", "enableVocabCapture", true);
+        updateSetting("settingsLockByDependency", "lockByDependency", true);
 
         document.getElementById("settingsActiveConj").innerHTML = "";
         document.getElementById("settingsActiveConj").appendChild(Conjugations.getSettingsHTML());
@@ -1240,7 +1249,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 let itemElement = document.createElement("li");
                 itemElement.classList = "pack-item";
                 itemElement.innerHTML = `
-                    ${item.info.characters} - ${item.info.meanings[0]} - ${item.info.type} ${CustomSRSSettings.userSettings.showItemDueTime ? "- Due: " + pack.getItemTimeUntilReview(j) : ""}
+                    ${item.info.characters} - ${item.info.meanings[0]} - ${item.info.type} ${CustomSRSSettings.userSettings.showItemDueTime ? "- Due: " + pack.getItemTimeUntilReview(j, i) : ""}
                     <div>
                         <button class="edit-item" title="Edit Item" type="button">${Icons.customIconTxt("edit")}</button>
                         <button class="delete-item" title="Delete Item" type="button">${Icons.customIconTxt("cross")}</button>

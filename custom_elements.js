@@ -992,7 +992,11 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         let itemID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItemID(subjectType, id);
                         if(itemID !== null && itemID !== undefined) {
                             let itemFromID = activePackProfile.customPacks[document.getElementById("pack-select").value].getItem(itemID);
-                            tempVar.components.push({id: itemID, pack: parseInt(document.getElementById("pack-select").value), type: subjectType, characters: itemFromID.info.characters, meanings: itemFromID.info.meanings, readings: itemFromID.info.readings || itemFromID.info.onyomi?.concat(itemFromID.info.kunyomi).concat(itemFromID.info.nanori) || null});
+                            let itemReadings = itemFromID.info.readings || [];
+                            if(itemFromID.info.onyomi) itemReadings = itemReadings.concat(itemFromID.info.onyomi);
+                            if(itemFromID.info.kunyomi) itemReadings = itemReadings.concat(itemFromID.info.kunyomi);
+                            if(itemFromID.info.nanori) itemReadings = itemReadings.concat(itemFromID.info.nanori);
+                            tempVar.components.push({id: itemID, pack: parseInt(document.getElementById("pack-select").value), type: subjectType, characters: itemFromID.info.characters, meanings: itemFromID.info.meanings, readings: itemReadings});
                             document.getElementById("component-add-btn").nextElementSibling.style.display = "none";
                             document.getElementById("components-container").appendChild(buildComponentEditHTML(tempVar.components[tempVar.components.length - 1]));
                             document.getElementById("component-type").value = "";
@@ -1104,9 +1108,12 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             alert("Primary reading must be set");
                             return;
                         }
-                        if(document.getElementById("kanji-onyomi").value != "") infoStruct.onyomi = document.getElementById("kanji-onyomi").value.split("/,|、/").map(s => s.trim());
-                        if(document.getElementById("kanji-kunyomi").value != "") infoStruct.kunyomi = document.getElementById("kanji-kunyomi").value.split("/,|、/").map(s => s.trim());
-                        if(document.getElementById("kanji-nanori").value != "") infoStruct.nanori = document.getElementById("kanji-nanori").value.split("/,|、/").map(s => s.trim());
+                        let on_reading = document.getElementById("kanji-onyomi").value;
+                        let kun_reading = document.getElementById("kanji-kunyomi").value;
+                        let nan_reading = document.getElementById("kanji-nanori").value;
+                        if(on_reading != "" && on_reading != null) infoStruct.onyomi = on_reading.split(/,|、/).map(s => s.trim());
+                        if(kun_reading != "" && kun_reading != null) infoStruct.kunyomi = kun_reading.split(/,|、/).map(s => s.trim());
+                        if(nan_reading != "" && nan_reading != null) infoStruct.nanori = nan_reading.split(/,|、/).map(s => s.trim());
                         if(document.getElementById("item-reading-explanation").value != "") infoStruct.reading_expl = document.getElementById("item-reading-explanation").value;
                         if(document.getElementById("item-reading-whitelist").value != "") infoStruct.reading_wl = document.getElementById("item-reading-whitelist").value.split(",").map(s => s.trim());
                         if(document.getElementById("item-reading-blacklist").value != "") infoStruct.reading_bl = document.getElementById("item-reading-blacklist").value.split(",").map(s => s.trim());
@@ -1114,7 +1121,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                         break;
                     case "Vocabulary":
                         infoStruct.category = infoStruct.type;
-                        infoStruct.readings = document.getElementById("item-readings").value.split("/,|、/").map(s => s.trim());
+                        infoStruct.readings = document.getElementById("item-readings").value.split(/,|、/).map(s => s.trim());
                         if(document.getElementById("item-reading-explanation").value != "") infoStruct.reading_expl = document.getElementById("item-reading-explanation").value;
                         if(document.getElementById("item-word-function").value != "") infoStruct.func = document.getElementById("item-word-function").value;
                         if(document.getElementById("item-context-sentences-container").children.length > 0) {
@@ -1133,7 +1140,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     case "KanaVocabulary":
                         let readingsEl = document.getElementById("item-readings");
                         infoStruct.category = "Vocabulary";
-                        if(readingsEl.value != "" && !(readingsEl.value.split("/,|、/").length == 1 && infoStruct.characters == readingsEl.value.split("/,|、/")[0])) infoStruct.readings = readingsEl.value.split("/,|、/").map(s => s.trim());
+                        if(readingsEl.value != "" && !(readingsEl.value.split(/,|、/).length == 1 && infoStruct.characters == readingsEl.value.split(/,|、/)[0])) infoStruct.readings = readingsEl.value.split(/,|、/).map(s => s.trim());
                         if(document.getElementById("item-word-function").value != "") infoStruct.func = document.getElementById("item-word-function").value;
                         if(document.getElementById("item-context-sentences-container").children.length > 0) {
                             infoStruct.ctx_jp = [];

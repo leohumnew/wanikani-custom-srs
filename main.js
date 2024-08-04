@@ -174,7 +174,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
                 return originalFetch(...args);
             }
         // Catch subject info fetch and return custom item details if the number at the end of the url is negative
-        } else if (resource.includes("/subject_info/") && config && config.method === "get" && resource.split("/").pop() < 0) {
+        } else if (resource.includes("/subject_info/") && config && config.method === "GET" && resource.split("/").pop() < 0) {
             // Submit original fetch but to different URL to get usable headers
             args[0] = "https://www.wanikani.com/subject_info/1";
             let response = await originalFetch(...args);

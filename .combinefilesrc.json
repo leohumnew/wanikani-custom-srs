@@ -7,7 +7,7 @@
             "// ==UserScript==",
             "// @name         WK Custom SRS",
             "// @namespace    leohumnew.wk",
-            "// @version      0.6.9",
+            "// @version      0.7.0",
             "// @description  Add custom word packs to WaniKani!",
             "// @author       leohumnew",
             "// @match        https://www.wanikani.com/*",

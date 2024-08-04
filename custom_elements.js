@@ -20,13 +20,6 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         padding: 1rem;
     }
 
-    .dashboard .lessons-and-reviews__section:nth-child(3) {
-        margin-top: 12px;
-        margin-right: 16px;
-    }
-    .dashboard .lessons-and-reviews__section:last-child {
-        margin-top: 12px }
-
     /* Main popup styling */
     #overview-popup {
         background-color: var(--color-menu, white);
@@ -42,8 +35,15 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             border: none }
         p {
             margin: 0 }
+        h2 {
+            margin: 0.5rem 0;
+            font-size: 1.5rem;
+        }
         input, select {
-            margin-bottom: 0.5rem }
+            margin-bottom: 0.5rem;
+            padding: 0.25rem;
+            border-radius: 3px;
+        }
         button {
             cursor: pointer;
             background-color: transparent;
@@ -137,6 +137,8 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
 
         p {
             text-align: left }
+        > .content-box > h2:nth-child(2) {
+            font-size: 2rem }
         #custom-srs-progress .content-box {
             background-color: var(--color-menu, white);
             margin-bottom: 0.6rem;
@@ -218,6 +220,8 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         }
         i {
             opacity: 0.5 }
+        textarea {
+            height: 4rem }
         .ctx-sentence-div {
             display: flex;
             justify-content: space-between;
@@ -233,6 +237,8 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 margin-left: auto }
             label {
                 margin-right: 0.5rem }
+            input {
+                background-color: var(--color-wk-panel-background, white) }
         }
         .component-div {
             display: grid;
@@ -283,14 +289,14 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
 
     // Add custom review buttons
     let extraButtons = /*html*/ `
-    <div class="lessons-and-reviews__section">
+    <div class="dashboard__lessons-and-reviews-section">
         <div class="reviews-dashboard">
             <div class="reviews-dashboard__content">
                 <div class="reviews-dashboard__title" style="color: var(--color-todays-lessons-text)">
                     <div class="reviews-dashboard__title-text">Conjugations</div>
                 </div>
                 <div class="reviews-dashboard__button reviews-dashboard__button--start">
-                    <a href="/subjects/review?conjugations&question_order=reading_first" class="wk-button wk-button--modal-primary">
+                    <a href="/subjects/review?conjugations&question_order=reading_first" class="wk-button wk-button--modal-primary" target="_top">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}
@@ -300,14 +306,14 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             </div>
         </div>
     </div>
-    <div class="lessons-and-reviews__section">
+    <div class="dashboard__lessons-and-reviews-section">
         <div class="reviews-dashboard">
             <div class="reviews-dashboard__content">
                 <div class="reviews-dashboard__title" style="color: var(--color-todays-lessons-text)">
                     <div class="reviews-dashboard__title-text">Audio Quiz</div>
                 </div>
                 <div class="reviews-dashboard__button reviews-dashboard__button--start">
-                    <a href="/subjects/extra_study?queue_type=burned_items&question_order=meaning_first&audio" class="wk-button wk-button--modal-primary">
+                    <a href="/subjects/extra_study?queue_type=burned_items&question_order=meaning_first&audio" class="wk-button wk-button--modal-primary" target="_top">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}
@@ -793,7 +799,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
     // --------- Add custom elements to page ---------
     document.addEventListener("DOMContentLoaded", () => {
         document.head.appendChild(overviewPopupStyle);
-        if(CustomSRSSettings.userSettings.enabledConjGrammar) document.querySelector(".lessons-and-reviews").innerHTML += extraButtons;
+        if(CustomSRSSettings.userSettings.enabledConjGrammar) document.querySelector(".dashboard__lessons-and-reviews").innerHTML += extraButtons;
         document.body.appendChild(overviewPopup);
         // Add event listeners for buttons etc.
         for(let i = 1; i <= 5; i++) {

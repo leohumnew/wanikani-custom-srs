@@ -68,7 +68,7 @@ class CustomItem {
         StorageManager.savePackProfile(activePackProfile, "main");
     }
     getSRS(packID) {
-        return [Utils.cantorNumber(packID, this.id), parseInt(this.info.srs_lvl)];
+        return [Utils.cantorNumber(packID, this.id), parseInt(this.info.srs_lvl), 1];
     }
     burnItem() {
         this.info.srs_lvl = 9;
@@ -515,7 +515,7 @@ class Conjugations {
         // Set up items
         let srsItems = [], verbItems = [];
         for(let item of items) {
-            srsItems.push([-item.id, 0]);
+            srsItems.push([-item.id, 0, 1]);
             verbItems.push(this.getConjugationQueueItem(item));
         }
         this.activeQueue = verbItems;
@@ -721,6 +721,7 @@ class CustomSRSSettings {
         }
     }
 }
+settingsLoaded = true;
 
 class StorageManager {
     static downloadedPackProfile = null;

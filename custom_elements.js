@@ -1,5 +1,6 @@
 const srsNames = ["Lesson", "Apprentice 1", "Apprentice 2", "Apprentice 3", "Apprentice 4", "Guru 1", "Guru 2", "Master", "Enlightened", "Burned"];
 const time = 106;
+let settingsLoaded = false;
 
 if(window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
     let tempVar = {}; // Temporary variable for multiple things
@@ -296,7 +297,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <div class="reviews-dashboard__title-text">Conjugations</div>
                 </div>
                 <div class="reviews-dashboard__button reviews-dashboard__button--start">
-                    <a href="/subjects/review?conjugations&question_order=reading_first" class="wk-button wk-button--modal-primary" target="_top">
+                    <a href="/subjects/review?conjugations&question_order=reading_first" class="wk-button wk-button--modal-primary" target="_top" data-turbo="false" rel="noopener noreferrer">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}
@@ -313,7 +314,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     <div class="reviews-dashboard__title-text">Audio Quiz</div>
                 </div>
                 <div class="reviews-dashboard__button reviews-dashboard__button--start">
-                    <a href="/subjects/extra_study?queue_type=burned_items&question_order=meaning_first&audio" class="wk-button wk-button--modal-primary" target="_top">
+                    <a href="/subjects/extra_study?queue_type=burned_items&question_order=meaning_first&audio" class="wk-button wk-button--modal-primary" target="_top" data-turbo="false" rel="noopener noreferrer">
                         <span class="wk-button__text">Start</span>
                         <span class="wk-button__icon wk-button__icon--after">
                             ${Icons.customIconTxt("chevron-right")}
@@ -797,9 +798,13 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
     };
 
     // --------- Add custom elements to page ---------
-    document.addEventListener("DOMContentLoaded", () => {
+    if(document.readyState === "complete" || document.readyState === "interactive") {
+        dashboardElementsLoad();
+    } else {
+        document.addEventListener("DOMContentLoaded", dashboardElementsLoad);
+    }
+    async function dashboardElementsLoad() {
         document.head.appendChild(overviewPopupStyle);
-        if(CustomSRSSettings.userSettings.enabledConjGrammar) document.querySelector(".dashboard__lessons-and-reviews").innerHTML += extraButtons;
         document.body.appendChild(overviewPopup);
         // Add event listeners for buttons etc.
         for(let i = 1; i <= 5; i++) {
@@ -814,7 +819,10 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
             document.getElementById("sitemap").prepend(buttonLI);
         }
-    });
+
+        while(!settingsLoaded) await new Promise(r => setTimeout(r, 250));
+        if(CustomSRSSettings.userSettings.enabledConjGrammar) document.querySelector(".dashboard__lessons-and-reviews").innerHTML += extraButtons;
+    }
 
 
     // ---------- Change tab ----------

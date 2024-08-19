@@ -3,6 +3,7 @@ if(stopRemainingScriptLoad) return;
 let activePackProfile = await StorageManager.loadPackProfile("main");
 let quizStatsController;
 
+console.log("full refresh");
 // ----------- If on review page -----------
 if (window.location.pathname.includes("/review") || (window.location.pathname.includes("/extra_study") && window.location.search.includes("audio"))) {
     let urlParams = new URLSearchParams(window.location.search);
@@ -23,7 +24,13 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
     }
 
     // Add custom items to the quiz queue and update captured WK review
-    document.addEventListener("DOMContentLoaded", async () => {
+    if(document.readyState === "complete" || document.readyState === "interactive") {
+        replaceQueue();
+    } else {
+        document.addEventListener("DOMContentLoaded", replaceQueue);
+    }
+
+    async function replaceQueue() {
         let changedFirstItem = false;
         let queueEl = document.getElementById('quiz-queue');
         let parentEl = queueEl.parentElement;
@@ -56,7 +63,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             document.querySelector(".character-header__content").appendChild(AudioQuiz.setUpAudioQuizHTML());
         } else {
             queueElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML);
-            SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML);
+            SRSElement = JSON.parse(cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML).subject_ids_with_srs_info;
 
             if(!urlParams.has("custom")) {
                 // Capture WK review from queue
@@ -119,7 +126,7 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
         if(changedFirstItem) document.querySelector(".character-header").classList.add("character-header__loading");
 
         cloneEl.querySelector("script[data-quiz-queue-target='subjects']").innerHTML = JSON.stringify(queueElement);
-        if(!urlParams.has("audio")) cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = JSON.stringify(SRSElement);
+        if(!urlParams.has("audio")) cloneEl.querySelector("script[data-quiz-queue-target='subjectIdsWithSRS']").innerHTML = '{"subject_ids_with_srs_info":' + JSON.stringify(SRSElement) + ',"srs_ids_stage_names":[[1,["Unlocked","Apprentice","Apprentice","Apprentice","Apprentice","Guru","Guru","Master","Enlightened","Burned"]]]}';
         else cloneEl.querySelector("script[data-quiz-queue-target='subjectIds']").innerHTML = JSON.stringify(SRSElement);
         parentEl.appendChild(cloneEl);
 
@@ -147,51 +154,60 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             if(urlParams.has("audio")) Utils.setMeaningsOnly();
             loadControllers();
         }
-    });
+
+        // Force full refresh when returning to home page
+        const homeButton = document.querySelector(".summary-button");
+        homeButton.setAttribute("target", "_top");
+        homeButton.setAttribute("data-turbo", "false");
+        homeButton.setAttribute("rel", "noopener noreferrer");
+    }
 
     // Catch submission fetch and stop it if submitted item is a custom item
     const { fetch: originalFetch } = unsafeWindow;
-    unsafeWindow.fetch = async (...args) => {
-        let [resource, config] = args;
-        if (resource.includes("/subjects/review") && config != null && config.method === "POST") {
-            let payload = JSON.parse(config.body);
-            // Check if submitted item is a custom item
-            if(payload.counts && payload.counts[0].id < 0) {
-                // Check if url includes ?conjugations
-                if(window.location.search.includes("conjugations")) {
-                    return new Response("{}", { status: 200 });
+    function overrideFetch() {
+        unsafeWindow.fetch = async (...args) => {
+            let [resource, config] = args;
+            if (resource.includes("/subjects/review") && config != null && config.method === "POST") {
+                let payload = JSON.parse(config.body);
+                // Check if submitted item is a custom item
+                if(payload.counts && payload.counts[0].id < 0) {
+                    // Check if url includes ?conjugations
+                    if(window.location.search.includes("conjugations")) {
+                        return new Response("{}", { status: 200 });
+                    } else {
+                        // Update custom item SRS
+                        activePackProfile.submitReview(payload.counts[0].id, payload.counts[0].meaning, payload.counts[0].reading);
+                        SyncManager.setDidReview();
+                        return new Response("{}", { status: 200 });
+                    }
                 } else {
-                    // Update custom item SRS
-                    activePackProfile.submitReview(payload.counts[0].id, payload.counts[0].meaning, payload.counts[0].reading);
-                    SyncManager.setDidReview();
-                    return new Response("{}", { status: 200 });
+                    if(payload.counts[0].id == CustomSRSSettings.savedData.capturedWKReview?.id) { // Check if somehow the captured WK review is being submitted
+                        CustomSRSSettings.savedData.capturedWKReview = null;
+                        StorageManager.saveSettings();
+                    }
+                    return originalFetch(...args);
                 }
+            // Catch subject info fetch and return custom item details if the number at the end of the url is negative
+            } else if (resource.includes("/subject_info/") && config && config.method === "GET" && resource.split("/").pop() < 0) {
+                // Submit original fetch but to different URL to get usable headers
+                args[0] = "https://www.wanikani.com/subject_info/1";
+                let response = await originalFetch(...args);
+                let subjectId = resource.split("/").pop();
+                let subjectInfo;
+                if(window.location.search.includes("conjugations")) subjectInfo = Conjugations.getSubjectInfo(subjectId);
+                else subjectInfo = activePackProfile.getSubjectInfo(subjectId);
+                return new Response(subjectInfo, {
+                    status: response.status,
+                    headers: response.headers
+                });
             } else {
-                if(payload.counts[0].id == CustomSRSSettings.savedData.capturedWKReview?.id) { // Check if somehow the captured WK review is being submitted
-                    CustomSRSSettings.savedData.capturedWKReview = null;
-                    StorageManager.saveSettings();
-                }
                 return originalFetch(...args);
             }
-        // Catch subject info fetch and return custom item details if the number at the end of the url is negative
-        } else if (resource.includes("/subject_info/") && config && config.method === "GET" && resource.split("/").pop() < 0) {
-            // Submit original fetch but to different URL to get usable headers
-            args[0] = "https://www.wanikani.com/subject_info/1";
-            let response = await originalFetch(...args);
-            let subjectId = resource.split("/").pop();
-            let subjectInfo;
-            if(window.location.search.includes("conjugations")) subjectInfo = Conjugations.getSubjectInfo(subjectId);
-            else subjectInfo = activePackProfile.getSubjectInfo(subjectId);
-
-            return new Response(subjectInfo, {
-                status: response.status,
-                headers: response.headers
-            });
-        } else {
-            return originalFetch(...args);
-        }
-    };
-
+        };
+    }
+    overrideFetch();
+    document.addEventListener("turbo:frame-load", overrideFetch);
+    document.addEventListener("turbo:load", overrideFetch);
 // ----------- If on dashboard page -----------
 } else if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
     // Catch lesson / review count fetch and update it with custom item count
@@ -223,7 +239,13 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
     };
 
     // Catch document load to edit review count on dashboard
-    document.addEventListener("DOMContentLoaded", () => {
+    if(document.readyState === "complete" || document.readyState === "interactive") {
+        dashboardLoad();
+    } else {
+        document.addEventListener("DOMContentLoaded", dashboardLoad);
+    }
+
+    function dashboardLoad() {
         let reviewNumberElement = document.querySelector(".reviews-dashboard .reviews-dashboard__count-text span");
         reviewNumberElement.innerHTML = parseInt(reviewNumberElement.innerHTML) + activePackProfile.getNumActiveReviews() + (CustomSRSSettings.savedData.capturedWKReview ? -1 : 0);
         Utils.log("Captured review item: " + (CustomSRSSettings.savedData.capturedWKReview ? CustomSRSSettings.savedData.capturedWKReview.id : "none"));
@@ -236,7 +258,14 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
             reviewTile.classList.add("reviews-dashboard--complete");
             reviewTile.querySelector(".reviews-dashboard__text .wk-text").innerHTML = "There are no more reviews to do right now.";
         }
-    });
+
+        // Force full refresh when clicking on lesson or review buttons
+        document.querySelectorAll(".dashboard__lessons-and-reviews a.wk-button").forEach(button => {
+            button.setAttribute("target", "_top");
+            button.setAttribute("data-turbo", "false");
+            button.setAttribute("rel", "noopener noreferrer");
+        });
+    }
 
     await SyncManager.checkIfAuthed();
 

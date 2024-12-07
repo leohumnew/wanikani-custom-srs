@@ -77,11 +77,14 @@ class CustomItem {
     }
 
     getQueueItem(packID) {
-        let aux_meanings = [], aux_readings = [];
-        if(this.info.meaning_wl) aux_meanings = aux_meanings.concat(this.info.meaning_wl.map(m => ({"type": "whitelist", "meaning": m})));
-        if(this.info.meaning_bl) aux_meanings = aux_meanings.concat(this.info.meaning_bl.map(m => ({"type": "blacklist", "meaning": m})));
-        if(this.info.reading_wl) aux_readings = aux_readings.concat(this.info.reading_wl.map(r => ({"type": "whitelist", "reading": r})));
-        if(this.info.reading_bl) aux_readings = aux_readings.concat(this.info.reading_bl.map(r => ({"type": "blacklist", "reading": r})));
+        const preparedReadings = []
+        if(this.info.reading_wl) preparedReadings.push(...this.info.reading_wl.map(reading => ({"text": reading, "kind": "allowed"})));
+        if(this.info.reading_bl) preparedReadings.push(...this.info.reading_bl.map(reading => ({"text": reading, "kind": "blocked"})));
+
+        const preparedMeanings = this.info.meanings.map(meaning => ({"text": meaning, "kind": "primary"}));
+        if(this.info.meaning_wl) preparedMeanings.push(...this.info.meaning_wl.map(m => ({"text": m, "kind": "allowed"})));
+        if(this.info.meaning_bl) preparedMeanings.push(...this.info.meaning_bl.map(m => ({"text": m, "kind": "blocked"})));
+
         switch(this.info.type) {
             case "Radical":
                 return {
@@ -89,23 +92,21 @@ class CustomItem {
                     type: this.info.type,
                     subject_category: this.info.category,
                     characters: this.info.characters,
-                    meanings: this.info.meanings,
-                    auxiliary_meanings: aux_meanings,
+                    meanings: preparedMeanings,
                     kanji: this.info.kanji || []
                 };
             case "Kanji":
+                if(this.info.onyomi) preparedReadings.push(...this.info.onyomi.map(reading => ({"text": reading, "type": "onyomi", "kind": (this.info.primary_reading_type == "onyomi" ? "primary" : "alternative")})));
+                if(this.info.kunyomi) preparedReadings.push(...this.info.kunyomi.map(reading => ({"text": reading, "type": "kunyomi", "kind": (this.info.primary_reading_type == "kunyomi" ? "primary" : "alternative")})));
+                if(this.info.nanori) preparedReadings.push(...this.info.nanori.map(reading => ({"text": reading, "type": "nanori", "kind": (this.info.primary_reading_type == "nanori" ? "primary" : "alternative")})));
                 return {
                     id: Utils.cantorNumber(packID, this.id),
                     type: this.info.type,
                     subject_category: this.info.category,
                     characters: this.info.characters,
-                    meanings: this.info.meanings,
-                    auxiliary_meanings: aux_meanings,
+                    meanings: preparedMeanings,
                     primary_reading_type: this.info.primary_reading_type,
-                    onyomi: this.info.onyomi || [],
-                    kunyomi: this.info.kunyomi || [],
-                    nanori: this.info.nanori || [],
-                    auxiliary_readings: aux_readings,
+                    readings: preparedReadings,
                     radicals: this.info.radicals || [],
                     vocabulary: this.info.vocabulary || []
                 };
@@ -115,10 +116,8 @@ class CustomItem {
                     type: this.info.type,
                     subject_category: this.info.category,
                     characters: this.info.characters,
-                    meanings: this.info.meanings,
-                    auxiliary_meanings: aux_meanings,
-                    readings: this.info.readings.map(reading => ({"reading": reading, "pronunciations": []})),
-                    auxiliary_readings: aux_readings,
+                    meanings: preparedMeanings,
+                    readings: preparedReadings.push(...this.info.readings.map(reading => ({"text": reading, "kind": "primary", "pronunciations": []}))),
                     kanji: this.info.kanji || []
                 };
             case "KanaVocabulary":
@@ -127,9 +126,8 @@ class CustomItem {
                     type: this.info.type,
                     subject_category: this.info.category,
                     characters: this.info.characters,
-                    meanings: this.info.meanings,
-                    auxiliary_meanings: aux_meanings,
-                    readings: (this.info.readings ? this.info.readings.map(reading => ({"reading": reading, "pronunciations": []})) : [{"reading": this.info.characters, "pronunciations": []}])
+                    meanings: preparedMeanings,
+                    readings: preparedReadings.push(...(this.info.readings ? this.info.readings.map(reading => ({"text": reading, "kind": "primary", "pronunciations": []})) : [{"text": this.info.characters, "kind": "primary", "pronunciations": []}]))
                 };
         }
     }
@@ -485,9 +483,9 @@ class Conjugations {
             type: "Vocabulary",
             subject_category: "Vocabulary",
             characters: item.data.characters + "\n" + this.conjugations[conjugationType][2] + " form",
-            meanings: item.data.meanings.map(m => m.meaning) || [],
+            meanings: item.data.meanings.map(m => ({"text": m.meaning, "kind": "primary"})) || [],
             auxiliary_meanings: item.data.auxiliary_meanings || [],
-            readings: [{"reading": this.conjugateVerb(item.data.readings[0].reading, verbType, conjugationType, item.data.characters), "pronunciations": []}],
+            readings: [{"text": this.conjugateVerb(item.data.readings[0].reading, verbType, conjugationType, item.data.characters), "kind": "primary", "pronunciations": []}],
             auxiliary_readings: item.data.auxiliary_readings || [],
             kanji: [],
             verbType: verbType,

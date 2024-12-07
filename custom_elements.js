@@ -582,7 +582,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         width: 100%;
         height: 100%;
         background-color: var(--color-wk-panel-content-background);
-        z-index: 100;
+        z-index: 10000;
         text-align: center;
         overflow: auto;
 
@@ -1447,7 +1447,6 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
         switch(item.info.type) {
             case "Radical":
             return /*html*/ `
-            <turbo-frame class="subject-info" id="subject-info">
                 <div class="container">
                     <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
                         <a class='wk-nav__anchor' id='information'></a>
@@ -1508,11 +1507,9 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
                         </section>
                     </section>
                 </div>
-            </turbo-frame>
             `;
             case "Kanji":
             return /*html*/ `
-            <turbo-frame class="subject-info" id="subject-info">
                 <div class="container">
                     <!-- Radical combination -->
                     <section class="subject-section subject-section--components subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
@@ -1649,11 +1646,9 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
                         </section>
                     </section>
                 </div>
-            </turbo-frame>
             `;
             case "Vocabulary":
             return /*html*/ `
-            <turbo-frame class="subject-info" id="subject-info">
                 <div class="container">
                     <!-- Meaning -->
                     <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
@@ -1794,11 +1789,9 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
                         </section>
                     </section>
                 </div>
-            </turbo-frame>
             `;
             case "KanaVocabulary":
             return /*html*/ `
-            <turbo-frame class="subject-info" id="subject-info">
                 <div class="container">
                     <!-- Meaning -->
                     <section class="subject-section subject-section--meaning subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;meaning&quot;]}">
@@ -1907,7 +1900,6 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
                         </section>
                     </section>
                 </div>
-            </turbo-frame>
             `;
         }
     }
@@ -1915,7 +1907,6 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
     function makeDetailsHTMLConjugation(item, extraDetails) {
         let [ , , conjName, conjDesc, conjCtx] = extraDetails;
         return /*html*/ `
-        <turbo-frame class="subject-info" id="subject-info">
             <div class="container">
                 <section class="subject-section subject-section--reading subject-section--collapsible" data-controller="toggle" data-toggle-context-value="{&quot;auto_expand_question_types&quot;:[&quot;reading&quot;]}">
                     <a class='wk-nav__anchor' id='information'></a>
@@ -1984,7 +1975,6 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
                     </section>
                 </section>
             </div>
-        </turbo-frame>
         `;
     }
 }

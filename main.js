@@ -3,7 +3,6 @@ if(stopRemainingScriptLoad) return;
 let activePackProfile = await StorageManager.loadPackProfile("main");
 let quizStatsController;
 
-console.log("full refresh");
 // ----------- If on review page -----------
 if (window.location.pathname.includes("/review") || (window.location.pathname.includes("/extra_study") && window.location.search.includes("audio"))) {
     let urlParams = new URLSearchParams(window.location.search);
@@ -163,51 +162,76 @@ if (window.location.pathname.includes("/review") || (window.location.pathname.in
     }
 
     // Catch submission fetch and stop it if submitted item is a custom item
-    const { fetch: originalFetch } = unsafeWindow;
     function overrideFetch() {
-        unsafeWindow.fetch = async (...args) => {
-            let [resource, config] = args;
-            if (resource.includes("/subjects/review") && config != null && config.method === "POST") {
+        const originalFetch = unsafeWindow.fetch;
+        unsafeWindow.fetch = function(...args) {
+            let [resource, config] = [...args];
+            if(resource?.includes("/subjects/review") && config?.method === "POST") {
                 let payload = JSON.parse(config.body);
-                // Check if submitted item is a custom item
-                if(payload.counts && payload.counts[0].id < 0) {
-                    // Check if url includes ?conjugations
-                    if(window.location.search.includes("conjugations")) {
-                        return new Response("{}", { status: 200 });
-                    } else {
-                        // Update custom item SRS
+                if(payload?.counts[0]?.id < 0) {
+                    Utils.log("Custom item submitted. Stopping fetch.");
+                    if(!window.location.search.includes("conjugations")) {
                         activePackProfile.submitReview(payload.counts[0].id, payload.counts[0].meaning, payload.counts[0].reading);
                         SyncManager.setDidReview();
-                        return new Response("{}", { status: 200 });
                     }
-                } else {
-                    if(payload.counts[0].id == CustomSRSSettings.savedData.capturedWKReview?.id) { // Check if somehow the captured WK review is being submitted
-                        CustomSRSSettings.savedData.capturedWKReview = null;
-                        StorageManager.saveSettings();
-                    }
-                    return originalFetch(...args);
+                    return new Promise((resolve, reject) => {resolve(new Response(null, {status: 200}));});
                 }
-            // Catch subject info fetch and return custom item details if the number at the end of the url is negative
-            } else if (resource.includes("/subject_info/") && config && config.method === "GET" && resource.split("/").pop() < 0) {
-                // Submit original fetch but to different URL to get usable headers
-                args[0] = "https://www.wanikani.com/subject_info/1";
-                let response = await originalFetch(...args);
-                let subjectId = resource.split("/").pop();
-                let subjectInfo;
-                if(window.location.search.includes("conjugations")) subjectInfo = Conjugations.getSubjectInfo(subjectId);
-                else subjectInfo = activePackProfile.getSubjectInfo(subjectId);
-                return new Response(subjectInfo, {
-                    status: response.status,
-                    headers: response.headers
-                });
-            } else {
-                return originalFetch(...args);
             }
+            return originalFetch(...args);
         };
     }
     overrideFetch();
     document.addEventListener("turbo:frame-load", overrideFetch);
     document.addEventListener("turbo:load", overrideFetch);
+    document.addEventListener("turbo:before-fetch-request", handleTurboFetchRequest);
+    
+    async function handleTurboFetchRequest(e) {
+        console.log("Handling Turbo fetch request.");
+        if(!e.detail) return;
+        e.preventDefault();
+        if(!e.detail.url) return e.detail.resume();
+
+        let [resource, config] = [e.detail.url.href, e.detail.fetchOptions];
+        //console.log("Resource: " + resource + " Config: " + JSON.stringify(config));
+        if(resource.includes("/subjects/review") && config != null && config.method === "POST") {
+            console.log("Review submitted.");
+            console.log(e.detail);
+            let payload = JSON.parse(config.body);
+            // Check if submitted item is a custom item
+            if(payload?.counts[0]?.id < 0) {
+                // Check if url includes ?conjugations
+                if(window.location.search.includes("conjugations")) {
+                    // Do nothing
+                } else {
+                    // Update custom item SRS
+                    activePackProfile.submitReview(payload.counts[0].id, payload.counts[0].meaning, payload.counts[0].reading);
+                    SyncManager.setDidReview();
+                }
+            } else {
+                if(payload?.counts[0]?.id == CustomSRSSettings.savedData.capturedWKReview?.id) { // Check if somehow the captured WK review is being submitted
+                    CustomSRSSettings.savedData.capturedWKReview = null;
+                    StorageManager.saveSettings();
+                }
+                e.detail.resume();
+            }
+        // Catch subject info fetch and return custom item details if the number at the end of the url is negative
+        } else if(resource.includes("/subject_info/") && config && config.method === "GET" && resource.split("/").pop() < 0) {
+            const currentFetchingID = resource.split("/").pop();
+            console.log("Replacing subject info fetch for item " + currentFetchingID);
+            let subjectInfo;
+            if (window.location.search.includes("conjugations")) {
+                subjectInfo = Conjugations.getSubjectInfo(currentFetchingID);
+            } else {
+                subjectInfo = activePackProfile.getSubjectInfo(currentFetchingID);
+            }
+            document.getElementById("subject-info").innerHTML = subjectInfo;
+            document.getElementById("subject-info").setAttribute("complete", "");
+        } else {
+            console.log("Resuming fetch.");
+            e.detail.resume();
+        }
+    }
+
 // ----------- If on dashboard page -----------
 } else if (window.location.pathname.includes("/dashboard") || window.location.pathname === "/") {
     // Catch lesson / review count fetch and update it with custom item count

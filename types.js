@@ -31,8 +31,10 @@ class CustomItem {
         if(this.info.srs_lvl == 0) {
             if(CustomSRSSettings.userSettings.lockByDependency && ((this.info.type == "Vocabulary" && this.info.kanji) || (this.info.type == "Kanji" && this.info.radicals))) {
                 for(let component of (this.info.type == "Vocabulary" ? this.info.kanji : this.info.radicals)) {
-                    if(component.pack != -1 && activePackProfile.customPacks[packID].getItem(component.id).info.srs_lvl < 4) return (details ? -2 : false);
-                    else if(component.pack == -1 && component.lvl && component.lvl > CustomSRSSettings.userSettings.lastKnownLevel) return (details ? -2 : false);
+                    if(component.pack != null) {
+                        if(component.pack != -1 && activePackProfile.customPacks[packID].getItem(component.id).info.srs_lvl < 4) return (details ? -2 : false);
+                        else if(component.pack == -1 && component.lvl && component.lvl > CustomSRSSettings.userSettings.lastKnownLevel) return (details ? -2 : false);
+                    }
                 }
             }
             if(levelingType == "none") return true;
@@ -111,23 +113,25 @@ class CustomItem {
                     vocabulary: this.info.vocabulary || []
                 };
             case "Vocabulary":
+                preparedReadings.push(...this.info.readings.map(reading => ({"text": reading, "kind": "primary", "pronunciations": []})));
                 return {
                     id: Utils.cantorNumber(packID, this.id),
                     type: this.info.type,
                     subject_category: this.info.category,
                     characters: this.info.characters,
                     meanings: preparedMeanings,
-                    readings: preparedReadings.push(...this.info.readings.map(reading => ({"text": reading, "kind": "primary", "pronunciations": []}))),
+                    readings: preparedReadings,
                     kanji: this.info.kanji || []
                 };
             case "KanaVocabulary":
+                preparedReadings.push(...(this.info.readings ? this.info.readings.map(reading => ({"text": reading, "kind": "primary", "pronunciations": []})) : [{"text": this.info.characters, "kind": "primary", "pronunciations": []}]));
                 return {
                     id: Utils.cantorNumber(packID, this.id),
                     type: this.info.type,
                     subject_category: this.info.category,
                     characters: this.info.characters,
                     meanings: preparedMeanings,
-                    readings: preparedReadings.push(...(this.info.readings ? this.info.readings.map(reading => ({"text": reading, "kind": "primary", "pronunciations": []})) : [{"text": this.info.characters, "kind": "primary", "pronunciations": []}]))
+                    readings: preparedReadings
                 };
         }
     }

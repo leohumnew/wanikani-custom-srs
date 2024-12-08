@@ -255,7 +255,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         &:has(#item-type [value="KanaVocabulary"]:checked) .item-kanavocab-specific {
             display: grid !important }
 
-        &:has(#component-type [value="internal"]:checked), &:has(#component-type [value="wk"]:checked) {
+        &:has(#component-type [value="internal"]:checked), &:has(#component-type [value="wk"]:checked), &:has(#component-type [value="custom"]:checked) {
             #component-type-container {
                 display: none !important }
             #component-id-container {
@@ -425,7 +425,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     </select>
                     <label for="item-characters">Characters:</label>
                     <input id="item-characters" required type="text">
-                    <label for="item-meanings">Meanings (comma separated):</label>
+                    <label for="item-meanings">Primary Meaning/s (comma separated):</label>
                     <input id="item-meanings" required type="text">
                     <div class="item-vocab-specific item-kanavocab-specific" style="display: none; grid-column: 1 / span 2">
                         <label for="item-readings">Readings (comma separated):</label>
@@ -474,7 +474,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             <span class="item-vocab-specific" style="display: none">Kanji Components</span>
                             <span class="item-kanji-specific" style="display: none">Radical Components</span>
                         </p>
-                        <p style="grid-column: 1 / span 2"><i>If custom item, enter the character. If WaniKani item, enter the ID found on the WK item page.</i></p>
+                        <p style="grid-column: 1 / span 2"><i>If item from this pack, enter the character. If WaniKani item, enter the ID found on the WK item page. If custom item not in a pack or on WK enter the character.</i></p>
                         <span>
                             <span id="component-type-container">
                                 <label for="component-type" style="float: left">Type:</label>
@@ -482,6 +482,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                                     <option value=""><i>Select type</i></option>
                                     <option value="internal">This Pack</option>
                                     <option value="wk">WaniKani</option>
+                                    <option value="custom">New Custom</option>
                                 </select>
                             </span>
                             <span id="component-id-container" style="display: none">
@@ -641,6 +642,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                 border: none;
                 transform: translateX(-100%);
                 border-radius: 3px;
+                padding: 0.5rem;
                 margin-top: 1rem;
 
                 &:hover {
@@ -667,6 +669,10 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                     width: fit-content;
                     padding: 4px;
                 }
+            }
+
+            .subject-section__subsection:last-child {
+                margin-bottom: 0;
             }
 
             .subject-character-grid__items {
@@ -719,7 +725,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             let nextItem = this.lessonQueue[0];
             let lessonContainer = document.getElementById("custom-lessons");
             lessonContainer.querySelector("h1").innerText = nextItem.characters;
-            lessonContainer.querySelector("h2").innerText = nextItem.meanings[0];
+            lessonContainer.querySelector("h2").innerText = nextItem.meanings[0].text.charAt(0).toUpperCase() + nextItem.meanings[0].text.slice(1);
 
             lessonContainer.querySelector(".character-header").classList.remove("character-header--kanji", "character-header--radical", "character-header--vocabulary");
             if(nextItem.subject_category === "Kanji") lessonContainer.querySelector(".character-header").classList.add("character-header--kanji");
@@ -727,7 +733,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             else if(nextItem.subject_category === "Vocabulary") lessonContainer.querySelector(".character-header").classList.add("character-header--vocabulary");
 
             document.getElementById("subject-info")?.remove();
-            document.getElementById("custom-lessons").innerHTML += activePackProfile.getSubjectInfo(nextItem.id);
+            document.getElementById("custom-lessons").innerHTML += '<div class="subject-info" id="subject-info" complete>' + activePackProfile.getSubjectInfo(nextItem.id) + '</div>';
             lessonContainer.querySelectorAll(".subject-section").forEach(section => {
                 const toggleLinkElem = section.querySelector(".subject-section__toggle");
                 const contentElem = section.querySelector(".subject-section__content");
@@ -739,7 +745,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
             });
             let actionsSection = document.createElement("section");
             actionsSection.innerHTML = `
-            <section class="subject-section">
+            <section class="subject-section subject-section--collapsible">
                 <h2 class="subject-section__title">Actions</h2>
                 <section class="subject-section__content">
                     <button id="burn-button" class="wk-button wk-button--modal-primary" style="width: auto">Burn</button>
@@ -1039,6 +1045,16 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
                             }
                         });
                         break;
+                    } case "custom": {
+                        const inputCharacters = id;
+                        const link = prompt("Enter a link to more info (e.g. Jisho) if available");
+                        const meaning = prompt("Enter the primary meaning of the component");
+                        const reading = prompt("Enter the primary reading of the component");
+                        tempVar.components.push({id: link ? link : inputCharacters, pack: null, type: subjectType, characters: inputCharacters, meanings: [meaning], readings: [reading]});
+                        document.getElementById("component-add-btn").nextElementSibling.style.display = "none";
+                        document.getElementById("components-container").appendChild(buildComponentEditHTML(tempVar.components[tempVar.components.length - 1]));
+                        document.getElementById("component-type").value = "";
+                        document.getElementById("component-id").value = "";
                     }
                 }
             };
@@ -1336,7 +1352,7 @@ if(window.location.pathname.includes("/dashboard") || window.location.pathname =
         let template = document.createElement('template');
         template.innerHTML = /*html*/ `
         <div class="component-div">
-            <p>${item.pack < 0 ? "WaniKani" : "This Pack"} ${item.type}. Character: ${item.characters} | Meaning: ${item.meanings[0]}</p>
+            <p>${item.pack ? (item.pack < 0 ? "WaniKani" : "This Pack") : "New Custom"} ${item.type}. Character: ${item.characters} | Meaning: ${item.meanings[0]}</p>
             <button class="delete-component" title="Delete Component">${Icons.customIconTxt("cross")}</button>
         </div>
         `;
@@ -1386,12 +1402,12 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
     function buildKanjiComponentHTML(item) {
         return /*html*/ `
         <li class="subject-character-grid__item">
-            <a class="subject-character subject-character--${item.type.toLowerCase()} subject-character--grid" data-turbo-frame="_blank" ${item.pack < 0 ? 'href="https://www.wanikani.com/' + item.type.toLowerCase() + '/' + item.characters + '"' : ""}>
+            <a class="subject-character subject-character--${item.type.toLowerCase()} subject-character--grid" data-turbo-frame="_blank" ${item.pack ? (item.pack < 0 ? 'href="https://www.wanikani.com/' + item.type.toLowerCase() + '/' + item.characters + '"' : "") : 'href="' + item.id + '"'}>
                 <div class="subject-character__content">
                     <span class="subject-character__characters" lang="ja">${item.characters}</span>
                     <div class="subject-character__info">
                         <span class="subject-character__reading">${item.readings ? item.readings[0] : item.primary_reading_type == "onyomi" ? item.onyomi[0] : item.primary_reading_type == "kunyomi" ? item.kunyomi[0] : item.primary_reading_type == "nanori" ? item.nanori[0] : "-"}</span>
-                        <span class="subject-character__meaning">${item.meanings[0]}</span>
+                        <span class="subject-character__meaning">${item.meanings[0].text ? item.meanings[0].text : item.meanings[0]}</span>
                     </div>
                 </div>
             </a>
@@ -1401,11 +1417,11 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
     function buildRadicalComponentHTML(item) {
         return /*html*/ `
         <li class="subject-list__item">
-            <a class="subject-character subject-character--radical subject-character--small-with-meaning subject-character--expandable" data-turbo-frame="_blank" ${item.pack < 0 ? 'href="https://www.wanikani.com/radicals/' + item.meanings[0].toLowerCase() + '"' : ""}>
+            <a class="subject-character subject-character--radical subject-character--small-with-meaning subject-character--expandable" data-turbo-frame="_blank" ${item.pack ? (item.pack < 0 ? 'href="https://www.wanikani.com/radicals/' + item.meanings[0].text.toLowerCase() + '"' : "") : 'href="' + item.id + '"'}>
                 <div class="subject-character__content">
                     <span class="subject-character__characters" lang="ja">${item.characters}</span>
                     <div class="subject-character__info">
-                        <span class="subject-character__meaning">${item.meanings[0]}</span>
+                        <span class="subject-character__meaning">${item.meanings[0].text ? item.meanings[0].text : item.meanings[0]}</span>
                     </div>
                 </div>
             </a>
@@ -1420,7 +1436,7 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
                     <span class="subject-character__characters" lang="ja">${item.ogChar}</span>
                     <div class="subject-character__info">
                         <span class="subject-character__reading">${item.ogReading}</span>
-                        <span class="subject-character__meaning">${item.meanings[0]}</span>
+                        <span class="subject-character__meaning">${item.meanings[0].text ? item.meanings[0].text : item.meanings[0]}</span>
                     </div>
                 </div>
             </a>
@@ -1920,7 +1936,7 @@ if(window.location.pathname.includes("/review") || window.location.pathname.incl
                         <section class="subject-section__subsection">
                             <div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>Conjugated</h2>
-                                <div class="subject-section__meanings-items" lang='ja'>${item.readings[0].reading}</div>
+                                <div class="subject-section__meanings-items" lang='ja'>${item.readings[0].text}</div>
                             </div>
                             <div class='subject-section__meanings'>
                                 <h2 class='subject-section__meanings-title'>Conjugation</h2>
